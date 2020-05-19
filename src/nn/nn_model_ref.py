@@ -116,8 +116,8 @@ class NN_Model_Ref:
                     self.optimizer.zero_grad()
                     # forward + backward + optimize
                     with torch.set_grad_enabled(phase == 'train'):
-                        outputs = self.net(inputs)
-                        loss = self.criterion(outputs.squeeze(1), labels)
+                        outputs = self.net(inputs.to(self.device))
+                        loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
                             loss.backward()

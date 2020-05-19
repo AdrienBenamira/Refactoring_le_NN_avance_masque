@@ -16,6 +16,6 @@ class DataLoader_cipher_binary(Dataset):
 
     def __getitem__(self, idx):
         input_x, input_y = self.X[idx], self.Y[idx]
-        return torch.tensor(input_x).float().to(self.device), torch.tensor(input_y).float().to(self.device)
+        return torch.tensor(input_x).float(), torch.tensor(input_y).float()
 
 

@@ -9,11 +9,7 @@ from src.utils.initialisation_run import init_all_for_run, init_cipher
 from src.utils.config import Config
 import argparse
 from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
-from multiprocessing import set_start_method
-try:
-    set_start_method('spawn')
-except RuntimeError:
-    pass
+
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
@@ -96,4 +92,3 @@ print("---" * 100)
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 print("STEP 2 : GET MASKS")
 print()
-
