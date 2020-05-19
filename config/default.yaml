@@ -1,6 +1,6 @@
 general:
   seed: 0
-  device: 0
+  device: 3
   logs_tensorboard: results/test/
   models_path: results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
@@ -14,7 +14,7 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   type_model: baseline        # Which type of model
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
