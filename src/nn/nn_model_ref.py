@@ -125,7 +125,7 @@ class NN_Model_Ref:
                             self.optimizer.step()
                             if self.scheduler is not None:
                                 self.scheduler.step()
-                        preds = (outputs.squeeze(1) > self.t.to(self.device)).float() * 1
+                        preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
                         TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
                         TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
                         FN += (preds.eq(0) & labels.eq(1)).cpu().sum()
