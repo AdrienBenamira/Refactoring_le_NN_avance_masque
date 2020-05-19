@@ -111,7 +111,7 @@ class NN_Model_Ref:
                 nbre_sample = 0
                 TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
                     1).long()
-                for i, data in tqdm(enumerate(self.dataloaders[phase], 0)):
+                for i, data in enumerate(self.dataloaders[phase], 0):
                     inputs, labels = data
                     self.optimizer.zero_grad()
                     # forward + backward + optimize
