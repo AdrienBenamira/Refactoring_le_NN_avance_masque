@@ -1,0 +1,112 @@
+general:
+  seed: 0
+  device: 0
+  logs_tensorboard: results/test/
+  models_path: results/models_trained/
+  cipher: speck # speck, simon, aes228, aes224, gimli, simeck
+  nombre_round_eval: 5
+  inputs_type:  [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r] #
+  word_size: 16
+  alpha: 7
+  beta: 2
+  type_create_data: normal # real_difference
+
+
+
+train_nn:
+  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
+  type_model: baseline        # Which type of model
+  nbre_sample_train: 10000000
+  nbre_sample_eval: 1000000
+  num_epochs: 20
+  batch_size: 5000
+  loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
+  lr_nn: 0.002
+  weight_decay_nn: 0.00001
+  momentum_nn: 0.999 #only for SGD
+  optimizer_type: Adam #Adam - AdamW - SGD
+  scheduler_type: CyclicLR #CyclicLR - None
+  base_lr:  0.0001      #Only if CyclicLR
+  max_lr: 0.002        #Only if CyclicLR
+  demicycle_1: 5  #Only if CyclicLR
+  num_blocks: 2
+  numLayers: 2
+  in_channel: 4
+  out_channel0: 32
+  out_channel1: 32
+  hidden1: 64
+  kernel_size0: 1
+  kernel_size1: 3
+  num_workers: 2
+
+
+runs:
+  nbre_sample_DDT: 1000000       # nbre de samples pour la DDT
+  double: Yes
+  nbre_sample: 100000        # nbre de samples pour la train le model de Gpphr (meme samples que le ddt)
+  nbre_sampleval: 100000      # nbre de samples pour val
+  nombre_round_eval: 6         # round evaluation
+  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  # [ctdata0l, ctdata0r, ctdata1l, ctdata1r]
+  #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  #[ctdata0l^ctdata1l, ctdata1r^ctdata0l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  #[dec_one_round((L0 R0) 0)1^dec_one_round((L1 R1) 0)1, dec_one_round((L0 R0) 0)0^dec_one_round((L1 R1) 0)0, dec_one_round((L0 R0) 0)0, dec_one_round((L1 R1) 0)0]
+  nbre_to_del: 0
+  load_masks: No
+  fusion_2_files: No
+  file1: ./results/test/speck/2020_04_14_14_31_44_272661/masks.txt
+  file2: ./results/test/speck/2020_04_13_10_09_20_979731/masks.txt
+  fusion_1_file: No
+  file11: results/masks_autres/masks_QQ_ct2.txt # results/masks_autres/masks_QQ_ct2.txt #results/masks_autres/masks_random.txt #results/test/speck/2020_04_27_18_27_11_117922/masks_imp.txt #results/masks_autres/masks_QQ_ct2.txt #results/test/speck/2020_04_27_12_29_21_375785/masks_imp.txt #masks_imp_7round_2.txt #results/test/speck/2020_04_26_15_15_07_779846/masks_imp.txt #results/test/speck/2020_04_26_00_31_10_255559/masks.txt #./masks_f_6.txt #./results/test/speck/2020_04_24_13_22_40_996250/masks.txt #./results/test/speck/2020_04_24_09_31_58_197683/masks_imp.txt # ./results/test/speck/2020_04_23_21_16_27_325875/masks_imp.txt #results/test/speck/2020_04_23_21_01_10_981385/masks.txt #./results/test/speck/2020_04_23_18_37_22_684575/masks_imp.txt
+  cipher: speck
+  version_upload_data: v1 #v1 normal v2: real difference v3a: aes input cipher different key v3b
+  add_qq_expe: No
+  fusion_ddt_masks: No
+  max_maks: -1
+
+
+model_gohr_ref:
+  batch_size: 5000
+  num_epoch: 3                 # nbre epoch Gohr
+  name_model_load: "model"
+  only_gohr: No
+
+get_the_mask:
+  max_int_bit:  [16]           #  [16] nmbre de bits a 1 dans les masks de shapley
+  max_limit_int: 1000      # Pour obtnir les masks de shapley, ilfaut eval une regression lineaire : nbre sample train
+  nombre_sample_shapley: 100   # Pour obtnir les masks de shapley, ilfaut eval une regression lineaire : nbre sample eval (ATTENTION LONG)
+  nbre_de_mask_init: 1           # cbn de fois on repete la demande de masks shapley values
+  bol_thr: No
+  listethr: [16]                 #[16] SHAP
+  listethr2: [16]                # [16] PCA
+  listethr3: [2]            #[1.5/2.5] SHAP
+  listethr4: [0.9]             # [1] PCA
+  liste_max_min: ["1, 0.9", "0.9, 0.8", "0.8, 0.7", "0.7, 0.6", "0.5, 0.25", "0.25, 0."]
+  #["1, 0.9", "0.9, 0.8", "0.8, 0.7", "0.7, 0.6", "0.5, 0.25", "0.25, 0.", "0.75, 0.5", "1.0, 0.75", "1, 0.5"]
+  #
+  #[(0.25, 0), (0.5, 0.25), (0.75, 0.5), (1.0, 0.75)]
+  evaluate_quality_masks: No
+  select_maks_max_num: No
+  max_num: 1000
+  select_maks_thr_score: No
+  thr_score: 15
+  path_random: results/masks_autres/masks_quality.txt.npy
+
+
+classifier:
+  classifier_Gohr: Yes
+  num_epoch2: 20             # nbre epoch OUR CLASSIFIER
+  batch_size2: 50
+  RegressionLinear_bol: No
+  RandomForest_bol: No
+  LGBM_bol: Yes
+  ratio: 1
+
+DDT:
+  flag_reduce_ddt: No       # est ce que tu souhaite reduire la DDT a value_thr_pour valeurs/parametres
+  value_thr_pour:  50000      # est ce que tu souhaite reduire la DDT a value_thr_pour valeurs/parametreses
+  deux_dataset: True
+  Pure_ddt: True
+  nbre_bit_faible: 0
+  cond_64_to_32_bits_entry: No
+  egalite_mask_condition: No
