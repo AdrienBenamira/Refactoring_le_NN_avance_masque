@@ -4,7 +4,7 @@ general:
   logs_tensorboard: results/test/
   models_path: results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 6
+  nombre_round_eval: 5
   inputs_type:  [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r] #
   word_size: 16
   alpha: 7
@@ -16,7 +16,9 @@ general:
 train_nn:
   retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   countinuous_learning: Yes
-  type_model: baseline        # baseline, cnn_attention
+  curriculum_learning: No
+  nbre_epoch_per_stage: 3
+  type_model: multihead        # baseline, cnn_attention, multihead, deepset
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
   num_epochs: 10
