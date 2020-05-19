@@ -17,9 +17,9 @@ train_nn:
   retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   countinuous_learning: Yes
   type_model: baseline        # baseline, cnn_attention
-  nbre_sample_train: 100000
-  nbre_sample_eval: 100000
-  num_epochs: 3
+  nbre_sample_train: 10000000
+  nbre_sample_eval: 1000000
+  num_epochs: 10
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001
