@@ -2,14 +2,15 @@ import copy
 import torch
 from torch.utils.data import DataLoader
 from src.nn.DataLoader import DataLoader_cipher_binary
-from src.nn.ModelBaseline import ModelPaperBaseline
+from src.nn.models.ModelBaseline import ModelPaperBaseline
 import time
 from tqdm import tqdm
 import os
 import torch.nn as nn
 from torch.autograd import Variable
 
-from src.utils.utils import F1_Loss, BCE_bit_Loss
+from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
+from src.utils.utils import F1_Loss
 
 
 class NN_Model_Ref:
@@ -31,6 +32,8 @@ class NN_Model_Ref:
         self.cipher = cipher
         self.path_save_model =path_save_model
         self.net = self.choose_model()
+        if self.args.nombre_round_eval > 5 and self.args.countinuous_learning:
+            self.load_nn_round(self.args.nombre_round_eval - 1)
         self.creator_data_binary = creator_data_binary
         self.create_data()
 
@@ -38,6 +41,8 @@ class NN_Model_Ref:
     def choose_model(self):
         if self.args.type_model=="baseline":
             return ModelPaperBaseline(self.args).to(self.device)
+        if self.args.type_model=="cnn_attention":
+            return Modelbaseline_CNN_ATTENTION(self.args).to(self.device)
 
     def create_data(self):
         self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, c1r_train_nn = self.creator_data_binary.make_data(
@@ -111,7 +116,7 @@ class NN_Model_Ref:
                 nbre_sample = 0
                 TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
                     1).long()
-                for i, data in enumerate(self.dataloaders[phase], 0):
+                for i, data in tqdm(enumerate(self.dataloaders[phase], 0)):
                     inputs, labels = data
                     self.optimizer.zero_grad()
                     # forward + backward + optimize
@@ -179,6 +184,12 @@ class NN_Model_Ref:
     def load_nn(self):
         self.net.load_state_dict(torch.load(
             os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth.tar')), strict=False)
+        self.net.to(self.device)
+
+    def load_nn_round(self, nr):
+        path_save_model_train_v2 = self.path_save_model_train.replace("/"+str(self.args.nombre_round_eval)+"/", "/"+str(nr)+"/")
+        self.net.load_state_dict(torch.load(
+            os.path.join(path_save_model_train_v2, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth.tar')), strict=False)
         self.net.to(self.device)
 
 

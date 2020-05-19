@@ -10,7 +10,6 @@ class ModelPaperBaseline(nn.Module):
     def __init__(self, args):
         super(ModelPaperBaseline, self).__init__()
         self.args = args
-        self.num_blocks = args.num_blocks
         self.word_size = args.word_size
         self.conv0 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel0, kernel_size=1)
         self.BN0 = nn.BatchNorm1d(args.out_channel0, eps=0.01, momentum=0.99)
