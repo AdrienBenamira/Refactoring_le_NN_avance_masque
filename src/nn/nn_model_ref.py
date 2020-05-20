@@ -93,14 +93,19 @@ class NN_Model_Ref:
 
     def load_nn(self):
         self.net.load_state_dict(torch.load(
-            os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth.tar')), strict=False)
+            os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'))['state_dict'], strict=False)
         self.net.to(self.device)
+        self.net.eval()
 
     def load_nn_round(self, net, nr):
+        print(net.fc1.bias)
         path_save_model_train_v2 = self.path_save_model_train.replace("/"+str(self.args.nombre_round_eval)+"/", "/"+str(nr)+"/")
         net.load_state_dict(torch.load(
-            os.path.join(path_save_model_train_v2, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth.tar')), strict=False)
+            os.path.join(path_save_model_train_v2, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'))['state_dict'], strict=False)
         net.to(self.device)
+        net.eval()
+        print(net.fc1.bias)
+
         return net
 
 
@@ -207,14 +212,14 @@ class NN_Model_Ref:
                     best_loss = epoch_loss
                     best_model_wts = copy.deepcopy(self.net.state_dict())
                     torch.save({'epoch': epoch + 1, 'acc': best_loss, 'state_dict': self.net.state_dict()},
-                               os.path.join(self.path_save_model, str(best_loss) + '_bestloss.pth.tar'))
+                               os.path.join(self.path_save_model, str(best_loss) + '_bestloss.pth'))
                 if phase == 'val' and acc >= best_acc:
                     best_acc = acc
                     torch.save({'epoch': epoch + 1, 'acc': best_acc, 'state_dict': self.net.state_dict()},
-                               os.path.join(self.path_save_model, str(best_acc) + '_bestacc.pth.tar'))
+                               os.path.join(self.path_save_model, str(best_acc) + '_bestacc.pth'))
             print()
         torch.save({'epoch': epoch + 1, 'acc': acc, 'state_dict': self.net.state_dict()},
-                   os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth.tar'))
+                   os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'))
 
 
 
