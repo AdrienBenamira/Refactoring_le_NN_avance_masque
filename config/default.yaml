@@ -16,7 +16,7 @@ general:
 train_nn:
   retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   countinuous_learning: No
-  curriculum_learning: No
+  curriculum_learning: Yes
   nbre_epoch_per_stage: 3
   type_model: baseline        # baseline, cnn_attention, multihead, deepset
   nbre_sample_train: 10000000
