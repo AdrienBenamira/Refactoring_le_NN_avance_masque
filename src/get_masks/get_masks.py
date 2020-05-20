@@ -8,4 +8,6 @@ class Get_masks:
         self.args = args
         self.net = net
         self.all_masks = []
+        self.masks_infos = []
+
 

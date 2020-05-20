@@ -24,10 +24,11 @@ class PermEqui1_mean(nn.Module):
 
 class DTanh(nn.Module):
 
-  def __init__(self, d_dim=32, x_dim=4, pool = 'mean1'):
+  def __init__(self, args):
     super(DTanh, self).__init__()
-    self.d_dim = d_dim
-    self.x_dim = x_dim
+    self.args = args
+    self.d_dim = self.args.out_channel0
+    self.x_dim = len(self.args.inputs_type)
 
     self.PermEqui1_mean1 = PermEqui1_mean(self.x_dim, self.d_dim)
     self.PermEqui1_mean2 = PermEqui1_mean(self.d_dim, self.d_dim)
@@ -48,7 +49,7 @@ class DTanh(nn.Module):
 
 
   def forward(self, x, test = "test"):
-    x = x.view(-1, 3, 16)
+    x = x.view(-1, len(self.args.inputs_type), self.args.word_size)
     x = torch.tanh(self.PermEqui1_mean1(x))
     shortcut = x.clone()
     x = torch.tanh(self.PermEqui1_mean2(x))

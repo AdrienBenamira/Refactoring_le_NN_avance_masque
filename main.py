@@ -13,6 +13,9 @@ from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
+
+print("TODO: MULTITHREADING + ASSERT PATH EXIST DEPEND ON CONDITION")
+
 config = Config()
 parser = argparse.ArgumentParser()
 
@@ -67,6 +70,7 @@ args = parser.parse_args()
 print("---" * 100)
 writer, device, rng, path_save_model, path_save_model_train, name_input = init_all_for_run(args)
 
+
 print("LOAD CIPHER")
 print()
 cipher = init_cipher(args)
@@ -74,7 +78,9 @@ creator_data_binary = Create_data_binary(args, cipher, rng)
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 print("---" * 100)
-print("STEP 1 : NN REF")
+print("STEP 1 : LOAD/ TRAIN NN REF")
+print()
+print("COUNTINUOUS LEARNING: "+ str(args.countinuous_learning) +  " | CURRICULUM LEARNING: " +  str(args.curriculum_learning) + " | MODEL: " + str(args.type_model))
 print()
 
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)

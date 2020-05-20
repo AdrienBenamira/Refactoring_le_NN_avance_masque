@@ -1,8 +1,8 @@
 general:
   seed: 0
   device: 2
-  logs_tensorboard: results/test/
-  models_path: results/models_trained/
+  logs_tensorboard: ./results/test/
+  models_path: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 5
   inputs_type:  [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r] #
@@ -15,7 +15,7 @@ general:
 
 train_nn:
   retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
-  countinuous_learning: Yes
+  countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
   type_model: baseline        # baseline, cnn_attention, multihead, deepset

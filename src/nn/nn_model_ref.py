@@ -28,6 +28,7 @@ class NN_Model_Ref:
         :param path_save_model:
         """
         self.args = args
+        self.t = Variable(torch.Tensor([0.5]))
         self.writer = writer
         self.path_save_model_train = path_save_model_train
         self.device =device
@@ -55,7 +56,7 @@ class NN_Model_Ref:
         if self.args.type_model=="multihead":
             return Multihead(self.args).to(self.device)
         if self.args.type_model=="deepset":
-            model =DTanh(d_dim=16, x_dim=3)
+            model =DTanh(self.args)
             return model.to(self.device)
 
     def create_data(self):
@@ -66,7 +67,7 @@ class NN_Model_Ref:
 
 
     def train_from_scractch(self, name_input):
-        self.t = Variable(torch.Tensor([0.5]))
+
         data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device)
         dataloader_train = DataLoader(data_train, batch_size=self.args.batch_size,
                                       shuffle=True, num_workers=self.args.num_workers)
@@ -78,13 +79,12 @@ class NN_Model_Ref:
         self.train(name_input)
 
     def train_from_curriculum(self, name_input):
-        self.net_old = self.choose_model()
-        self.net_old = self.load_nn_round(self.net_old, self.args.nombre_round_eval)
-        self.t = Variable(torch.Tensor([0.5]))
-        data_train = DataLoader_curriculum(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device, self.net_old, 3, True)
+        net_old = self.choose_model()
+        net_old = self.load_nn_round(net_old, self.args.nombre_round_eval)
+        data_train = DataLoader_curriculum(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device, net_old, 3, self.args, True)
         dataloader_train = DataLoader(data_train, batch_size=self.args.batch_size,
                                       shuffle=True, num_workers=self.args.num_workers)
-        data_val = DataLoader_curriculum(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device, self.net_old, 3, False)
+        data_val = DataLoader_curriculum(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device, net_old, 3, self.args, False)
         dataloader_val = DataLoader(data_val, batch_size=self.args.batch_size,
                                       shuffle=False, num_workers=self.args.num_workers)
         self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
