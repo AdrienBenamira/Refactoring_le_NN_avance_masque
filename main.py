@@ -54,6 +54,7 @@ parser.add_argument("--hidden1", default=config.train_nn.hidden1, type=two_args_
 parser.add_argument("--kernel_size0", default=config.train_nn.kernel_size0, type=two_args_str_int)
 parser.add_argument("--kernel_size1", default=config.train_nn.kernel_size1, type=two_args_str_int)
 parser.add_argument("--num_workers", default=config.train_nn.num_workers, type=two_args_str_int)
+parser.add_argument("--clip_grad_norm", default=config.train_nn.clip_grad_norm, type=two_args_str_float)
 
 
 

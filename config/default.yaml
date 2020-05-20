@@ -1,6 +1,6 @@
 general:
   seed: 0
-  device: 3
+  device: 2
   logs_tensorboard: results/test/
   models_path: results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
@@ -39,6 +39,7 @@ train_nn:
   kernel_size0: 1
   kernel_size1: 3
   num_workers: 2
+  clip_grad_norm: 0.5
 
 
 runs:

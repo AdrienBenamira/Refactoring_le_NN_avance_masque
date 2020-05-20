@@ -89,7 +89,7 @@ class NN_Model_Ref:
                                       shuffle=False, num_workers=self.args.num_workers)
         self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
         self.load_general_train()
-        self.train_curriculum(name_input)
+        self.train(name_input)
 
     def load_nn(self):
         self.net.load_state_dict(torch.load(
@@ -144,6 +144,9 @@ class NN_Model_Ref:
         best_acc = 0.0
         n_batches = self.args.batch_size
         for epoch in range(self.args.num_epochs):
+            pourcentage = epoch // self.args.nbre_epoch_per_stage + 1
+            if pourcentage > 3:
+                pourcentage = 3
             print('-' * 10)
             print('==> %d/%d epoch, previous best: %.3f' % (epoch + 1, self.args.num_epochs, best_acc))
             print('-' * 10)
@@ -153,6 +156,8 @@ class NN_Model_Ref:
                     self.net.train()
                 if phase == 'val':
                     self.net.eval()
+                if self.args.curriculum_learning:
+                    self.dataloaders[phase].catgeorie = pourcentage
                 running_loss = 0.0
                 nbre_sample = 0
                 TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
@@ -167,7 +172,7 @@ class NN_Model_Ref:
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
                             loss.backward()
-                            #torch.nn.utils.clip_grad_norm_(self.net.parameters(), 0.5)
+                            torch.nn.utils.clip_grad_norm_(self.net.parameters(), self.args.clip_grad_norm)
                             self.optimizer.step()
                             if self.scheduler is not None:
                                 self.scheduler.step()
@@ -222,96 +227,6 @@ class NN_Model_Ref:
         # load best model weights
         self.net.load_state_dict(best_model_wts)
 
-
-    def train_curriculum(self, name_input):
-        since = time.time()
-        phrase = self.args.cipher + " round " +str(self.args.nombre_round_eval) +" inputs " + name_input +" size dataset "+ str(self.args.nbre_sample_train)
-        best_model_wts = copy.deepcopy(self.net.state_dict())
-        best_loss = 100
-        best_acc = 0.0
-        n_batches = self.args.batch_size
-        for epoch in range(self.args.num_epochs):
-            pourcentage = epoch//self.args.nbre_epoch_per_stage + 1
-            if pourcentage>3:
-                pourcentage=3
-            print('-' * 10)
-            print('==> %d/%d epoch, previous best: %.3f' % (epoch + 1, self.args.num_epochs, best_acc))
-            print('-' * 10)
-            # Each epoch has a training and validation phase
-            for phase in ['train', 'val']:
-                if phase == 'train':
-                    self.net.train()
-                if phase == 'val':
-                    self.net.eval()
-                self.dataloaders[phase].catgeorie = pourcentage
-                running_loss = 0.0
-                nbre_sample = 0
-                TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
-                    1).long()
-                for i, data in tqdm(enumerate(self.dataloaders[phase], 0)):
-                    inputs, labels = data
-                    self.optimizer.zero_grad()
-                    # forward + backward + optimize
-                    with torch.set_grad_enabled(phase == 'train'):
-                        outputs = self.net(inputs.to(self.device))
-                        loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
-                        desc = 'loss: %.4f; ' % (loss.item())
-                        if phase == 'train':
-                            loss.backward()
-                            #torch.nn.utils.clip_grad_norm_(self.net.parameters(), 0.5)
-                            self.optimizer.step()
-                            if self.scheduler is not None:
-                                self.scheduler.step()
-                        preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
-                        TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
-                        TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
-                        FN += (preds.eq(0) & labels.eq(1)).cpu().sum()
-                        FP += (preds.eq(1) & labels.eq(0)).cpu().sum()
-                        TOT = TP + TN + FN + FP
-                        desc += 'acc: %.3f, TP: %.3f, TN: %.3f, FN: %.3f, FP: %.3f' % (
-                            (TP.item() + TN.item()) * 1.0 / TOT.item(), TP.item() * 1.0 / TOT.item(),
-                            TN.item() * 1.0 / TOT.item(), FN.item() * 1.0 / TOT.item(),
-                            FP.item() * 1.0 / TOT.item())
-                        running_loss += loss.item() * n_batches
-                        nbre_sample += n_batches
-                epoch_loss = running_loss / nbre_sample
-                acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
-                print('{} Loss: {:.4f}'.format(
-                    phase, epoch_loss))
-                print('{} Acc: {:.4f}'.format(
-                    phase, acc))
-                #print(desc)
-                print()
-                self.writer.add_scalar(phase + ' Loss ' + phrase,
-                                  epoch_loss,
-                                  epoch)
-                self.writer.add_scalar(phase + ' Acc ' + phrase,
-                                  acc,
-                                  epoch)
-                # deep copy the model
-                if phase == 'val' and epoch_loss < best_loss:
-                    best_loss = epoch_loss
-                    best_model_wts = copy.deepcopy(self.net.state_dict())
-                    torch.save({'epoch': epoch + 1, 'acc': best_loss, 'state_dict': self.net.state_dict()},
-                               os.path.join(self.path_save_model, str(best_loss) + '_bestloss.pth.tar'))
-                if phase == 'val' and acc >= best_acc:
-                    best_acc = acc
-                    torch.save({'epoch': epoch + 1, 'acc': best_acc, 'state_dict': self.net.state_dict()},
-                               os.path.join(self.path_save_model, str(best_acc) + '_bestacc.pth.tar'))
-            print()
-        torch.save({'epoch': epoch + 1, 'acc': acc, 'state_dict': self.net.state_dict()},
-                   os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth.tar'))
-
-
-
-        time_elapsed = time.time() - since
-        print('Training complete in {:.0f}m {:.0f}s'.format(
-            time_elapsed // 60, time_elapsed % 60))
-        print('Best val Loss: {:4f}'.format(best_loss))
-        print('Best val Acc: {:4f}'.format(best_acc))
-        print()
-        # load best model weights
-        self.net.load_state_dict(best_model_wts)
 
 
 
