@@ -1,19 +1,19 @@
 import os
 
-os.system("python3 main.py --nombre_round_eval 5")
-os.system("python3 main.py --nombre_round_eval 6")
-os.system("python3 main.py --nombre_round_eval 7")
-os.system("python3 main.py --nombre_round_eval 8")
-
-os.system("python3 main.py --nombre_round_eval 5 --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]'")
-os.system("python3 main.py --nombre_round_eval 6 --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]'")
-os.system("python3 main.py --nombre_round_eval 7 --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]'")
-os.system("python3 main.py --nombre_round_eval 8 --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]'")
-
-os.system("python3 main.py --nombre_round_eval 5 --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l]'")
-os.system("python3 main.py --nombre_round_eval 6 --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l]'")
-os.system("python3 main.py --nombre_round_eval 7 --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l]'")
-os.system("python3 main.py --nombre_round_eval 8 --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l]'")
+#'[ctdata0l, ctdata0r, ctdata1l, ctdata1r]', '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r]', '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]', '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l]'
 
 
+for curriculum in ["No"]:
+    for continuous in ["No", "Yes"]:
+        for model in ["baseline"]:
+            for round in ([5, 6, 7, 8]):
+                command = "python3 main.py --nombre_round_eval " + str(round) + " --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]' " + " --type_model " + str(model) + " --countinuous_learning " + str(continuous) + " --curriculum_learning " + str(curriculum)
+                os.system(command)
 
+
+for curriculum in ["No"]:
+    for continuous in ["No", "Yes"]:
+        for model in ["baseline"]:
+            for round in ([5, 6, 7, 8]):
+                command = "python3 main.py --nombre_round_eval " + str(round) + " --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]' " + " --type_model " + str(model) + " --countinuous_learning " + str(continuous) + " --curriculum_learning " + str(curriculum)
+                os.system(command)

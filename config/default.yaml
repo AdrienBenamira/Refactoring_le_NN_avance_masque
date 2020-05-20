@@ -18,7 +18,7 @@ train_nn:
   countinuous_learning: Yes
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: multihead        # baseline, cnn_attention, multihead, deepset
+  type_model: baseline        # baseline, cnn_attention, multihead, deepset
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
   num_epochs: 10
@@ -27,12 +27,12 @@ train_nn:
   lr_nn: 0.001
   weight_decay_nn: 0.00001
   momentum_nn: 0.9 #only for SGD
-  optimizer_type: AdamW #Adam - AdamW - SGD
+  optimizer_type: Adam #Adam - AdamW - SGD
   scheduler_type: CyclicLR #CyclicLR - None
   base_lr:  0.0001      #Only if CyclicLR
   max_lr: 0.002        #Only if CyclicLR
   demicycle_1: 5  #Only if CyclicLR
-  numLayers: 2
+  numLayers: 10
   out_channel0: 32
   out_channel1: 32
   hidden1: 64

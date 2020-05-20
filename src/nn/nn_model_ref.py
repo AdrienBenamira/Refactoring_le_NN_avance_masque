@@ -167,7 +167,7 @@ class NN_Model_Ref:
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
                             loss.backward()
-                            torch.nn.utils.clip_grad_norm_(self.net.parameters(), 0.5)
+                            #torch.nn.utils.clip_grad_norm_(self.net.parameters(), 0.5)
                             self.optimizer.step()
                             if self.scheduler is not None:
                                 self.scheduler.step()
@@ -258,7 +258,7 @@ class NN_Model_Ref:
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
                             loss.backward()
-                            torch.nn.utils.clip_grad_norm_(self.net.parameters(), 0.5)
+                            #torch.nn.utils.clip_grad_norm_(self.net.parameters(), 0.5)
                             self.optimizer.step()
                             if self.scheduler is not None:
                                 self.scheduler.step()
