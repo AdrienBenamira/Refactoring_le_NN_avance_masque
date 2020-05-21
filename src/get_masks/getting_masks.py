@@ -86,6 +86,8 @@ def upgrade_mask(args, index_interet, k, X_train, index_interettrain, X_eval, no
     test_images = X_eval[index_interet][(k + 1) * nombre_sample_shapley:(k + 2) * nombre_sample_shapley]
     start = time.time()
     e = shap.GradientExplainer(net, background)
+    #e = PyTorchDeepExplainer(model, background)
+    #shap_values = e.shap_values(test_images)
     print("temps train", time.time()-start)
     start = time.time()
     shap_values_sample = e.shap_values(test_images)[0]

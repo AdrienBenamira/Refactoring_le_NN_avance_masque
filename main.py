@@ -1,4 +1,8 @@
+import sys
 import warnings
+
+from src.get_masks.get_masks import Get_masks
+
 warnings.filterwarnings('ignore',category=FutureWarning)
 
 from src.data_cipher.create_data import Create_data_binary
@@ -58,8 +62,24 @@ parser.add_argument("--kernel_size0", default=config.train_nn.kernel_size0, type
 parser.add_argument("--kernel_size1", default=config.train_nn.kernel_size1, type=two_args_str_int)
 parser.add_argument("--num_workers", default=config.train_nn.num_workers, type=two_args_str_int)
 parser.add_argument("--clip_grad_norm", default=config.train_nn.clip_grad_norm, type=two_args_str_float)
+parser.add_argument("--end_after_training", default=config.train_nn.end_after_training, type=str2bool)
 
 
+
+parser.add_argument("--load_masks", default=config.getting_masks.load_masks, type=str2bool)
+parser.add_argument("--file_mask", default=config.getting_masks.file_mask)
+parser.add_argument("--nbre_max_masks_load", default=config.getting_masks.nbre_max_masks_load, type=two_args_str_int)
+parser.add_argument("--nbre_generate_data_train_val", default=config.getting_masks.nbre_generate_data_train_val, type=two_args_str_int)
+parser.add_argument("--nbre_necessaire_val_SV", default=config.getting_masks.nbre_necessaire_val_SV, type=two_args_str_int)
+parser.add_argument("--nbre_max_batch", default=config.getting_masks.nbre_max_batch, type=two_args_str_int)
+parser.add_argument("--liste_segmentation_prediction", default=config.getting_masks.liste_segmentation_prediction)
+parser.add_argument("--liste_methode_extraction", default=config.getting_masks.liste_methode_extraction, type=transform_input_type)
+parser.add_argument("--liste_methode_selection", default=config.getting_masks.liste_methode_selection, type=transform_input_type)
+parser.add_argument("--hamming_weigth", default=config.getting_masks.hamming_weigth, type=str2list)
+parser.add_argument("--thr_value", default=config.getting_masks.thr_value, type=str2list)
+parser.add_argument("--research_new_masks", default=config.getting_masks.research_new_masks, type=str2bool)
+parser.add_argument("--save_fig_plot_feature_before_mask", default=config.getting_masks.save_fig_plot_feature_before_mask, type=str2bool)
+parser.add_argument("--end_after_step2", default=config.getting_masks.end_after_step2, type=str2bool)
 
 
 args = parser.parse_args()
@@ -94,9 +114,35 @@ else:
         print("NO MODEL AVALAIBLE FOR THIS CONFIG")
         print("CHANGE ARGUMENT retain_model_gohr_ref")
         print()
+        sys.exit(1)
 
 print("STEP 1 : DONE")
 print("---" * 100)
+if args.end_after_training:
+    sys.exit(1)
+
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 print("STEP 2 : GET MASKS")
 print()
+print("LOAD MASKS: "+ str(args.load_masks) +  " | RESEARCH NEW: " +  str(args.research_new_masks) + " | MODEL: " + str(args.liste_segmentation_prediction) +" " + str(args.liste_methode_extraction)+" " + str(args.liste_methode_selection)+" " + str(args.hamming_weigth)+" " + str(args.thr_value))
+print()
+get_masks_gen = Get_masks(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device)
+if args.research_new_masks:
+    get_masks_gen.start_step()
+
+print("STEP 2 : DONE")
+print("---" * 100)
+if args.end_after_step2:
+    sys.exit(1)
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+print("STEP 3 : MAKE TABLE OF TRUTH")
+print()
+get_masks_gen = Get_masks(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device)
+if args.research_new_masks:
+    get_masks_gen.start_step()
+
+print("STEP 3 : DONE")
+print("---" * 100)
+if args.end_after_step2:
+    sys.exit(1)

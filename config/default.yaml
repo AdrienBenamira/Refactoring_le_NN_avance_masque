@@ -4,7 +4,7 @@ general:
   logs_tensorboard: ./results/test/
   models_path: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 5
+  nombre_round_eval: 4
   inputs_type:  [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r] #
   word_size: 16
   alpha: 7
@@ -12,15 +12,14 @@ general:
   type_create_data: normal # real_difference
 
 
-
 train_nn:
-  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
   countinuous_learning: No
-  curriculum_learning: Yes
+  curriculum_learning: No
   nbre_epoch_per_stage: 3
   type_model: baseline        # baseline, cnn_attention, multihead, deepset
-  nbre_sample_train: 10000000
-  nbre_sample_eval: 1000000
+  nbre_sample_train: 100000
+  nbre_sample_eval: 100000
   num_epochs: 10
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
@@ -40,6 +39,36 @@ train_nn:
   kernel_size1: 3
   num_workers: 2
   clip_grad_norm: 0.5
+  end_after_training: No
+
+
+getting_masks:
+  load_masks: Yes
+  file_mask: results/masks_ref/speck/5/masks_QQ/masks_126.txt
+  nbre_max_masks_load: 10
+  research_new_masks: Yes
+  nbre_generate_data_train_val: 1000
+  nbre_necessaire_val_SV: 100
+  nbre_max_batch: 10
+  liste_segmentation_prediction: ["1, 0.9", "0.9, 0.8", "0.8, 0.7", "0.7, 0.6", "0.6, 0.5"]
+  liste_methode_extraction: [GradientShap]
+  #[IntegratedGradients, IntegratedGradients_tunnel, DeepLift, GradientShap, FeatureAblation, Saliency, ShapleyValueSampling, Occlusion]
+  #temps get_mask IntegratedGradients 0.6 for 100 samples
+  #temps get_mask IntegratedGradients_tunnel 3.7 for 100 samples
+  #temps get_mask DeepLift 0.02 for 100 samples
+  #temps get_mask GradientShap 0.04 for 100 samples
+  #temps get_mask FeatureAblation 0.2 for 100 samples
+  #temps get_mask Saliency 0.03 for 100 samples
+  #temps get_mask ShapleyValueSampling 4 for 100 samples
+  #temps get_mask Occlusion 0.15 for 100 samples
+  liste_methode_selection: [PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
+  #[PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
+  hamming_weigth: [8]
+  thr_value: [0.05]
+  save_fig_plot_feature_before_mask: No
+  end_after_step2: No
+
+
 
 
 runs:
@@ -59,7 +88,7 @@ runs:
   file1: ./results/test/speck/2020_04_14_14_31_44_272661/masks.txt
   file2: ./results/test/speck/2020_04_13_10_09_20_979731/masks.txt
   fusion_1_file: No
-  file11: results/masks_autres/masks_QQ_ct2.txt # results/masks_autres/masks_QQ_ct2.txt #results/masks_autres/masks_random.txt #results/test/speck/2020_04_27_18_27_11_117922/masks_imp.txt #results/masks_autres/masks_QQ_ct2.txt #results/test/speck/2020_04_27_12_29_21_375785/masks_imp.txt #masks_imp_7round_2.txt #results/test/speck/2020_04_26_15_15_07_779846/masks_imp.txt #results/test/speck/2020_04_26_00_31_10_255559/masks.txt #./masks_f_6.txt #./results/test/speck/2020_04_24_13_22_40_996250/masks.txt #./results/test/speck/2020_04_24_09_31_58_197683/masks_imp.txt # ./results/test/speck/2020_04_23_21_16_27_325875/masks_imp.txt #results/test/speck/2020_04_23_21_01_10_981385/masks.txt #./results/test/speck/2020_04_23_18_37_22_684575/masks_imp.txt
+  file11: results/masks_autres/masks_126.txt # results/masks_autres/masks_126.txt #results/masks_autres/masks_random.txt #results/test/speck/2020_04_27_18_27_11_117922/masks_imp.txt #results/masks_autres/masks_126.txt #results/test/speck/2020_04_27_12_29_21_375785/masks_imp.txt #masks_imp_7round_2.txt #results/test/speck/2020_04_26_15_15_07_779846/masks_imp.txt #results/test/speck/2020_04_26_00_31_10_255559/masks.txt #./masks_f_6.txt #./results/test/speck/2020_04_24_13_22_40_996250/masks.txt #./results/test/speck/2020_04_24_09_31_58_197683/masks_imp.txt # ./results/test/speck/2020_04_23_21_16_27_325875/masks_imp.txt #results/test/speck/2020_04_23_21_01_10_981385/masks.txt #./results/test/speck/2020_04_23_18_37_22_684575/masks_imp.txt
   cipher: speck
   version_upload_data: v1 #v1 normal v2: real difference v3a: aes input cipher different key v3b
   add_qq_expe: No
