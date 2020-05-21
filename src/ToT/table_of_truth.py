@@ -1,0 +1,92 @@
+import numpy as np
+from tqdm import tqdm
+from scipy import sparse
+from sparse_vector import SparseVector
+
+
+class ToT:
+
+    def __init__(self, args, net, path_file_models, rng, creator_data_binary, device, masks, nn_model_ref):
+
+        self.args = args
+        self.device= device
+        self.net = net
+        self.masks = masks
+        self.path_file_models = path_file_models
+        self.rng = rng
+        self.creator_data_binary = creator_data_binary
+        self.nn_model_ref = nn_model_ref
+        self.features_name = []
+        if self.args.create_new_data_for_ToT:
+            self.create_data()
+        else:
+            self.c0l_create_ToT = nn_model_ref.c0l_train_nn
+            self.c0r_create_ToT = nn_model_ref.c0r_train_nn
+            self.c1l_create_ToT = nn_model_ref.c1l_train_nn
+            self.c1r_create_ToT = nn_model_ref.c1r_train_nn
+            self.Y_create_ToT = nn_model_ref.Y_train_nn_binaire
+        if self.args.create_ToT_with_only_sample_from_cipher:
+            self.c0l_create_ToT = self.c0l_create_ToT[self.Y_create_ToT == 1]
+            self.c0r_create_ToT = self.c0r_create_ToT[self.Y_create_ToT == 1]
+            self.c1l_create_ToT = self.c1l_create_ToT[self.Y_create_ToT == 1]
+            self.c1r_create_ToT = self.c1r_create_ToT[self.Y_create_ToT == 1]
+
+    def create_data(self):
+        _, self.Y_create_ToT, self.c0l_create_ToT, self.c0r_create_ToT, self.c1l_create_ToT, self.c1r_create_ToT = self.creator_data_binary.make_data(
+            self.args.nbre_sample_create_ToT);
+
+    def create_masked_moment(self, moment):
+        masks_du_moment = []
+        name_input_cic = ""
+        for index_mask_all in range(len(self.args.inputs_type)):
+            masks_du_moment.append(self.masks[index_mask_all][moment])
+            name_input_cic += str(self.masks[index_mask_all][moment])
+            name_input_cic += "_"
+        name_input_cic = name_input_cic[:-1]
+        self.features_name.append(name_input_cic)
+
+        return masks_du_moment, name_input_cic
+
+    def create_masked_inputs(self, liste_inputs, masks_du_moment):
+        liste_inputsmasked = []
+        for index, input_v in enumerate(liste_inputs):
+            liste_inputsmasked.append((input_v) & masks_du_moment[index])
+        debut = len(liste_inputs) * self.args.word_size - self.args.word_size
+        ddt_entree = (np.uint64(liste_inputsmasked[0]) << debut)
+        for index in range(1, len(liste_inputs)):
+            ddt_entree += (np.uint64(liste_inputsmasked[index]) << debut - 16 * index)
+        return ddt_entree
+
+    def convert_proba(self, vals, counts, num_samples):
+        nbre_param = len(vals)
+        ms = int(np.log2(nbre_param) + 0.1)
+        cste = 1 / (2 ** (ms))
+        p_input_sachant_speK_masks = counts / num_samples
+        a = 100 * (0.5 * p_input_sachant_speK_masks)
+        b = cste + p_input_sachant_speK_masks
+        p_speck_sachant_input_masks = self.mat_div(a, b)
+        return p_speck_sachant_input_masks
+
+    def create_DDT(self):
+        num_samples = len(self.c0l_create_ToT)
+        print("NUMBER OF SAMPLES IN DDT :", num_samples)
+        print()
+        self.nbre_param_ddt = 0
+
+        liste_inputs = self.creator_data_binary.convert_data_inputs(self.args, self.c0l_create_ToT, self.c0r_create_ToT, self.c1l_create_ToT, self.c1r_create_ToT)
+        self.ToT = {}
+        for moment, _ in enumerate(tqdm(self.masks[0])):
+            masks_du_moment, name_input_cic = self.create_masked_moment(moment)
+            ddt_entree = self.create_masked_inputs(liste_inputs, masks_du_moment)
+            vals, counts = np.unique(ddt_entree, return_counts=True)
+            self.nbre_param_ddt += len(vals)
+            p_speck_sachant_input_masks = self.convert_proba( vals, counts, num_samples)
+            sv = SparseVector((vals, p_speck_sachant_input_masks))
+            self.ToT[name_input_cic] = sv
+        print()
+        print("NUMBER OF ENTRIES IN DDT :", self.nbre_param_ddt)
+        print()
+
+
+    def mat_div(self, a, b):
+        return np.array([ra / rb  for ra, rb in zip(a, b)])

@@ -2,14 +2,13 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 from torch.autograd import Variable
-from shap.explainers.deep.deep_pytorch import PyTorchDeepExplainer
 from torch.utils.data import DataLoader
 from src.nn.DataLoader import DataLoader_cipher_binary
 from captum.attr import Saliency, ShapleyValueSampling
 from captum.attr import IntegratedGradients, DeepLift, GradientShap, NoiseTunnel, FeatureAblation, Occlusion
 import torch
 from sklearn.decomposition import PCA, NMF
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+
 
 class Get_masks:
 

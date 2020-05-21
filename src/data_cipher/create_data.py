@@ -75,39 +75,39 @@ class Create_data_binary:
             ctdata0r[Y == 0] = ctdata0r[Y == 0] ^ k1;
             ctdata1l[Y == 0] = ctdata1l[Y == 0] ^ k0;
             ctdata1r[Y == 0] = ctdata1r[Y == 0] ^ k1;
-        liste_inputs = convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
+        liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
         X = self.convert_to_binary(liste_inputs);
         return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
 
 
-def convert_data_inputs(args, ctdata0l, ctdata0r, ctdata1l, ctdata1r):
-    inputs_toput = []
-    for i in range(len(args.inputs_type)):
-        if args.inputs_type[i] =="ctdata0l":
-            inputs_toput.append(ctdata0l)
-        if args.inputs_type[i] =="ctdata1l":
-            inputs_toput.append(ctdata1l)
-        if args.inputs_type[i] =="ctdata0r":
-            inputs_toput.append(ctdata0r)
-        if args.inputs_type[i] =="ctdata1r":
-            inputs_toput.append(ctdata1r)
-        if args.inputs_type[i] =="ctdata0l^ctdata1l":
-            inputs_toput.append(ctdata0l^ctdata1l)
-        if args.inputs_type[i] =="ctdata0l^ctdata0r":
-            inputs_toput.append(ctdata0l^ctdata0r)
-        if args.inputs_type[i] =="ctdata0r^ctdata1r":
-            inputs_toput.append(ctdata0r^ctdata1r)
-        if args.inputs_type[i] =="ctdata1l^ctdata1r":
-            inputs_toput.append(ctdata1l^ctdata1r)
-        if args.inputs_type[i] =="ctdata1l^ctdata0r":
-            inputs_toput.append(ctdata1l^ctdata0r)
-        if args.inputs_type[i] =="ctdata1r^ctdata0l":
-            inputs_toput.append(ctdata1r^ctdata0l)
-        if args.inputs_type[i] =="ctdata0l^ctdata1l^ctdata0r^ctdata1r":
-            inputs_toput.append(ctdata0l^ctdata1l^ctdata0r^ctdata1r)
-        if args.inputs_type[i] =="ctdata0r^ctdata1r^ctdata0l^ctdata1l":
-            inputs_toput.append(ctdata0r^ctdata1r^ctdata0l^ctdata1l)
-    return inputs_toput
+    def convert_data_inputs(self, args, ctdata0l, ctdata0r, ctdata1l, ctdata1r):
+        inputs_toput = []
+        for i in range(len(args.inputs_type)):
+            if args.inputs_type[i] =="ctdata0l":
+                inputs_toput.append(ctdata0l)
+            if args.inputs_type[i] =="ctdata1l":
+                inputs_toput.append(ctdata1l)
+            if args.inputs_type[i] =="ctdata0r":
+                inputs_toput.append(ctdata0r)
+            if args.inputs_type[i] =="ctdata1r":
+                inputs_toput.append(ctdata1r)
+            if args.inputs_type[i] =="ctdata0l^ctdata1l":
+                inputs_toput.append(ctdata0l^ctdata1l)
+            if args.inputs_type[i] =="ctdata0l^ctdata0r":
+                inputs_toput.append(ctdata0l^ctdata0r)
+            if args.inputs_type[i] =="ctdata0r^ctdata1r":
+                inputs_toput.append(ctdata0r^ctdata1r)
+            if args.inputs_type[i] =="ctdata1l^ctdata1r":
+                inputs_toput.append(ctdata1l^ctdata1r)
+            if args.inputs_type[i] =="ctdata1l^ctdata0r":
+                inputs_toput.append(ctdata1l^ctdata0r)
+            if args.inputs_type[i] =="ctdata1r^ctdata0l":
+                inputs_toput.append(ctdata1r^ctdata0l)
+            if args.inputs_type[i] =="ctdata0l^ctdata1l^ctdata0r^ctdata1r":
+                inputs_toput.append(ctdata0l^ctdata1l^ctdata0r^ctdata1r)
+            if args.inputs_type[i] =="ctdata0r^ctdata1r^ctdata0l^ctdata1l":
+                inputs_toput.append(ctdata0r^ctdata1r^ctdata0l^ctdata1l)
+        return inputs_toput
 
 
 

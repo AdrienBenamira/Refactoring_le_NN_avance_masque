@@ -1,12 +1,15 @@
 import sys
 import warnings
 
+from src.ToT.table_of_truth import ToT
+from src.data_classifier.Generator_proba_classifier import Genrator_data_prob_classifier
 from src.get_masks.get_masks import Get_masks
+from src.nn.nn_classifier_keras import train_speck_distinguisher
+from src.nn.nn_model_ref import NN_Model_Ref
 
 warnings.filterwarnings('ignore',category=FutureWarning)
 
 from src.data_cipher.create_data import Create_data_binary
-from src.nn.nn_model_ref import NN_Model_Ref
 from src.utils.initialisation_run import init_all_for_run, init_cipher
 
 
@@ -18,7 +21,7 @@ from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
 
-print("TODO: MULTITHREADING + ASSERT PATH EXIST DEPEND ON CONDITION")
+print("TODO: MULTITHREADING + ASSERT PATH EXIST DEPEND ON CONDITION + save DDT + deleate some dataset")
 
 config = Config()
 parser = argparse.ArgumentParser()
@@ -65,7 +68,6 @@ parser.add_argument("--clip_grad_norm", default=config.train_nn.clip_grad_norm, 
 parser.add_argument("--end_after_training", default=config.train_nn.end_after_training, type=str2bool)
 
 
-
 parser.add_argument("--load_masks", default=config.getting_masks.load_masks, type=str2bool)
 parser.add_argument("--file_mask", default=config.getting_masks.file_mask)
 parser.add_argument("--nbre_max_masks_load", default=config.getting_masks.nbre_max_masks_load, type=two_args_str_int)
@@ -80,6 +82,25 @@ parser.add_argument("--thr_value", default=config.getting_masks.thr_value, type=
 parser.add_argument("--research_new_masks", default=config.getting_masks.research_new_masks, type=str2bool)
 parser.add_argument("--save_fig_plot_feature_before_mask", default=config.getting_masks.save_fig_plot_feature_before_mask, type=str2bool)
 parser.add_argument("--end_after_step2", default=config.getting_masks.end_after_step2, type=str2bool)
+
+
+parser.add_argument("--create_new_data_for_ToT", default=config.make_ToT.create_new_data_for_ToT, type=str2bool)
+parser.add_argument("--create_ToT_with_only_sample_from_cipher", default=config.make_ToT.create_ToT_with_only_sample_from_cipher, type=str2bool)
+parser.add_argument("--nbre_sample_create_ToT", default=config.make_ToT.nbre_sample_create_ToT, type=two_args_str_int)
+
+
+parser.add_argument("--create_new_data_for_classifier", default=config.make_data_classifier.create_new_data_for_classifier, type=str2bool)
+parser.add_argument("--nbre_sample_train_classifier", default=config.make_data_classifier.nbre_sample_train_classifier, type=two_args_str_int)
+parser.add_argument("--nbre_sample_val_classifier", default=config.make_data_classifier.nbre_sample_val_classifier, type=two_args_str_int)
+
+parser.add_argument("--retrain_nn_ref", default=config.compare_classifer.retrain_nn_ref, type=str2bool)
+parser.add_argument("--num_epch_2", default=config.compare_classifer.num_epch_2, type=two_args_str_int)
+parser.add_argument("--batch_size_2", default=config.compare_classifer.batch_size_2, type=two_args_str_int)
+parser.add_argument("--classifiers_ours", default=config.compare_classifer.classifiers_ours, type=str2list)
+parser.add_argument("--retrain_with_import_features", default=config.compare_classifer.retrain_with_import_features, type=str2bool)
+parser.add_argument("--keep_number_most_impactfull", default=config.compare_classifer.keep_number_most_impactfull, type=two_args_str_int)
+parser.add_argument("--num_epch_our", default=config.compare_classifer.num_epch_our, type=two_args_str_int)
+parser.add_argument("--batch_size_our", default=config.compare_classifer.batch_size_our, type=two_args_str_int)
 
 
 args = parser.parse_args()
@@ -138,11 +159,42 @@ if args.end_after_step2:
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 print("STEP 3 : MAKE TABLE OF TRUTH")
 print()
-get_masks_gen = Get_masks(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device)
-if args.research_new_masks:
-    get_masks_gen.start_step()
+print("NEW DATA: "+ str(args.create_new_data_for_ToT) +  " | PURE ToT: " +  str(args.create_ToT_with_only_sample_from_cipher) )
+print()
+
+table_of_truth = ToT(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device, get_masks_gen.masks, nn_model_ref)
+
+table_of_truth.create_DDT()
 
 print("STEP 3 : DONE")
 print("---" * 100)
-if args.end_after_step2:
-    sys.exit(1)
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+print("STEP 4 : CREATE DATA PROBA AND CLASSIFY")
+print()
+print("NEW DATA: "+ str(args.create_new_data_for_classifier))
+print()
+
+generator_data = Genrator_data_prob_classifier(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device, get_masks_gen.masks, nn_model_ref)
+
+generator_data.create_data_g(table_of_truth.ToT)
+
+
+nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train
+nn_model_ref.X_val_nn_binaire = generator_data.X_bin_val
+nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
+nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
+nn_model_ref.epochs = args.num_epch_2
+nn_model_ref.batch_size_2 = args.batch_size_2
+nn_model_ref.net.freeze()
+
+
+
+nn_model_ref.train_from_scractch(name_input)
+X_train_proba = generator_data.X_proba_train
+Y_train_proba = generator_data.Y_create_proba_train
+X_eval_proba = generator_data.X_proba_val
+Y_eval_proba = generator_data.Y_create_proba_val
+
+net2, h = train_speck_distinguisher(args, len(get_masks_gen.masks[0]), X_train_proba,
+                                     Y_train_proba, X_eval_proba, Y_eval_proba, wdir=path_save_model)
+

@@ -28,6 +28,8 @@ class NN_Model_Ref:
         :param path_save_model:
         """
         self.args = args
+        self.epochs = self.args.num_epochs
+        self.batch_size = self.args.batch_size
         self.t = Variable(torch.Tensor([0.5]))
         self.writer = writer
         self.path_save_model_train = path_save_model_train
@@ -60,19 +62,18 @@ class NN_Model_Ref:
             return model.to(self.device)
 
     def create_data(self):
-        self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, c1r_train_nn = self.creator_data_binary.make_data(
+        self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_data(
             self.args.nbre_sample_train);
         self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_data(
            self.args.nbre_sample_eval);
 
 
     def train_from_scractch(self, name_input):
-
         data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device)
-        dataloader_train = DataLoader(data_train, batch_size=self.args.batch_size,
+        dataloader_train = DataLoader(data_train, batch_size=self.batch_size,
                                       shuffle=True, num_workers=self.args.num_workers)
         data_val = DataLoader_cipher_binary(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device)
-        dataloader_val = DataLoader(data_val, batch_size=self.args.batch_size,
+        dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
                                       shuffle=False, num_workers=self.args.num_workers)
         self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
         self.load_general_train()
@@ -82,10 +83,10 @@ class NN_Model_Ref:
         net_old = self.choose_model()
         net_old = self.load_nn_round(net_old, self.args.nombre_round_eval)
         data_train = DataLoader_curriculum(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device, net_old, 3, self.args, True)
-        dataloader_train = DataLoader(data_train, batch_size=self.args.batch_size,
+        dataloader_train = DataLoader(data_train, batch_size=self.batch_size,
                                       shuffle=True, num_workers=self.args.num_workers)
         data_val = DataLoader_curriculum(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device, net_old, 3, self.args, False)
-        dataloader_val = DataLoader(data_val, batch_size=self.args.batch_size,
+        dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
                                       shuffle=False, num_workers=self.args.num_workers)
         self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
         self.load_general_train()
@@ -134,7 +135,7 @@ class NN_Model_Ref:
         if self.args.scheduler_type == "None":
             self.scheduler = None
         if self.args.scheduler_type == "CyclicLR":
-            step_size_up = self.args.demicycle_1 * (self.args.nbre_sample_train // self.args.batch_size)
+            step_size_up = self.args.demicycle_1 * (self.args.nbre_sample_train // self.batch_size)
             self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, self.args.base_lr, self.args.max_lr, step_size_up, cycle_momentum=False) # exponential
         #if arg.scheduler_type == "OneCycleLR":
         #    from torch.optim.lr_scheduler import OneCycleLR
@@ -147,13 +148,13 @@ class NN_Model_Ref:
         best_model_wts = copy.deepcopy(self.net.state_dict())
         best_loss = 100
         best_acc = 0.0
-        n_batches = self.args.batch_size
-        for epoch in range(self.args.num_epochs):
+        n_batches = self.batch_size
+        for epoch in range(self.epochs):
             pourcentage = epoch // self.args.nbre_epoch_per_stage + 1
             if pourcentage > 3:
                 pourcentage = 3
             print('-' * 10)
-            print('==> %d/%d epoch, previous best: %.3f' % (epoch + 1, self.args.num_epochs, best_acc))
+            print('==> %d/%d epoch, previous best: %.3f' % (epoch + 1, self.epochs, best_acc))
             print('-' * 10)
             # Each epoch has a training and validation phase
             for phase in ['train', 'val']:
@@ -231,7 +232,3 @@ class NN_Model_Ref:
         print()
         # load best model weights
         self.net.load_state_dict(best_model_wts)
-
-
-
-
