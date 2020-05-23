@@ -4,7 +4,7 @@ general:
   logs_tensorboard: ./results/test/
   models_path: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 8
+  nombre_round_eval: 6
   inputs_type:  [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r] #
   word_size: 16
   alpha: 7
@@ -17,10 +17,10 @@ train_nn:
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: multihead        # baseline, cnn_attention, multihead, deepset
+  type_model: baseline        # baseline, cnn_attention, multihead, deepset
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 10
+  num_epochs: 200
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001
@@ -39,19 +39,19 @@ train_nn:
   kernel_size1: 3
   num_workers: 2
   clip_grad_norm: 0.5
-  end_after_training: No
+  end_after_training: Yes
 
 
 getting_masks:
-  load_masks: Yes
+  load_masks: No
   file_mask: results/masks_ref/speck/5/masks_QQ/masks_126.txt
   nbre_max_masks_load: -1
-  research_new_masks: No
+  research_new_masks: Yes
   nbre_generate_data_train_val: 1000
   nbre_necessaire_val_SV: 100
   nbre_max_batch: 10
   liste_segmentation_prediction: ["1, 0.9", "0.9, 0.8", "0.8, 0.7", "0.7, 0.6", "0.6, 0.5"]
-  liste_methode_extraction: [GradientShap]
+  liste_methode_extraction: [IntegratedGradients, IntegratedGradients_tunnel, DeepLift, GradientShap, FeatureAblation, Saliency, ShapleyValueSampling, Occlusion]
   #[IntegratedGradients, IntegratedGradients_tunnel, DeepLift, GradientShap, FeatureAblation, Saliency, ShapleyValueSampling, Occlusion]
   #temps get_mask IntegratedGradients 0.6 for 100 samples
   #temps get_mask IntegratedGradients_tunnel 3.7 for 100 samples
@@ -61,30 +61,30 @@ getting_masks:
   #temps get_mask Saliency 0.03 for 100 samples
   #temps get_mask ShapleyValueSampling 4 for 100 samples
   #temps get_mask Occlusion 0.15 for 100 samples
-  liste_methode_selection: [sum]
+  liste_methode_selection: [PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
   #[PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
-  hamming_weigth: [8]
+  hamming_weigth: [2, 4, 6, 8, 10, 12, 14, 16, 18]
   thr_value: []
-  save_fig_plot_feature_before_mask: No
+  save_fig_plot_feature_before_mask: Yes
   end_after_step2: No
 
 
 make_ToT:
-  create_new_data_for_ToT: No
+  create_new_data_for_ToT: Yes
   create_ToT_with_only_sample_from_cipher: Yes
-  nbre_sample_create_ToT: 1000000
+  nbre_sample_create_ToT: 10000000
 
 make_data_classifier:
   create_new_data_for_classifier: Yes
-  nbre_sample_train_classifier: 100000
-  nbre_sample_val_classifier: 100000
+  nbre_sample_train_classifier: 10000
+  nbre_sample_val_classifier: 10000
 
 compare_classifer:
   retrain_nn_ref: Yes
-  num_epch_2: 10
-  batch_size_2: 50
+  num_epch_2: 3
+  batch_size_2: 500
   classifiers_ours: [NN, LGBM]
-  num_epch_our: 10
+  num_epch_our: 20
   batch_size_our: 50
   retrain_with_import_features: Yes
   keep_number_most_impactfull: 20

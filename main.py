@@ -68,6 +68,7 @@ parser.add_argument("--clip_grad_norm", default=config.train_nn.clip_grad_norm, 
 parser.add_argument("--end_after_training", default=config.train_nn.end_after_training, type=str2bool)
 
 
+
 parser.add_argument("--load_masks", default=config.getting_masks.load_masks, type=str2bool)
 parser.add_argument("--file_mask", default=config.getting_masks.file_mask)
 parser.add_argument("--nbre_max_masks_load", default=config.getting_masks.nbre_max_masks_load, type=two_args_str_int)
@@ -87,6 +88,8 @@ parser.add_argument("--end_after_step2", default=config.getting_masks.end_after_
 parser.add_argument("--create_new_data_for_ToT", default=config.make_ToT.create_new_data_for_ToT, type=str2bool)
 parser.add_argument("--create_ToT_with_only_sample_from_cipher", default=config.make_ToT.create_ToT_with_only_sample_from_cipher, type=str2bool)
 parser.add_argument("--nbre_sample_create_ToT", default=config.make_ToT.nbre_sample_create_ToT, type=two_args_str_int)
+
+
 
 
 parser.add_argument("--create_new_data_for_classifier", default=config.make_data_classifier.create_new_data_for_classifier, type=str2bool)
@@ -128,14 +131,14 @@ nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, 
 if args.retain_model_gohr_ref:
     nn_model_ref.train_general(name_input)
 else:
-    try:
-        nn_model_ref.load_nn()
-    except:
+    #try:
+    nn_model_ref.load_nn()
+"""    except:
         print("ERROR")
         print("NO MODEL AVALAIBLE FOR THIS CONFIG")
         print("CHANGE ARGUMENT retain_model_gohr_ref")
         print()
-        sys.exit(1)
+        sys.exit(1)"""
 
 print("STEP 1 : DONE")
 print("---" * 100)
@@ -176,7 +179,7 @@ print()
 
 generator_data = Genrator_data_prob_classifier(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device, get_masks_gen.masks, nn_model_ref)
 
-generator_data.create_data_g(table_of_truth.ToT)
+generator_data.create_data_g(table_of_truth)
 
 
 nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train

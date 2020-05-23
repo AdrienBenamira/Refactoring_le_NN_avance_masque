@@ -20,6 +20,7 @@ class Genrator_data_prob_classifier:
         if self.args.create_new_data_for_classifier:
             self.create_data_bin()
         else:
+
             self.c0l_create_proba_train = nn_model_ref.c0l_train_nn
             self.c0r_create_proba_train = nn_model_ref.c0r_train_nn
             self.c1l_create_proba_train = nn_model_ref.c1l_train_nn
@@ -30,6 +31,11 @@ class Genrator_data_prob_classifier:
             self.c0r_create_proba_val = nn_model_ref.c0r_val_nn
             self.c1l_create_proba_val = nn_model_ref.c1l_val_nn
             self.c1r_create_proba_val = nn_model_ref.c1r_val_nn
+            self.Y_create_proba_val = nn_model_ref.Y_val_nn_binaire
+
+            self.X_bin_train = nn_model_ref.X_train_nn_binaire
+            self.X_bin_val =nn_model_ref.X_val_nn_binaire
+            self.Y_create_proba_train = nn_model_ref.Y_train_nn_binaire
             self.Y_create_proba_val = nn_model_ref.Y_val_nn_binaire
 
 
@@ -77,12 +83,8 @@ class Genrator_data_prob_classifier:
             X_t[moment] = proba
         return X_t.transpose()
 
-    def create_data_g(self,ToT):
+    def create_data_g(self,table_of_truth):
+        ToT = table_of_truth.ToT
         self.X_proba_train = self.create_data(ToT, self.c0l_create_proba_train, self.c0r_create_proba_train, self.c1l_create_proba_train, self.c1r_create_proba_train, "TRAIN")
         self.X_proba_val =self.create_data(ToT, self.c0l_create_proba_val, self.c0r_create_proba_val, self.c1l_create_proba_val, self.c1r_create_proba_val, "VAL")
         print()
-
-
-
-    def mat_div(self, a, b):
-        return np.array([ra / rb  for ra, rb in zip(a, b)])

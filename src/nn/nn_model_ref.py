@@ -94,7 +94,8 @@ class NN_Model_Ref:
 
     def load_nn(self):
         self.net.load_state_dict(torch.load(
-            os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'))['state_dict'], strict=False)
+            os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'),
+        map_location=self.device)['state_dict'], strict=False)
         self.net.to(self.device)
         self.net.eval()
 
@@ -102,10 +103,10 @@ class NN_Model_Ref:
         print(net.fc1.bias)
         path_save_model_train_v2 = self.path_save_model_train.replace("/"+str(self.args.nombre_round_eval)+"/", "/"+str(nr)+"/")
         net.load_state_dict(torch.load(
-            os.path.join(path_save_model_train_v2, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'))['state_dict'], strict=False)
+            os.path.join(path_save_model_train_v2, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'),
+        map_location=self.device)['state_dict'], strict=False)
         net.to(self.device)
         net.eval()
-        print(net.fc1.bias)
 
         return net
 

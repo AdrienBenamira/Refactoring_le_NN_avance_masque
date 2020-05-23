@@ -331,13 +331,15 @@ class Get_masks:
             axs[index_m].autoscale_view()
             plt.tight_layout()
 
-            axs[index].set_xticks(x_axis_data + 0.5)
-            axs[index].set_xticklabels(x_axis_data)
+            axs[index_m].set_xticks(x_axis_data + 0.5)
+            axs[index_m].set_xticklabels(x_axis_data)
 
-            axs[index].legend(legends, loc=3)
+
 
             title = 'Comparing input feature importances across multiple algorithms and ' + method + ' for segment ' + str(
                 self.valmax_mnt) + "|" + str(self.valimin_mnt) + "number " + str(self.cpt)
+
+        plt.legend(legends, loc=3)
 
         plt.savefig(self.path_file_models + title + ".png")
 
