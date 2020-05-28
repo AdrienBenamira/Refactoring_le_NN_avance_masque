@@ -25,6 +25,8 @@ class All_classifier:
         self.Y_train_proba = generator_data.Y_create_proba_train
         self.X_eval_proba = generator_data.X_proba_val
         self.Y_eval_proba = generator_data.Y_create_proba_val
+        self.masks_infos_score = None
+        self.masks_infos_rank = None
         if args.retrain_nn_ref:
             self.retrain_classifier_final(args, nn_model_ref)
 
@@ -33,12 +35,18 @@ class All_classifier:
     def classify_all(self):
         for clf in self.args.classifiers_ours:
             if clf == "NN":
+                print("START CLASSIFY NN")
+                print()
                 self.classifier_nn()
             if clf == "LGBM":
+                print("START CLASSIFY LGBM")
+                print()
                 self.classifier_lgbm()
                 if self.args.retrain_with_import_features and self.args.keep_number_most_impactfull >0:
                     self.classifier_lgbm_retrict()
             if clf == "RF":
+                print("START CLASSIFY RF")
+                print()
                 self.classifier_RF()
                 if self.args.retrain_with_import_features and self.args.keep_number_most_impactfull >0:
                     self.classifier_RF_retrict()
@@ -94,10 +102,15 @@ class All_classifier:
         os.system("dot -Tpng " + self.path_save_model + "tree_LGBM_nbrefeat_"+str(len(features))+".dot > " + self.path_save_model + "tree_LGBM_nbrefeat_"+str(len(features))+".png")
         del X_DDTpd
         self.importances = final_model.feature_importances_
-        indices = np.argsort(self.importances)[::-1]
+        self.indices = np.argsort(self.importances)[::-1]
+
         with open(self.path_save_model + "features_impotances_order_nbrefeat_"+str(len(features))+".txt", "w") as file:
-            file.write(str(np.array(features)[indices]) + str(self.importances[indices]))
+            file.write(str(np.array(features)[self.indices]) + str(self.importances[self.indices]))
             file.write("\n")
+        if self.masks_infos_score is None:
+            self.masks_infos_score = self.importances.copy()
+            self.masks_infos_rank = np.array([np.where(self.indices==x)[0][0] for x in range(len(self.importances))])
+
 
 
     def classifier_lgbm(self):

@@ -17,6 +17,8 @@ class ToT:
         self.creator_data_binary = creator_data_binary
         self.nn_model_ref = nn_model_ref
         self.features_name = []
+        self.mask_infos_compression = []
+        self.mask_infos_hamming = []
         if self.args.create_new_data_for_ToT:
             self.create_data()
         else:
@@ -59,7 +61,7 @@ class ToT:
 
     def convert_proba_pure(self, vals, counts, num_samples):
         nbre_param = len(vals)
-        ms = int(np.log2(nbre_param))+1
+        self.ms = int(np.log2(nbre_param))+1
         p_input_sachant_masks = counts / num_samples
         p_input_sachant_random = min(p_input_sachant_masks)
         assert min(p_input_sachant_masks) > 0
@@ -101,13 +103,12 @@ class ToT:
                 p_speck_sachant_input_masks = self.convert_proba_pure( vals, counts, num_samples)
             else:
                 p_speck_sachant_input_masks = self.convert_proba_impure( vals, counts, num_samples)
-            #sv = SparseVector((vals, p_speck_sachant_input_masks))
-            #print(vals, p_speck_sachant_input_masks)
-            #row = vals
-            #col = np.array([0] * len(vals))
-            #sv = coo_matrix((p_speck_sachant_input_masks, (row, col)))
             sv = dict(zip(vals, p_speck_sachant_input_masks))
             self.ToT[name_input_cic] = sv
+            hamming_number = np.sum([bin(x).count("1") for x in masks_du_moment])
+            self.mask_infos_compression.append(1 - self.ms/hamming_number)
+            self.mask_infos_hamming.append(hamming_number)
+
         print()
         print("NUMBER OF ENTRIES IN DDT :", self.nbre_param_ddt)
         print()

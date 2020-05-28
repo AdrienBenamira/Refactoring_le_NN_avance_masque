@@ -1,5 +1,8 @@
 import sys
 import warnings
+
+from src.get_masks.evaluate_quality_masks import Quality_masks
+
 warnings.filterwarnings('ignore',category=FutureWarning)
 from src.classifiers.classifier_all import All_classifier
 from src.ToT.table_of_truth import ToT
@@ -194,3 +197,7 @@ nn_model_ref.eval_all(name_input + "_eval")
 
 all_clfs = All_classifier(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth)
 all_clfs.classify_all()
+
+qm = Quality_masks(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth, all_clfs)
+
+qm.start_all()
