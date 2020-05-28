@@ -143,7 +143,7 @@ class NN_Model_Ref:
         #    scheduler = OneCycleLR(optimizer_conv, max_lr=max_lr, total_steps=step_size_up)
 
 
-    def eval_all(self, name_input):
+    def eval_all(self, val_phase = ["train", "val"]):
         print("EVALUATE MODEL NNGOHR ON THIS DATASET ON TRAIN AND VAL")
         print()
         data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device)
@@ -152,9 +152,12 @@ class NN_Model_Ref:
         data_val = DataLoader_cipher_binary(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device)
         dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
                                       shuffle=False, num_workers=self.args.num_workers)
-        self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
+        if len(val_phase)>1:
+            self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
+        else:
+            self.dataloaders = {'val': dataloader_val}
         self.load_general_train()
-        self.eval(name_input)
+        self.eval(val_phase)
 
 
     def train(self, name_input):
@@ -248,13 +251,15 @@ class NN_Model_Ref:
 
 
 
-    def eval(self, name_input):
+    def eval(self, val_phase = ['train', 'val']):
         since = time.time()
         n_batches = self.batch_size
         pourcentage = 3
         #phase = "val"
-        self.intermediaires = {"train":[],"val":[] }
-        for phase in ['train', 'val']:
+        self.intermediaires = {x:[] for x in val_phase }
+        self.outputs_proba = {x: [] for x in val_phase}
+        self.outputs_pred = {x: [] for x in val_phase}
+        for phase in val_phase:
             self.net.eval()
             if self.args.curriculum_learning:
                 self.dataloaders[phase].catgeorie = pourcentage
@@ -267,9 +272,11 @@ class NN_Model_Ref:
                 inputs, labels = data
                 outputs = self.net(inputs.to(self.device))
                 self.intermediaires[phase].append(self.net.intermediare.detach().cpu().numpy().astype(np.float16))
+                self.outputs_proba[phase].append(outputs.detach().cpu().numpy().astype(np.float16))
                 loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
                 desc = 'loss: %.4f; ' % (loss.item())
                 preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
+                self.outputs_pred[phase].append(preds.detach().cpu().numpy().astype(np.float16))
                 TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
                 TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
                 FN += (preds.eq(0) & labels.eq(1)).cpu().sum()
@@ -296,5 +303,11 @@ class NN_Model_Ref:
             num1 = len(self.intermediaires[phase])
             if phase == "train":
                 self.all_intermediaire = np.array(self.intermediaires[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
+                self.outputs_proba_train = np.array(self.outputs_proba[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
+                self.outputs_pred_train = np.array(self.outputs_pred[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
             else:
                 self.all_intermediaire_val = np.array(self.intermediaires[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
+                self.outputs_proba_val = np.array(self.outputs_proba[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
+                self.outputs_pred_val = np.array(self.outputs_pred[phase]).astype(np.float16).reshape(
+                    num1 * self.batch_size, -1)
+

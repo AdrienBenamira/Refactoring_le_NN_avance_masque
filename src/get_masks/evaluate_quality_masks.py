@@ -1,4 +1,4 @@
-from sklearn import linear_model
+from sklearn.tree import DecisionTreeClassifier
 import numpy as np
 import pandas as pd
 from sklearn.feature_selection import chi2, f_classif
@@ -30,7 +30,7 @@ class Quality_masks:
                       'penalty': 'elasticnet',
                       'tol': 0.01}
         self.columns = ["name_feat", "source", "compression", "accuracy", "hamming", "score_LGBM", "ranked_LGBM",
-                        "IQR", "mean", "median", "sum", "min", "max", "independance_y", "nbre_independance_var", "nom_varaible_indepeandant"]
+                        "IQR", "mean", "median", "sum", "min", "max", "independance_y", "nbre_dependance_var"]
         self.index = [x for x in range(len(self.masks[0]))]
         self.masks_reshape = np.array(self.masks).transpose()
         self.df_ = pd.DataFrame(index=self.index, columns=self.columns)
@@ -62,18 +62,17 @@ class Quality_masks:
         self.df_["sum"] = np.array(self.res_all_sum)
         self.df_["min"] = np.array(self.res_all_min)
         self.df_["max"] = np.array(self.res_all_max)
-
         self.df = pd.DataFrame(self.X_train_proba, columns=self.table_of_truth.features_name)
-
         self.independance_feature()
+        self.df_["nbre_dependance_var"] = np.sum(self.res2 < self.args.alpha_test, axis=0)
+        self.df_.to_csv(self.path_save_model + "quality_masks.csv", index=False)
 
 
 
     def start_one_masks_acc_statistics(self, index):
         X_t = self.X_train_proba[:, index].reshape(-1, 1)
-        #X_DDTpd = pd.DataFrame(data=X_t)
         X_DDT_val = self.X_eval_proba[:, index].reshape(-1, 1)
-        clf = linear_model.SGDClassifier(**self.param_best, random_state=self.args.seed)
+        clf = DecisionTreeClassifier(random_state=self.args.seed)
         clf.fit(X_t, self.Y_train_proba)
         y_pred = clf.predict(X_DDT_val)
         self.res_all_accuracy.append(accuracy_score(y_pred=y_pred, y_true=self.Y_eval_proba))
@@ -89,6 +88,9 @@ class Quality_masks:
         X = self.X_train_proba
         y = self.Y_train_proba
         chi_scores = f_classif(X, y)
+        p_values = pd.Series(chi_scores[1], index=self.table_of_truth.features_name)
+        p_values.sort_values(ascending=False, inplace=True)
+        p_values.to_csv(self.path_save_model + "INDEPENACE FEATURES LABELS.csv")
         return chi_scores[1]
 
     def independance_feature(self):
@@ -107,7 +109,9 @@ class Quality_masks:
                 del X, y
                 if len(self.df.columns) > 1:
                     self.df = self.df.drop(feature_name_ici, axis=1)
-        df2 = pd.DataFrame(res, index=self.table_of_truth.features_name, columns=self.table_of_truth.features_name)
+        self.res2 = res + res.T
+        df2 = pd.DataFrame(self.res2, index=self.table_of_truth.features_name, columns=self.table_of_truth.features_name)
+        """
         vals = np.around(df2.values, 2)
         colours = plt.cm.RdBu(vals)
         fig = plt.figure(figsize=(100, 100))
@@ -116,6 +120,9 @@ class Quality_masks:
                               colWidths=[0.03] * vals.shape[1], loc='center',
                               cellColours=colours)
         plt.savefig(self.path_save_model + "COMPARASION INTRA FEATURES XI 2.png")
-        df2.to_csv(self.path_save_model + "COMPARASION INTRA FEATURES XI 2.csv", index=False)
+        """
+        df2.to_csv(self.path_save_model + "COMPARASION INTRA FEATURES XI 2.csv")
+
+
 
 

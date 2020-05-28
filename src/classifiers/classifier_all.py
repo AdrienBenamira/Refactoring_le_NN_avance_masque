@@ -27,8 +27,10 @@ class All_classifier:
         self.Y_eval_proba = generator_data.Y_create_proba_val
         self.masks_infos_score = None
         self.masks_infos_rank = None
+        self.clf_final = {}
         if args.retrain_nn_ref:
-            self.retrain_classifier_final(args, nn_model_ref)
+            net_retrain = self.retrain_classifier_final(args, nn_model_ref)
+            self.clf_final["NN_ref_retrain"] = net_retrain
 
 
 
@@ -37,19 +39,24 @@ class All_classifier:
             if clf == "NN":
                 print("START CLASSIFY NN")
                 print()
-                self.classifier_nn()
+                classifier = self.classifier_nn()
+                self.clf_final["NN"] = classifier
             if clf == "LGBM":
                 print("START CLASSIFY LGBM")
                 print()
-                self.classifier_lgbm()
+                classifier = self.classifier_lgbm()
+                self.clf_final["LGBM"] = classifier
                 if self.args.retrain_with_import_features and self.args.keep_number_most_impactfull >0:
-                    self.classifier_lgbm_retrict()
+                    classifier, indices = self.classifier_lgbm_retrict()
+                    self.clf_final["LGBM_restricted"] = [classifier, indices]
             if clf == "RF":
                 print("START CLASSIFY RF")
                 print()
-                self.classifier_RF()
+                classifier = self.classifier_RF()
+                self.clf_final["RF"] = classifier
                 if self.args.retrain_with_import_features and self.args.keep_number_most_impactfull >0:
-                    self.classifier_RF_retrict()
+                    classifier, indices = self.classifier_RF_retrict()
+                    self.clf_final["RF_restricted"] = [classifier, indices]
 
 
 
@@ -69,6 +76,15 @@ class All_classifier:
                                                    epoch=args.num_epch_2, name_ici="retrain_nn_gohr",
                                                    wdir=self.path_save_model)
 
+        """
+        X_DDTpd = pd.DataFrame(data=X_train_proba_feat, columns=[x for x in range(X_train_proba_feat.shape[1])])
+        clf = self.classifier_lgbm_general(X_DDTpd, X_eval_proba_feat, [x for x in range(X_train_proba_feat.shape[1])])
+
+        print(ok)
+        """
+
+        return net_retrain
+
 
     def classifier_nn(self):
         net2, h = train_speck_distinguisher(self.args, len(self.get_masks_gen.masks[0]), self.X_train_proba,
@@ -76,6 +92,8 @@ class All_classifier:
                                             bs=self.args.batch_size_our,
                                             epoch=self.args.num_epch_our, name_ici="our_model",
                                             wdir=self.path_save_model)
+        return net2
+
 
     def classifier_lgbm_general(self, X_DDTpd, X_eval, features):
         best_params_ = {
@@ -103,27 +121,28 @@ class All_classifier:
         del X_DDTpd
         self.importances = final_model.feature_importances_
         self.indices = np.argsort(self.importances)[::-1]
-
         with open(self.path_save_model + "features_impotances_order_nbrefeat_"+str(len(features))+".txt", "w") as file:
             file.write(str(np.array(features)[self.indices]) + str(self.importances[self.indices]))
             file.write("\n")
         if self.masks_infos_score is None:
             self.masks_infos_score = self.importances.copy()
             self.masks_infos_rank = np.array([np.where(self.indices==x)[0][0] for x in range(len(self.importances))])
+        return final_model
 
 
 
     def classifier_lgbm(self):
         X_DDTpd = pd.DataFrame(data=self.X_train_proba, columns=self.table_of_truth.features_name)
-        self.classifier_lgbm_general(X_DDTpd, self.X_eval_proba, self.table_of_truth.features_name)
-
+        clf = self.classifier_lgbm_general(X_DDTpd, self.X_eval_proba, self.table_of_truth.features_name)
+        return clf
 
 
     def classifier_lgbm_retrict(self):
         indices = np.argsort(self.importances)[::-1][:self.args.keep_number_most_impactfull]
         X_DDTpd = pd.DataFrame(data=self.X_train_proba[:, indices],
                                columns=np.array(self.table_of_truth.features_name)[indices])
-        self.classifier_lgbm_general(X_DDTpd, self.X_eval_proba[:, indices], np.array(self.table_of_truth.features_name)[indices])
+        clf = self.classifier_lgbm_general(X_DDTpd, self.X_eval_proba[:, indices], np.array(self.table_of_truth.features_name)[indices])
+        return clf, indices
 
 
     def classifier_RF_general(self, X_DDTpd, X_eval, features):
@@ -152,17 +171,21 @@ class All_classifier:
         with open(self.path_save_model + "features_impotances_order_RF_nbrefeat_"+str(len(features))+".txt", "w") as file:
             file.write(str(np.array(features)[indices]) + str(self.importances[indices]))
             file.write("\n")
+        return final_model
 
 
     def classifier_RF(self):
         X_DDTpd = pd.DataFrame(data=self.X_train_proba, columns=self.table_of_truth.features_name)
-        self.classifier_RF_general(X_DDTpd, self.X_eval_proba, self.table_of_truth.features_name)
+        clf = self.classifier_RF_general(X_DDTpd, self.X_eval_proba, self.table_of_truth.features_name)
+        return clf
+
 
     def classifier_RF_retrict(self):
         indices = np.argsort(self.importances)[::-1][:self.args.keep_number_most_impactfull]
         X_DDTpd = pd.DataFrame(data=self.X_train_proba[:, indices],
                                columns=np.array(self.table_of_truth.features_name)[indices])
-        self.classifier_RF_general(X_DDTpd, self.X_eval_proba[:, indices], np.array(self.table_of_truth.features_name)[indices])
+        clf = self.classifier_RF_general(X_DDTpd, self.X_eval_proba[:, indices], np.array(self.table_of_truth.features_name)[indices])
+        return clf, indices
 
 
 
@@ -210,3 +233,106 @@ class All_classifier:
         ax.set_yticks(range(len(colnames)))
         ax.set_yticklabels(np.array(colnames)[indices][::-1])
         plt.savefig(name)
+
+
+
+def evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, path_save_model):
+    generator_data.create_data_bin_val()
+    generator_data.create_data_g_val(table_of_truth)
+    nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train
+    nn_model_ref.X_val_nn_binaire = generator_data.X_bin_val
+    nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
+    nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
+    nn_model_ref.eval_all(["val"])
+
+
+
+    X_eval_proba_feat = nn_model_ref.all_intermediaire_val
+    X_eval_proba = generator_data.X_proba_val
+    Y_eval_proba = generator_data.Y_create_proba_val
+
+    columns_1 = list(all_clfs.clf_final.keys())
+    columns_2 = [x + " prediction proba" for x in columns_1]
+    columns_3 = [x + " prediction boolean" for x in columns_1]
+    columns_4 = ["label"]
+    columns_5 = ["NN_ref prediction proba", "NN_ref prediction boolean"]
+    columns = columns_2 + columns_3 + columns_4 + columns_5
+    index = [x for x in range(X_eval_proba.shape[0])]
+    results_all = pd.DataFrame(index=index, columns=columns)
+    results_all["label"] = Y_eval_proba
+
+    key = "NN_ref"
+    results_all[key + " prediction proba"] = nn_model_ref.outputs_proba_val
+    results_all[key + " prediction boolean"] = nn_model_ref.outputs_pred_val
+
+    del nn_model_ref, generator_data, table_of_truth, qm
+
+    if "NN_ref_retrain" in columns_1:
+        clf = all_clfs.clf_final["NN_ref_retrain"]
+        predictions = clf.predict(X_eval_proba_feat)
+        predictions_acc = predictions > 0.5
+        predictions_acc = predictions_acc.astype(int)
+        print("ACCURACY MODEL " + str("NN_ref_retrain") + " : ",
+              accuracy_score(y_pred=predictions_acc, y_true=Y_eval_proba))
+        key = "NN_ref_retrain"
+        results_all[key + " prediction proba"] = predictions
+        results_all[key + " prediction boolean"] = predictions_acc
+
+    for key in columns_1:
+        clf = all_clfs.clf_final[key]
+        if "NN" == key:
+            met2_predictions = clf.predict(X_eval_proba)
+            met2_predictions_acc = met2_predictions > 0.5
+            met2_predictions_acc = met2_predictions_acc.astype(int)
+            print("ACCURACY "+str(key)+" OUR : ", accuracy_score(y_pred=met2_predictions_acc, y_true=Y_eval_proba))
+            results_all[key + " prediction proba"] = met2_predictions
+            results_all[key + " prediction boolean"] = (met2_predictions_acc + 1 ) % 2
+        if "LGBM" == key:
+            met2_predictions = clf.predict(X_eval_proba)
+            met2_predictions = np.expand_dims(met2_predictions, axis=1)
+
+            met2_predictions_p = clf.predict_proba(X_eval_proba)
+            
+
+            met2_predictions_acc = met2_predictions > 0.5
+            met2_predictions_acc = met2_predictions_acc.astype(int)
+            print("ACCURACY "+str(key)+" OUR : ", accuracy_score(y_pred=met2_predictions_acc, y_true=Y_eval_proba))
+            results_all[key + " prediction proba"] = met2_predictions_p
+            results_all[key + " prediction boolean"] = (met2_predictions_acc + 1 ) % 2
+        if "RF" == key:
+            met2_predictions = clf.predict(X_eval_proba)
+            met2_predictions = np.expand_dims(met2_predictions, axis=1)
+            met2_predictions_p = clf.predict_proba(X_eval_proba)
+            
+            met2_predictions_acc = met2_predictions > 0.5
+            met2_predictions_acc = met2_predictions_acc.astype(int)
+            print("ACCURACY "+str(key)+" OUR : ", accuracy_score(y_pred=met2_predictions_acc, y_true=Y_eval_proba))
+            results_all[key + " prediction proba"] = met2_predictions_p
+            results_all[key + " prediction boolean"] = (met2_predictions_acc + 1 ) % 2
+        if "LGBM_restricted" == key:
+            clf2, indices = clf[0], clf[1]
+            met2_predictions = clf2.predict(X_eval_proba[:, indices])
+            met2_predictions = np.expand_dims(met2_predictions, axis=1)
+
+            met2_predictions_p = clf2.predict_proba(X_eval_proba[:, indices])
+            
+
+            met2_predictions_acc = met2_predictions > 0.5
+            met2_predictions_acc = met2_predictions_acc.astype(int)
+            print("ACCURACY "+str(key)+" OUR : ", accuracy_score(y_pred=met2_predictions_acc, y_true=Y_eval_proba))
+            results_all[key + " prediction proba"] = met2_predictions_p
+            results_all[key + " prediction boolean"] = (met2_predictions_acc + 1 ) % 2
+        if "RF_restricted" == key:
+            clf2, indices = clf[0], clf[1]
+            met2_predictions = clf2.predict(X_eval_proba[:, indices])
+            met2_predictions = np.expand_dims(met2_predictions, axis=1)
+
+            met2_predictions_p = clf2.predict_proba(X_eval_proba[:, indices])
+            
+
+            met2_predictions_acc = met2_predictions > 0.5
+            met2_predictions_acc = met2_predictions_acc.astype(int)
+            print("ACCURACY "+str(key)+" OUR : ", accuracy_score(y_pred=met2_predictions_acc, y_true=Y_eval_proba))
+            results_all[key + " prediction proba"] = met2_predictions_p
+            results_all[key + " prediction boolean"] = (met2_predictions_acc + 1 ) % 2
+    results_all.to_csv(path_save_model + "results_finaux.csv", index=False)

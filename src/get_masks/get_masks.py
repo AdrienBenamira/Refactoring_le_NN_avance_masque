@@ -302,20 +302,22 @@ class Get_masks:
 
     def plot_compare_method(self, for_plot_dico):
 
-        fig, axs = plt.subplots(len(list(for_plot_dico.keys())), 1, figsize=(20, 80), facecolor='w', edgecolor='k')
-        fig.subplots_adjust(hspace=.5, wspace=.001)
-
-        axs = axs.ravel()
-
-
-        x_axis_data = np.arange(self.args.word_size * len(self.args.inputs_type))
-        width = 0.14
-        #x_axis_data_labels = list(map(lambda idx: feature_names[idx], x_axis_data))
         for index_m, method in enumerate(list(for_plot_dico.keys())):
+
+            fig, axs = plt.subplots(1, 1, figsize=(25, 10), facecolor='w', edgecolor='k')
+            fig.subplots_adjust(hspace=.5, wspace=.001)
+
+            #axs = axs.ravel()
+
+
+            x_axis_data = np.arange(self.args.word_size * len(self.args.inputs_type))
+            width = 0.14
+            #x_axis_data_labels = list(map(lambda idx: feature_names[idx], x_axis_data))
+
             legends = list(for_plot_dico[method].keys())
 
-            axs[index_m].set_title('Comparing input feature importances across multiple algorithms and ' + method + ' for segment ' + str(self.valmax_mnt) + "|" + str(self.valimin_mnt))
-            axs[index_m].set_ylabel('Attributions')
+            axs.set_title('Comparing input feature importances across multiple algorithms and ' + method + ' for segment ' + str(self.valmax_mnt) + "|" + str(self.valimin_mnt))
+            axs.set_ylabel('Attributions')
 
             FONT_SIZE = 16
             plt.rc('font', size=FONT_SIZE)  # fontsize of the text sizes
@@ -326,22 +328,19 @@ class Get_masks:
             colors = ["#eb5e7c", "#A90000", '#34b8e0', '#4260f5', '#49ba81', 'yellow', "purple", "orange"]
             nbre=list(range(len(legends)))
             for index, leg, col in zip(nbre, legends, colors[:len(legends)]):
-                axs[index_m].bar(x_axis_data + index * width, for_plot_dico[method][leg], width, align='center', alpha=0.8, color=col)
+                axs.bar(x_axis_data + index * width, for_plot_dico[method][leg], width, align='center', alpha=0.8, color=col)
 
-            axs[index_m].autoscale_view()
+            axs.autoscale_view()
             plt.tight_layout()
 
-            axs[index_m].set_xticks(x_axis_data + 0.5)
-            axs[index_m].set_xticklabels(x_axis_data)
-
+            axs.set_xticks(x_axis_data + 0.5)
+            axs.set_xticklabels(x_axis_data)
 
 
             title = 'Comparing input feature importances across multiple algorithms and ' + method + ' for segment ' + str(
-                self.valmax_mnt) + "|" + str(self.valimin_mnt) + "number " + str(self.cpt)
-
-        plt.legend(legends, loc=3)
-
-        plt.savefig(self.path_file_models + title + ".png")
+                self.valmax_mnt) + "|" + str(self.valimin_mnt) + "number " + str(self.cpt) + " " + str(index_m)
+            plt.legend(legends, loc=1)
+            plt.savefig(self.path_file_models + title + ".png")
 
 
 

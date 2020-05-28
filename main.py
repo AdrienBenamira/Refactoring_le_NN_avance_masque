@@ -1,10 +1,8 @@
 import sys
 import warnings
-
-from src.get_masks.evaluate_quality_masks import Quality_masks
-
 warnings.filterwarnings('ignore',category=FutureWarning)
-from src.classifiers.classifier_all import All_classifier
+from src.get_masks.evaluate_quality_masks import Quality_masks
+from src.classifiers.classifier_all import All_classifier, evaluate_all
 from src.ToT.table_of_truth import ToT
 from src.data_classifier.Generator_proba_classifier import Genrator_data_prob_classifier
 from src.get_masks.get_masks import Get_masks
@@ -14,7 +12,8 @@ from src.utils.initialisation_run import init_all_for_run, init_cipher
 from src.utils.config import Config
 import argparse
 from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
-
+import numpy as np
+import pandas as pd
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
 
@@ -86,9 +85,6 @@ parser.add_argument("--create_new_data_for_ToT", default=config.make_ToT.create_
 parser.add_argument("--create_ToT_with_only_sample_from_cipher", default=config.make_ToT.create_ToT_with_only_sample_from_cipher, type=str2bool)
 parser.add_argument("--nbre_sample_create_ToT", default=config.make_ToT.nbre_sample_create_ToT, type=two_args_str_int)
 
-
-
-
 parser.add_argument("--create_new_data_for_classifier", default=config.make_data_classifier.create_new_data_for_classifier, type=str2bool)
 parser.add_argument("--nbre_sample_train_classifier", default=config.make_data_classifier.nbre_sample_train_classifier, type=two_args_str_int)
 parser.add_argument("--nbre_sample_val_classifier", default=config.make_data_classifier.nbre_sample_val_classifier, type=two_args_str_int)
@@ -101,6 +97,9 @@ parser.add_argument("--retrain_with_import_features", default=config.compare_cla
 parser.add_argument("--keep_number_most_impactfull", default=config.compare_classifer.keep_number_most_impactfull, type=two_args_str_int)
 parser.add_argument("--num_epch_our", default=config.compare_classifer.num_epch_our, type=two_args_str_int)
 parser.add_argument("--batch_size_our", default=config.compare_classifer.batch_size_our, type=two_args_str_int)
+parser.add_argument("--alpha_test", default=config.compare_classifer.alpha_test, type=two_args_str_float)
+parser.add_argument("--quality_of_masks", default=config.compare_classifer.quality_of_masks, type=str2bool)
+parser.add_argument("--end_after_step4", default=config.compare_classifer.end_after_step4, type=str2bool)
 
 
 args = parser.parse_args()
@@ -187,17 +186,29 @@ print()
 
 generator_data = Genrator_data_prob_classifier(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device, get_masks_gen.masks, nn_model_ref)
 generator_data.create_data_g(table_of_truth)
-
 #EVALUATE GOHR NN ON NEW DATASET
 nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train
 nn_model_ref.X_val_nn_binaire = generator_data.X_bin_val
 nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
 nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
-nn_model_ref.eval_all(name_input + "_eval")
-
+nn_model_ref.eval_all(["train", "val"])
 all_clfs = All_classifier(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth)
 all_clfs.classify_all()
 
-qm = Quality_masks(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth, all_clfs)
+if args.quality_of_masks:
+    qm = Quality_masks(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth, all_clfs)
+    qm.start_all()
+else:
+    qm = None
 
-qm.start_all()
+
+
+print("STEP 4 : DONE")
+print("---" * 100)
+if args.end_after_step4:
+    sys.exit(1)
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+print("STEP 5: START EVALUATE ClASSIFIERS")
+print()
+
+evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, path_save_model)

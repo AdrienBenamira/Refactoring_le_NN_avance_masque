@@ -45,6 +45,10 @@ class Genrator_data_prob_classifier:
         self.X_bin_val, self.Y_create_proba_val, self.c0l_create_proba_val, self.c0r_create_proba_val, self.c1l_create_proba_val, self.c1r_create_proba_val = self.creator_data_binary.make_data(
             self.args.nbre_sample_val_classifier);
 
+    def create_data_bin_val(self):
+        self.X_bin_val, self.Y_create_proba_val, self.c0l_create_proba_val, self.c0r_create_proba_val, self.c1l_create_proba_val, self.c1r_create_proba_val = self.creator_data_binary.make_data(
+            self.args.nbre_sample_val_classifier);
+
     def create_masked_moment(self, moment):
         masks_du_moment = []
         name_input_cic = ""
@@ -102,5 +106,10 @@ class Genrator_data_prob_classifier:
     def create_data_g(self,table_of_truth):
         ToT = table_of_truth.ToT
         self.X_proba_train = self.create_data(ToT, self.c0l_create_proba_train, self.c0r_create_proba_train, self.c1l_create_proba_train, self.c1r_create_proba_train, "TRAIN")
+        self.X_proba_val =self.create_data(ToT, self.c0l_create_proba_val, self.c0r_create_proba_val, self.c1l_create_proba_val, self.c1r_create_proba_val, "VAL")
+        print()
+
+    def create_data_g_val(self,table_of_truth):
+        ToT = table_of_truth.ToT
         self.X_proba_val =self.create_data(ToT, self.c0l_create_proba_val, self.c0r_create_proba_val, self.c1l_create_proba_val, self.c1r_create_proba_val, "VAL")
         print()
