@@ -1,10 +1,10 @@
 import sys
 import warnings
 warnings.filterwarnings('ignore',category=FutureWarning)
+from src.classifiers.classifier_all import All_classifier
 from src.ToT.table_of_truth import ToT
 from src.data_classifier.Generator_proba_classifier import Genrator_data_prob_classifier
 from src.get_masks.get_masks import Get_masks
-from src.classifiers.nn_classifier_keras import train_speck_distinguisher
 from src.nn.nn_model_ref import NN_Model_Ref
 from src.data_cipher.create_data import Create_data_binary
 from src.utils.initialisation_run import init_all_for_run, init_cipher
@@ -193,32 +193,6 @@ nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
 nn_model_ref.eval_all(name_input + "_eval")
 
 
+all_clfs = All_classifier(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth)
 
-if args.retrain_nn_ref:
-    nn_model_ref.epochs = args.num_epch_2
-    nn_model_ref.batch_size_2 = args.batch_size_2
-    nn_model_ref.net.freeze()
-    X_train_proba_feat, X_eval_proba_feat = nn_model_ref.all_intermediaire, nn_model_ref.all_intermediaire_val
-    Y_train_proba = generator_data.Y_create_proba_train
-    Y_eval_proba = generator_data.Y_create_proba_val
-    print("START RETRAIN LINEAR NN GOHR ")
-    print()
-    net_retrain, h = train_speck_distinguisher(args, X_train_proba_feat.shape[1], X_train_proba_feat,
-                                               Y_train_proba, X_eval_proba_feat, Y_eval_proba, bs=args.batch_size_2,
-                                               epoch=args.num_epch_2, name_ici="retrain_nn_gohr",
-                                               wdir=path_save_model)
-
-
-X_train_proba = generator_data.X_proba_train
-Y_train_proba = generator_data.Y_create_proba_train
-X_eval_proba = generator_data.X_proba_val
-Y_eval_proba = generator_data.Y_create_proba_val
-
-print("START OUR CLASSIFIER")
-print()
-
-net2, h = train_speck_distinguisher(args, len(get_masks_gen.masks[0]), X_train_proba,
-                                     Y_train_proba, X_eval_proba, Y_eval_proba, bs=args.batch_size_our,
-                                               epoch=args.num_epch_our, name_ici="our_model",
-                                                wdir=path_save_model)
-
+all_clfs.classify_all()

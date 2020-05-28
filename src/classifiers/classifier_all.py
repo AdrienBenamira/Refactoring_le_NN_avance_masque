@@ -11,13 +11,12 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
 
 
-class Get_masks:
+class All_classifier:
 
 
-    def __init__(self, args, create_data_g, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth):
+    def __init__(self, args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth):
         self.args = args
         self.table_of_truth = table_of_truth
-        self.create_data_g = create_data_g
         self.path_save_model = path_save_model
         self.nn_model_ref = nn_model_ref
         self.get_masks_gen = get_masks_gen
@@ -27,12 +26,19 @@ class Get_masks:
         self.X_eval_proba = generator_data.X_proba_val
         self.Y_eval_proba = generator_data.Y_create_proba_val
         if args.retrain_nn_ref:
-            self.retrain_classifier_final()
+            self.retrain_classifier_final(args, nn_model_ref)
 
 
 
     def classify_all(self):
-        pass
+        for clf in self.args.classifiers_ours:
+            if clf == "NN":
+                self.classifier_nn()
+            if clf == "LGBM":
+                self.classifier_lgbm()
+                if self.args.retrain_with_import_features and self.args.keep_number_most_impactfull >0:
+                    self.classifier_lgbm_retrict()
+
 
 
 
@@ -41,8 +47,8 @@ class Get_masks:
         nn_model_ref.batch_size_2 = args.batch_size_2
         nn_model_ref.net.freeze()
         X_train_proba_feat, X_eval_proba_feat = nn_model_ref.all_intermediaire, nn_model_ref.all_intermediaire_val
-        Y_train_proba = generator_data.Y_create_proba_train
-        Y_eval_proba = generator_data.Y_create_proba_val
+        Y_train_proba = self.generator_data.Y_create_proba_train
+        Y_eval_proba = self.generator_data.Y_create_proba_val
         print("START RETRAIN LINEAR NN GOHR ")
         print()
         net_retrain, h = train_speck_distinguisher(args, X_train_proba_feat.shape[1], X_train_proba_feat,
@@ -59,7 +65,7 @@ class Get_masks:
                                             epoch=self.args.num_epch_our, name_ici="our_model",
                                             wdir=self.path_save_model)
 
-    def classifier_lgbm(self):
+    def classifier_lgbm_general(self, X_DDTpd, X_eval, features):
         best_params_ = {
             'objective': 'binary',
             'num_leaves': 50,
@@ -74,20 +80,55 @@ class Get_masks:
             'bootstrap': True,
             'dart': False
         }
-
-        X_DDTpd = pd.DataFrame(data=self.X_train_proba, columns=self.table_of_truth.feature_names)
         final_model = lgb.LGBMClassifier(**best_params_, random_state=self.args.seed)
         final_model.fit(X_DDTpd, self.Y_train_proba)
-        self.plot_feat_importance(final_model, self.get_masks_gen.features_name, self.path_save_model + "features_importances_LGBM.png")
-        y_pred = final_model.predict(self.X_eval_proba)
-        self.save_logs(self.path_save_model + 'logs_lgbm.txt', y_pred, self.Y_eval_proba)
-        lgb.create_tree_digraph(final_model).save(directory=self.path_save_model, filename='tree_LGBM.dot')
-        os.system("dot -Tpng " + self.path_save_model + "tree_LGBM.dot > " + self.path_save_model + "tree_LGBM.png")
+        self.plot_feat_importance(final_model, features,
+                                  self.path_save_model + "features_importances_LGBM_nbrefeat_"+str(len(features))+".png")
+        y_pred = final_model.predict(X_eval)
+        self.save_logs(self.path_save_model + "logs_lgbm_"+str(len(features))+".txt", y_pred, self.Y_eval_proba)
+        lgb.create_tree_digraph(final_model).save(directory=self.path_save_model, filename="tree_LGBM_nbrefeat_"+str(len(features))+".dot")
+        os.system("dot -Tpng " + self.path_save_model + "tree_LGBM_nbrefeat_"+str(len(features))+".dot > " + self.path_save_model + "tree_LGBM_nbrefeat_"+str(len(features))+".png")
         del X_DDTpd
-        importances = final_model.feature_importances_
-        indices = np.argsort(importances)[::-1]
-        with open(self.path_save_model + "features_impotances_order_1.txt", "w") as file:
-            file.write(str(np.array(self.table_of_truth.feature_names)[indices]), str(importances[indices]))
+        self.importances = final_model.feature_importances_
+        indices = np.argsort(self.importances)[::-1]
+        with open(self.path_save_model + "features_impotances_order_nbrefeat_"+str(len(features))+".txt", "w") as file:
+            file.write(str(np.array(features)[indices]) + str(self.importances[indices]))
+            file.write("\n")
+
+
+    def classifier_lgbm(self):
+        X_DDTpd = pd.DataFrame(data=self.X_train_proba, columns=self.table_of_truth.features_name)
+        self.classifier_lgbm_general(X_DDTpd, self.X_eval_proba, self.table_of_truth.features_name)
+
+
+
+    def classifier_lgbm_retrict(self):
+        indices = np.argsort(self.importances)[::-1][:self.args.keep_number_most_impactfull]
+        X_DDTpd = pd.DataFrame(data=self.X_train_proba[:, indices],
+                               columns=np.array(self.table_of_truth.features_name)[indices])
+        self.classifier_lgbm_general(X_DDTpd, self.X_eval_proba[:, indices], np.array(self.table_of_truth.features_name)[indices])
+
+
+    def classifier_lgbm_general(self, X_DDTpd, X_eval, features):
+        best_params_RF = {'n_estimators': 100,
+                          'max_features': 'auto',
+                          'max_depth': 100,
+                          'min_samples_split': 5,
+                          'min_samples_leaf': 2,
+                          'bootstrap': True}
+        final_model = RandomForestClassifier(**best_params_RF, random_state=args.seed)
+        final_model.fit(X_DDTpd, self.Y_train_proba)
+        self.plot_feat_importance(final_model, features,
+                                  self.path_save_model + "features_importances_LGBM_nbrefeat_"+str(len(features))+".png")
+        y_pred = final_model.predict(X_eval)
+        self.save_logs(self.path_save_model + "logs_lgbm_"+str(len(features))+".txt", y_pred, self.Y_eval_proba)
+        lgb.create_tree_digraph(final_model).save(directory=self.path_save_model, filename="tree_LGBM_nbrefeat_"+str(len(features))+".dot")
+        os.system("dot -Tpng " + self.path_save_model + "tree_LGBM_nbrefeat_"+str(len(features))+".dot > " + self.path_save_model + "tree_LGBM_nbrefeat_"+str(len(features))+".png")
+        del X_DDTpd
+        self.importances = final_model.feature_importances_
+        indices = np.argsort(self.importances)[::-1]
+        with open(self.path_save_model + "features_impotances_order_nbrefeat_"+str(len(features))+".txt", "w") as file:
+            file.write(str(np.array(features)[indices]) + str(self.importances[indices]))
             file.write("\n")
 
     def classifier_RF(self):
