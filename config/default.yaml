@@ -4,7 +4,7 @@ general:
   logs_tensorboard: ./results/test/
   models_path: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 6
+  nombre_round_eval: 8
   inputs_type:  [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r] #
   word_size: 16
   alpha: 7
@@ -13,13 +13,13 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
   type_model: baseline        # baseline, cnn_attention, multihead, deepset
   nbre_sample_train: 10000000
-  nbre_sample_eval: 100000
+  nbre_sample_eval: 1000000
   num_epochs: 200
   batch_size: 500
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
@@ -43,7 +43,7 @@ train_nn:
 
 
 getting_masks:
-  load_masks: Yes
+  load_masks: No
   file_mask: results/masks_ref/speck/6/masks_QQ/masks_89.txt
   nbre_max_masks_load: -1
   research_new_masks: Yes
@@ -63,7 +63,7 @@ getting_masks:
   #temps get_mask Occlusion 0.15 for 100 samples
   liste_methode_selection: [PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
   #[PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
-  hamming_weigth: [12, 13, 14, 15, 16]
+  hamming_weigth: [12, 13, 14, 15, 16, 18, 20]
   thr_value: []
   save_fig_plot_feature_before_mask: Yes
   end_after_step2: No
@@ -83,7 +83,7 @@ compare_classifer:
   retrain_nn_ref: Yes
   num_epch_2: 20
   batch_size_2: 500
-  classifiers_ours: [NN, LGBM, RF] # [NN, LGBM, RF]
+  classifiers_ours: [NN, LGBM] # [NN, LGBM, RF]
   num_epch_our: 20
   batch_size_our: 500
   retrain_with_import_features: No

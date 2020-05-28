@@ -192,8 +192,12 @@ class NN_Model_Ref:
                     self.optimizer.zero_grad()
                     # forward + backward + optimize
                     with torch.set_grad_enabled(phase == 'train'):
+                        #inputs, targets_a, targets_b, lam = self.mixup_data(inputs, labels)
+                        #inputs, targets_a, targets_b = map(Variable, (inputs,
+                        #                                              targets_a, targets_b))
                         outputs = self.net(inputs.to(self.device))
                         loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
+                        #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
                             loss.backward()
@@ -310,4 +314,19 @@ class NN_Model_Ref:
                 self.outputs_proba_val = np.array(self.outputs_proba[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
                 self.outputs_pred_val = np.array(self.outputs_pred[phase]).astype(np.float16).reshape(
                     num1 * self.batch_size, -1)
+
+    def mixup_data(self, x, y, alpha=1.0):
+        '''Returns mixed inputs, pairs of targets, and lambda'''
+        if alpha > 0:
+            lam = np.random.beta(alpha, alpha)
+        else:
+            lam = 1
+        batch_size = x.size()[0]
+        index = torch.randperm(batch_size).to(self.device)
+        mixed_x = lam * x + (1 - lam) * x[index, :]
+        y_a, y_b = y, y[index]
+        return mixed_x, y_a, y_b, lam
+
+    def mixup_criterion(self, pred, y_a, y_b, lam):
+        return lam * self.criterion(pred, y_a) + (1 - lam) * self.criterion(pred, y_b)
 
