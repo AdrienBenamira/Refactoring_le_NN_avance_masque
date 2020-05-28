@@ -9,7 +9,7 @@ from tqdm import tqdm
 import os
 import torch.nn as nn
 from torch.autograd import Variable
-
+import numpy as np
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
 from src.nn.models.Multi_Headed import Multihead
 from src.nn.models.deepset import DTanh
@@ -143,6 +143,20 @@ class NN_Model_Ref:
         #    scheduler = OneCycleLR(optimizer_conv, max_lr=max_lr, total_steps=step_size_up)
 
 
+    def eval_all(self, name_input):
+        print("EVALUATE MODEL NNGOHR ON THIS DATASET ON TRAIN AND VAL")
+        print()
+        data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device)
+        dataloader_train = DataLoader(data_train, batch_size=self.batch_size,
+                                      shuffle=True, num_workers=self.args.num_workers)
+        data_val = DataLoader_cipher_binary(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device)
+        dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
+                                      shuffle=False, num_workers=self.args.num_workers)
+        self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
+        self.load_general_train()
+        self.eval(name_input)
+
+
     def train(self, name_input):
         since = time.time()
         phrase = self.args.cipher + " round " +str(self.args.nombre_round_eval) +" inputs " + name_input +" size dataset "+ str(self.args.nbre_sample_train)
@@ -169,7 +183,8 @@ class NN_Model_Ref:
                 nbre_sample = 0
                 TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
                     1).long()
-                for i, data in tqdm(enumerate(self.dataloaders[phase], 0)):
+                tk0 = tqdm(self.dataloaders[phase], total=int(len(self.dataloaders[phase])))
+                for i, data in enumerate(tk0):
                     inputs, labels = data
                     self.optimizer.zero_grad()
                     # forward + backward + optimize
@@ -222,9 +237,6 @@ class NN_Model_Ref:
             print()
         torch.save({'epoch': epoch + 1, 'acc': acc, 'state_dict': self.net.state_dict()},
                    os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'))
-
-
-
         time_elapsed = time.time() - since
         print('Training complete in {:.0f}m {:.0f}s'.format(
             time_elapsed // 60, time_elapsed % 60))
@@ -233,3 +245,56 @@ class NN_Model_Ref:
         print()
         # load best model weights
         self.net.load_state_dict(best_model_wts)
+
+
+
+    def eval(self, name_input):
+        since = time.time()
+        n_batches = self.batch_size
+        pourcentage = 3
+        #phase = "val"
+        self.intermediaires = {"train":[],"val":[] }
+        for phase in ['train', 'val']:
+            self.net.eval()
+            if self.args.curriculum_learning:
+                self.dataloaders[phase].catgeorie = pourcentage
+            running_loss = 0.0
+            nbre_sample = 0
+            TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
+                1).long()
+            tk0 = tqdm(self.dataloaders[phase], total=int(len(self.dataloaders[phase])))
+            for i, data in enumerate(tk0):
+                inputs, labels = data
+                outputs = self.net(inputs.to(self.device))
+                self.intermediaires[phase].append(self.net.intermediare.detach().cpu().numpy().astype(np.float16))
+                loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
+                desc = 'loss: %.4f; ' % (loss.item())
+                preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
+                TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
+                TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
+                FN += (preds.eq(0) & labels.eq(1)).cpu().sum()
+                FP += (preds.eq(1) & labels.eq(0)).cpu().sum()
+                TOT = TP + TN + FN + FP
+                desc += 'acc: %.3f, TP: %.3f, TN: %.3f, FN: %.3f, FP: %.3f' % (
+                    (TP.item() + TN.item()) * 1.0 / TOT.item(), TP.item() * 1.0 / TOT.item(),
+                    TN.item() * 1.0 / TOT.item(), FN.item() * 1.0 / TOT.item(),
+                    FP.item() * 1.0 / TOT.item())
+                running_loss += loss.item() * n_batches
+                nbre_sample += n_batches
+            epoch_loss = running_loss / nbre_sample
+            acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
+            print('{} Loss: {:.4f}'.format(
+                phase, epoch_loss))
+            print('{} Acc: {:.4f}'.format(
+                phase, acc))
+            #print(desc)
+            print()
+            time_elapsed = time.time() - since
+            print('Validate complete in {:.0f}m {:.0f}s'.format(
+                time_elapsed // 60, time_elapsed % 60))
+            print()
+            num1 = len(self.intermediaires[phase])
+            if phase == "train":
+                self.all_intermediaire = np.array(self.intermediaires[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
+            else:
+                self.all_intermediaire_val = np.array(self.intermediaires[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)

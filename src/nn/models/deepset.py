@@ -36,13 +36,13 @@ class DTanh(nn.Module):
 
 
     self.ro = nn.Sequential(
-       #nn.Dropout(p=0.5),
+       #nn.Dropout(p=0.6),
        nn.Linear(16, 64),
        nn.Tanh(),
-       #nn.Dropout(p=0.5),
+       #nn.Dropout(p=0.6),
        nn.Linear(64, 64),
         nn.Tanh(),
-        # nn.Dropout(p=0.5),
+        # nn.Dropout(p=0.6),
         nn.Linear(64, 1),
     )
 

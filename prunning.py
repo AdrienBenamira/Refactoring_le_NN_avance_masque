@@ -1,16 +1,23 @@
 import sys
 import warnings
-warnings.filterwarnings('ignore',category=FutureWarning)
+import torch
+
 from src.ToT.table_of_truth import ToT
 from src.data_classifier.Generator_proba_classifier import Genrator_data_prob_classifier
 from src.get_masks.get_masks import Get_masks
 from src.nn.nn_classifier_keras import train_speck_distinguisher
 from src.nn.nn_model_ref import NN_Model_Ref
+
+warnings.filterwarnings('ignore',category=FutureWarning)
+
 from src.data_cipher.create_data import Create_data_binary
 from src.utils.initialisation_run import init_all_for_run, init_cipher
+
+
 from src.utils.config import Config
 import argparse
-from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type, init_normal
+from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
+import torch.nn.utils.prune as prune
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
@@ -122,107 +129,46 @@ print("COUNTINUOUS LEARNING: "+ str(args.countinuous_learning) +  " | CURRICULUM
 print()
 
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-if args.retain_model_gohr_ref:
-    nn_model_ref.train_general(name_input)
-else:
-    try:
-        nn_model_ref.load_nn()
-    except:
-        print("ERROR")
-        print("NO MODEL AVALAIBLE FOR THIS CONFIG")
-        print("CHANGE ARGUMENT retain_model_gohr_ref")
-        print()
-        sys.exit(1)
 
-if args.create_new_data_for_ToT and args.create_new_data_for_classifier:
-    del nn_model_ref.X_train_nn_binaire, nn_model_ref.X_val_nn_binaire, nn_model_ref.Y_train_nn_binaire, nn_model_ref.Y_val_nn_binaire
-    del nn_model_ref.c0l_train_nn, nn_model_ref.c0l_val_nn, nn_model_ref.c0r_train_nn, nn_model_ref.c0r_val_nn
-    del nn_model_ref.c1l_train_nn, nn_model_ref.c1l_val_nn, nn_model_ref.c1r_train_nn, nn_model_ref.c1r_val_nn
+nn_model_ref.load_nn()
+
+nn_model_ref.eval_all(name_input)
+
+
+
+for global_sparsity in [0.5, 0.55, 0.6, 0.65]:
+    parameters_to_prune = []
+    for name, module in nn_model_ref.net.named_modules():
+        if len(name):
+            if name not in ["layers_batch", "layers_conv"]:
+                if name not in []:
+                    parameters_to_prune.append((module, 'weight'))
+    prune.global_unstructured(
+        parameters_to_prune,
+        pruning_method=prune.L1Unstructured,
+        amount=global_sparsity,
+    )
+    tot_sparsity = 0
+    for name, module in nn_model_ref.net.named_modules():
+        if len(name):
+            if name not in ["layers_batch", "layers_conv"]:
+                tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
+
+                print(
+                    "Sparsity in {}.weight: {:.2f}%".format(str(name),
+                        100. * float(torch.sum(module.weight == 0))
+                        / float(module.weight.nelement())
+                    )
+                )
+
+
+    nn_model_ref.eval_all(name_input)
+    del nn_model_ref.net
+    nn_model_ref.net = nn_model_ref.choose_model()
+    nn_model_ref.load_nn()
 
 
 print("STEP 1 : DONE")
 print("---" * 100)
 if args.end_after_training:
     sys.exit(1)
-
-#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-print("STEP 2 : GET MASKS")
-print()
-print("LOAD MASKS: "+ str(args.load_masks) +  " | RESEARCH NEW: " +  str(args.research_new_masks) + " | MODEL: " + str(args.liste_segmentation_prediction) +" " + str(args.liste_methode_extraction)+" " + str(args.liste_methode_selection)+" " + str(args.hamming_weigth)+" " + str(args.thr_value))
-print()
-get_masks_gen = Get_masks(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device)
-if args.research_new_masks:
-    get_masks_gen.start_step()
-    del get_masks_gen.X_deltaout_train, get_masks_gen.X_eval, get_masks_gen.Y_tf, get_masks_gen.Y_eval
-
-
-
-print("STEP 2 : DONE")
-print("---" * 100)
-if args.end_after_step2:
-    sys.exit(1)
-
-#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-print("STEP 3 : MAKE TABLE OF TRUTH")
-print()
-print("NEW DATA: "+ str(args.create_new_data_for_ToT) +  " | PURE ToT: " +  str(args.create_ToT_with_only_sample_from_cipher) )
-print()
-
-table_of_truth = ToT(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device, get_masks_gen.masks, nn_model_ref)
-table_of_truth.create_DDT()
-
-del table_of_truth.c0l_create_ToT, table_of_truth.c0r_create_ToT
-del table_of_truth.c1l_create_ToT, table_of_truth.c1r_create_ToT
-
-print("STEP 3 : DONE")
-print("---" * 100)
-#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-print("STEP 4 : CREATE DATA PROBA AND CLASSIFY")
-print()
-print("NEW DATA: "+ str(args.create_new_data_for_classifier))
-print()
-
-generator_data = Genrator_data_prob_classifier(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device, get_masks_gen.masks, nn_model_ref)
-generator_data.create_data_g(table_of_truth)
-
-#EVALUATE GOHR NN ON NEW DATASET
-nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train
-nn_model_ref.X_val_nn_binaire = generator_data.X_bin_val
-nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
-nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
-nn_model_ref.eval_all(name_input + "_eval")
-
-
-nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train
-nn_model_ref.X_val_nn_binaire = generator_data.X_bin_val
-nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
-nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
-nn_model_ref.eval_all(name_input + "_eval")
-if args.retrain_nn_ref:
-    nn_model_ref.epochs = args.num_epch_2
-    nn_model_ref.batch_size_2 = args.batch_size_2
-    nn_model_ref.net.freeze()
-    X_train_proba_feat, X_eval_proba_feat = nn_model_ref.all_intermediaire, nn_model_ref.all_intermediaire_val
-    Y_train_proba = generator_data.Y_create_proba_train
-    Y_eval_proba = generator_data.Y_create_proba_val
-    print("START RETRAIN LINEAR NN GOHR ")
-    print()
-    net_retrain, h = train_speck_distinguisher(args, X_train_proba_feat.shape[1], X_train_proba_feat,
-                                               Y_train_proba, X_eval_proba_feat, Y_eval_proba, bs=args.batch_size_2,
-                                               epoch=args.num_epch_2, name_ici="retrain_nn_gohr",
-                                               wdir=path_save_model)
-
-
-X_train_proba = generator_data.X_proba_train
-Y_train_proba = generator_data.Y_create_proba_train
-X_eval_proba = generator_data.X_proba_val
-Y_eval_proba = generator_data.Y_create_proba_val
-
-print("START OUR CLASSIFIER")
-print()
-
-net2, h = train_speck_distinguisher(args, len(get_masks_gen.masks[0]), X_train_proba,
-                                     Y_train_proba, X_eval_proba, Y_eval_proba, bs=args.batch_size_our,
-                                               epoch=args.num_epch_our, name_ici="our_model",
-                                                wdir=path_save_model)
-

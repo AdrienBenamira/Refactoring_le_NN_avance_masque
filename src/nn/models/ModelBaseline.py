@@ -49,3 +49,6 @@ class ModelPaperBaseline(nn.Module):
         for i in range(self.numLayers - 1):
             self.layers_conv[i].weight.requires_grad = False
             self.layers_batch[i].weight.requires_grad = False
+
+
+

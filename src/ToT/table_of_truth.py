@@ -59,12 +59,19 @@ class ToT:
 
     def convert_proba_pure(self, vals, counts, num_samples):
         nbre_param = len(vals)
-        ms = int(np.log2(nbre_param))
-        p_input_sachant_random = 1 / (2 ** (ms))
+        ms = int(np.log2(nbre_param))+1
         p_input_sachant_masks = counts / num_samples
-        a = p_input_sachant_random * 0.5
+        p_input_sachant_random = min(p_input_sachant_masks)
+        assert min(p_input_sachant_masks) > 0
+        assert max(p_input_sachant_masks) < 1
+        a = p_input_sachant_random*0.99
         b = p_input_sachant_masks
-        p_speck_sachant_input_masks = 1- self.mat_div2(a, b)
+        p_speck_sachant_input_masks_bar = self.mat_div2(a, b)
+        assert min(p_speck_sachant_input_masks_bar) > 0
+        assert max(p_speck_sachant_input_masks_bar) < 1
+        p_speck_sachant_input_masks = 1- p_speck_sachant_input_masks_bar
+        assert min(p_speck_sachant_input_masks) > 0
+        assert max(p_speck_sachant_input_masks) < 1
         return p_speck_sachant_input_masks
 
     def convert_proba_impure(self, vals, counts, num_samples):
@@ -84,7 +91,7 @@ class ToT:
         self.nbre_param_ddt = 0
         liste_inputs = self.creator_data_binary.convert_data_inputs(self.args, self.c0l_create_ToT, self.c0r_create_ToT, self.c1l_create_ToT, self.c1r_create_ToT)
         self.ToT = {}
-        self.X_train_proba_train = np.zeros((len(self.masks[0]), (len(self.c0l_create_ToT))), dtype=np.float16)
+        #self.X_train_proba_train = np.zeros((len(self.masks[0]), (len(self.c0l_create_ToT))), dtype=np.float16)
         for moment, _ in enumerate(tqdm(self.masks[0])):
             masks_du_moment, name_input_cic = self.create_masked_moment(moment)
             ddt_entree = self.create_masked_inputs(liste_inputs, masks_du_moment)
@@ -94,7 +101,12 @@ class ToT:
                 p_speck_sachant_input_masks = self.convert_proba_pure( vals, counts, num_samples)
             else:
                 p_speck_sachant_input_masks = self.convert_proba_impure( vals, counts, num_samples)
-            sv = SparseVector((vals, p_speck_sachant_input_masks))
+            #sv = SparseVector((vals, p_speck_sachant_input_masks))
+            #print(vals, p_speck_sachant_input_masks)
+            #row = vals
+            #col = np.array([0] * len(vals))
+            #sv = coo_matrix((p_speck_sachant_input_masks, (row, col)))
+            sv = dict(zip(vals, p_speck_sachant_input_masks))
             self.ToT[name_input_cic] = sv
         print()
         print("NUMBER OF ENTRIES IN DDT :", self.nbre_param_ddt)

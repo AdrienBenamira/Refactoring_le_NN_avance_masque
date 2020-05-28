@@ -50,21 +50,21 @@ def make_classifier(input_size=84, d1=64, d2=64, final_activation='sigmoid'):
     model = Model(inputs=inp, outputs=out);
     return (model);
 
-def train_speck_distinguisher(args, n_feat, X, Y, X_eval, Y_eval, wdir= "./"):
+def train_speck_distinguisher(args, n_feat, X, Y, X_eval, Y_eval, epoch, bs, name_ici="", wdir= "./"):
     # create the network
     net = make_classifier(input_size=n_feat);
     net.compile(optimizer='adam', loss='mse', metrics=['acc']);
     # generate training and validation data
     # set up model checkpoint
-    check = make_checkpoint(wdir + 'NN_classifier' + str(args.nombre_round_eval) +  '.h5');
+    check = make_checkpoint(wdir + 'NN_classifier' + str(args.nombre_round_eval) + "_"+ name_ici + '.h5');
     # create learnrate schedule
     lr = LearningRateScheduler(cyclic_lr(10, 0.002, 0.0001));
     # train and evaluate
-    h = net.fit(X, Y, epochs=args.num_epch_our, batch_size=args.batch_size_our, validation_data=(X_eval, Y_eval), callbacks=[lr, check]);
-    np.save(wdir + 'h_acc_' + str(np.max(h.history['val_acc'])) +  '.npy', h.history['val_acc']);
-    np.save(wdir + 'h_loss' + str(args.nombre_round_eval) + '.npy', h.history['val_loss']);
-    dump(h.history, open(wdir + 'hist' + str(args.nombre_round_eval) +  '.p', 'wb'));
+    h = net.fit(X, Y, epochs=epoch, batch_size=bs, validation_data=(X_eval, Y_eval), callbacks=[lr, check]);
+    np.save(wdir + 'h_acc_' + str(np.max(h.history['val_acc'])) + "_"+ name_ici +  '.npy', h.history['val_acc']);
+    np.save(wdir + 'h_loss' + str(args.nombre_round_eval) + "_"+ name_ici + '.npy', h.history['val_loss']);
+    dump(h.history, open(wdir + 'hist' + str(args.nombre_round_eval) + "_"+ name_ici +  '.p', 'wb'));
     print("Best validation accuracy: ", np.max(h.history['val_acc']));
     net3 = make_classifier(input_size=n_feat);
-    net3.load_weights(wdir + 'NN_classifier' + str(args.nombre_round_eval) +  '.h5')
+    net3.load_weights(wdir + 'NN_classifier' + str(args.nombre_round_eval) + "_"+ name_ici +  '.h5')
     return (net3, h);

@@ -143,3 +143,7 @@ class ContrastiveLoss(torch.nn.Module):
 
 
         return loss_contrastive
+
+def init_normal(m):
+    if type(m) == nn.Linear:
+        nn.init.uniform_(m.weight)

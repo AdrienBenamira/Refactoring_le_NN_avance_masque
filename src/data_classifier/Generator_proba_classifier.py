@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 from scipy import sparse
 from sparse_vector import SparseVector
-
+import time
 
 class Genrator_data_prob_classifier:
 
@@ -76,10 +76,26 @@ class Genrator_data_prob_classifier:
         X_t = np.zeros((len(self.masks[0]), (len(c0l))), dtype=np.float16)
         liste_inputs = self.creator_data_binary.convert_data_inputs(self.args, c0l, c0r, c1l, c1r)
         for moment, _ in enumerate(tqdm(self.masks[0])):
+
+            start = time.time()
             masks_du_moment, name_input_cic = self.create_masked_moment(moment)
+            #print()
+            #print(time.time() - start)
             ToT_du_moment = ToT[name_input_cic]
+            #print(time.time() - start)
             ToT_entree = self.create_masked_inputs(liste_inputs, masks_du_moment)
-            proba = ToT_du_moment[ToT_entree]
+            #print(time.time() - start)
+            proba = np.zeros((len(ToT_entree),))
+            #proba = ToT_du_moment.todok()[ToT_entree].toarray().squeeze()
+            for index_v, v in enumerate(ToT_entree):
+                try:
+                    proba[index_v] = ToT_du_moment[v]
+                except:
+                    proba[index_v] = 0
+            #print(proba)
+            #print(time.time() - start)
+            #print("--"*100)
+            #proba = ToT_du_moment[ToT_entree]
             X_t[moment] = proba
         return X_t.transpose()
 
