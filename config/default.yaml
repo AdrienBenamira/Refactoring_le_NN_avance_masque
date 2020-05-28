@@ -83,7 +83,7 @@ compare_classifer:
   retrain_nn_ref: No
   num_epch_2: 2
   batch_size_2: 500
-  classifiers_ours: [LGBM]
+  classifiers_ours: [RF]
   num_epch_our: 20
   batch_size_our: 500
   retrain_with_import_features: Yes

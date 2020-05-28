@@ -192,7 +192,5 @@ nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
 nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
 nn_model_ref.eval_all(name_input + "_eval")
 
-
 all_clfs = All_classifier(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth)
-
 all_clfs.classify_all()

@@ -38,6 +38,10 @@ class All_classifier:
                 self.classifier_lgbm()
                 if self.args.retrain_with_import_features and self.args.keep_number_most_impactfull >0:
                     self.classifier_lgbm_retrict()
+            if clf == "RF":
+                self.classifier_RF()
+                if self.args.retrain_with_import_features and self.args.keep_number_most_impactfull >0:
+                    self.classifier_RF_retrict()
 
 
 
@@ -109,31 +113,43 @@ class All_classifier:
         self.classifier_lgbm_general(X_DDTpd, self.X_eval_proba[:, indices], np.array(self.table_of_truth.features_name)[indices])
 
 
-    def classifier_lgbm_general(self, X_DDTpd, X_eval, features):
+    def classifier_RF_general(self, X_DDTpd, X_eval, features):
         best_params_RF = {'n_estimators': 100,
                           'max_features': 'auto',
                           'max_depth': 100,
                           'min_samples_split': 5,
                           'min_samples_leaf': 2,
                           'bootstrap': True}
-        final_model = RandomForestClassifier(**best_params_RF, random_state=args.seed)
+        final_model = RandomForestClassifier(**best_params_RF, random_state=self.args.seed)
         final_model.fit(X_DDTpd, self.Y_train_proba)
         self.plot_feat_importance(final_model, features,
-                                  self.path_save_model + "features_importances_LGBM_nbrefeat_"+str(len(features))+".png")
+                                  self.path_save_model + "features_importances_RF_nbrefeat_"+str(len(features))+".png")
         y_pred = final_model.predict(X_eval)
-        self.save_logs(self.path_save_model + "logs_lgbm_"+str(len(features))+".txt", y_pred, self.Y_eval_proba)
-        lgb.create_tree_digraph(final_model).save(directory=self.path_save_model, filename="tree_LGBM_nbrefeat_"+str(len(features))+".dot")
-        os.system("dot -Tpng " + self.path_save_model + "tree_LGBM_nbrefeat_"+str(len(features))+".dot > " + self.path_save_model + "tree_LGBM_nbrefeat_"+str(len(features))+".png")
+        self.save_logs(self.path_save_model + "logs_RF_"+str(len(features))+".txt", y_pred, self.Y_eval_proba)
+
+        export_graphviz(final_model.estimators_[5],
+                        out_file=self.path_save_model + "tree_RF_nbrefeat_"+str(len(features))+".dot",
+                        feature_names=features, class_names=["Random", "Speck"],
+                        rounded=True, proportion=False, precision=2, filled=True)
+
+        os.system("dot -Tpng " + self.path_save_model + "tree_RF_nbrefeat_"+str(len(features))+".dot > " + self.path_save_model + "tree_RF_nbrefeat_"+str(len(features))+".png")
         del X_DDTpd
         self.importances = final_model.feature_importances_
         indices = np.argsort(self.importances)[::-1]
-        with open(self.path_save_model + "features_impotances_order_nbrefeat_"+str(len(features))+".txt", "w") as file:
+        with open(self.path_save_model + "features_impotances_order_RF_nbrefeat_"+str(len(features))+".txt", "w") as file:
             file.write(str(np.array(features)[indices]) + str(self.importances[indices]))
             file.write("\n")
 
-    def classifier_RF(self):
-        pass
 
+    def classifier_RF(self):
+        X_DDTpd = pd.DataFrame(data=self.X_train_proba, columns=self.table_of_truth.features_name)
+        self.classifier_RF_general(X_DDTpd, self.X_eval_proba, self.table_of_truth.features_name)
+
+    def classifier_RF_retrict(self):
+        indices = np.argsort(self.importances)[::-1][:self.args.keep_number_most_impactfull]
+        X_DDTpd = pd.DataFrame(data=self.X_train_proba[:, indices],
+                               columns=np.array(self.table_of_truth.features_name)[indices])
+        self.classifier_RF_general(X_DDTpd, self.X_eval_proba[:, indices], np.array(self.table_of_truth.features_name)[indices])
 
 
 
