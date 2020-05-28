@@ -1,4 +1,4 @@
-from src.nn.nn_classifier_keras import train_speck_distinguisher
+from src.classifiers.nn_classifier_keras import train_speck_distinguisher
 
 
 class All_classifier:

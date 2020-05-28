@@ -4,13 +4,13 @@ warnings.filterwarnings('ignore',category=FutureWarning)
 from src.ToT.table_of_truth import ToT
 from src.data_classifier.Generator_proba_classifier import Genrator_data_prob_classifier
 from src.get_masks.get_masks import Get_masks
-from src.nn.nn_classifier_keras import train_speck_distinguisher
+from src.classifiers.nn_classifier_keras import train_speck_distinguisher
 from src.nn.nn_model_ref import NN_Model_Ref
 from src.data_cipher.create_data import Create_data_binary
 from src.utils.initialisation_run import init_all_for_run, init_cipher
 from src.utils.config import Config
 import argparse
-from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type, init_normal
+from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
@@ -193,11 +193,7 @@ nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
 nn_model_ref.eval_all(name_input + "_eval")
 
 
-nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train
-nn_model_ref.X_val_nn_binaire = generator_data.X_bin_val
-nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
-nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
-nn_model_ref.eval_all(name_input + "_eval")
+
 if args.retrain_nn_ref:
     nn_model_ref.epochs = args.num_epch_2
     nn_model_ref.batch_size_2 = args.batch_size_2

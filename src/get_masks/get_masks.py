@@ -7,7 +7,7 @@ from src.nn.DataLoader import DataLoader_cipher_binary
 from captum.attr import Saliency, ShapleyValueSampling
 from captum.attr import IntegratedGradients, DeepLift, GradientShap, NoiseTunnel, FeatureAblation, Occlusion
 import torch
-from sklearn.decomposition import PCA, NMF
+from sklearn.decomposition import PCA
 
 
 class Get_masks:
