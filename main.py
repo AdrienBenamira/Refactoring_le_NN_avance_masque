@@ -124,14 +124,25 @@ print("COUNTINUOUS LEARNING: "+ str(args.countinuous_learning) +  " | CURRICULUM
 print()
 
 nombre_round_eval = args.nombre_round_eval
-args.nombre_round_eval = nombre_round_eval - 1
+
+args.nombre_round_eval = nombre_round_eval - 2
 nn_model_ref2 = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-nn_model_ref2.epochs = 5
-args.nombre_round_eval = nombre_round_eval
+nn_model_ref2.epochs = 10
 nn_model_ref2.train_general(name_input)
 
+
+
+args.nombre_round_eval = nombre_round_eval - 1
+nn_model_ref3 = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
+nn_model_ref3.epochs = 10
+nn_model_ref3.net = nn_model_ref2.net
+nn_model_ref3.train_general(name_input)
+
+
+args.nombre_round_eval = nombre_round_eval
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-nn_model_ref.net = nn_model_ref2.net
+nn_model_ref.net = nn_model_ref3.net
+
 
 if args.retain_model_gohr_ref:
     nn_model_ref.train_general(name_input)
