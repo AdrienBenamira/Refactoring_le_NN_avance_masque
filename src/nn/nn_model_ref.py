@@ -14,7 +14,7 @@ from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTIO
 from src.nn.models.Multi_Headed import Multihead
 from src.nn.models.deepset import DTanh
 from src.utils.utils import F1_Loss
-
+from sklearn.preprocessing import StandardScaler
 
 class NN_Model_Ref:
 
@@ -93,9 +93,13 @@ class NN_Model_Ref:
         self.train(name_input)
 
     def load_nn(self):
-        self.net.load_state_dict(torch.load(
+        if not self.args.load_special:
+            self.net.load_state_dict(torch.load(
             os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'),
-        map_location=self.device)['state_dict'], strict=False)
+            map_location=self.device)['state_dict'], strict=False)
+        else:
+            self.net.load_state_dict(torch.load(self.args.load_nn_path,
+                map_location=self.device)['state_dict'], strict=False)
         self.net.to(self.device)
         self.net.eval()
 
@@ -275,7 +279,7 @@ class NN_Model_Ref:
             for i, data in enumerate(tk0):
                 inputs, labels = data
                 outputs = self.net(inputs.to(self.device))
-                self.intermediaires[phase].append(self.net.intermediare.detach().cpu().numpy().astype(np.float16))
+                self.intermediaires[phase].append(self.net.intermediare.detach().cpu().numpy())
                 self.outputs_proba[phase].append(outputs.detach().cpu().numpy().astype(np.float16))
                 loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
                 desc = 'loss: %.4f; ' % (loss.item())
@@ -301,19 +305,30 @@ class NN_Model_Ref:
             #print(desc)
             print()
             time_elapsed = time.time() - since
-            print('Validate complete in {:.0f}m {:.0f}s'.format(
+            print('Evaluation complete in {:.0f}m {:.0f}s'.format(
                 time_elapsed // 60, time_elapsed % 60))
             print()
             num1 = len(self.intermediaires[phase])
             if phase == "train":
-                self.all_intermediaire = np.array(self.intermediaires[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
+                scaler1 = StandardScaler()
+                data = np.array(self.intermediaires[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
+                data2 = scaler1.fit_transform(data)
+                self.all_intermediaire = data2
                 self.outputs_proba_train = np.array(self.outputs_proba[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
                 self.outputs_pred_train = np.array(self.outputs_pred[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
+                if not self.args.retrain_nn_ref:
+                    del self.all_intermediaire, data, data2
             else:
-                self.all_intermediaire_val = np.array(self.intermediaires[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
+                scaler2 = StandardScaler()
+                data = np.array(self.intermediaires[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
+                data2 = scaler2.fit_transform(data)
+                self.all_intermediaire_val = data2
                 self.outputs_proba_val = np.array(self.outputs_proba[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
                 self.outputs_pred_val = np.array(self.outputs_pred[phase]).astype(np.float16).reshape(
                     num1 * self.batch_size, -1)
+                if not self.args.retrain_nn_ref:
+                    del self.all_intermediaire_val, data, data2
+        del self.intermediaires
 
     def mixup_data(self, x, y, alpha=1.0):
         '''Returns mixed inputs, pairs of targets, and lambda'''

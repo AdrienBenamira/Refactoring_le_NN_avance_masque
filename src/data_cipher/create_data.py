@@ -107,6 +107,20 @@ class Create_data_binary:
                 inputs_toput.append(ctdata0l^ctdata1l^ctdata0r^ctdata1r)
             if args.inputs_type[i] =="ctdata0r^ctdata1r^ctdata0l^ctdata1l":
                 inputs_toput.append(ctdata0r^ctdata1r^ctdata0l^ctdata1l)
+            if args.inputs_type[i] =="V0&inv(V1)":
+                V1Inv = 65535 - ctdata1l ^ ctdata1r
+                V0 = ctdata0l^ctdata0r
+                inputs_toput.append(V0&V1Inv)
+            if args.inputs_type[i] =="inv(V0)&inv(V1)":
+                V1Inv = 65535 - ctdata1l ^ ctdata1r
+                V0Inv = 65535 -ctdata0l ^ ctdata0r
+                inputs_toput.append(V0Inv&V1Inv)
+            if args.inputs_type[i] =="inv(DeltaL)":
+                inv_DeltaL = 65535 - ctdata0l ^ ctdata1l
+                inputs_toput.append(inv_DeltaL)
+            if args.inputs_type[i] =="inv(DeltaV)":
+                inv_DeltaV = 65535 - ctdata0l^ctdata1l^ctdata0r^ctdata1r
+                inputs_toput.append(inv_DeltaV)
         return inputs_toput
 
 

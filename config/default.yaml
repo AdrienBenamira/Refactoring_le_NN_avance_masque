@@ -4,8 +4,8 @@ general:
   logs_tensorboard: ./results/test/
   models_path: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 8
-  inputs_type:  [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r] #
+  nombre_round_eval: 6
+  inputs_type:  [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, V0&inv(V1), inv(V0)&inv(V1)] #
   word_size: 16
   alpha: 7
   beta: 2
@@ -14,14 +14,16 @@ general:
 
 train_nn:
   retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
+  load_special: No
+  load_nn_path: results/models_trained/speck/6/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/Gohr_baseline_best_nbre_sampletrain_10000000_prunning_0.85.pth
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
   type_model: baseline        # baseline, cnn_attention, multihead, deepset
-  nbre_sample_train: 10000000
-  nbre_sample_eval: 1000000
+  nbre_sample_train: 100000
+  nbre_sample_eval: 100000
   num_epochs: 200
-  batch_size: 500
+  batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001
   weight_decay_nn: 0.00001
@@ -43,14 +45,14 @@ train_nn:
 
 
 getting_masks:
-  load_masks: No
-  file_mask: results/masks_ref/speck/6/masks_QQ/masks_89.txt
-  nbre_max_masks_load: -1
-  research_new_masks: Yes
+  load_masks: Yes
+  file_mask: results/masks_ref/speck/6/masks_f_6_V0V1_inv_V0_invV1_inv.txt
+  nbre_max_masks_load: 50
+  research_new_masks: No
   nbre_generate_data_train_val: 1000
   nbre_necessaire_val_SV: 100
   nbre_max_batch: 100
-  liste_segmentation_prediction: ["1, 0.9", "0.9, 0.8", "0.8, 0.7", "0.7, 0.6", "0.6, 0.5"]
+  liste_segmentation_prediction: ["1, 0.5"]
   liste_methode_extraction: [IntegratedGradients, IntegratedGradients_tunnel, DeepLift, GradientShap, FeatureAblation, Saliency, ShapleyValueSampling, Occlusion]
   #[IntegratedGradients, IntegratedGradients_tunnel, DeepLift, GradientShap, FeatureAblation, Saliency, ShapleyValueSampling, Occlusion]
   #temps get_mask IntegratedGradients 0.6 for 100 samples
@@ -63,7 +65,7 @@ getting_masks:
   #temps get_mask Occlusion 0.15 for 100 samples
   liste_methode_selection: [PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
   #[PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
-  hamming_weigth: [12, 13, 14, 15, 16, 18, 20]
+  hamming_weigth: [16, 18]
   thr_value: []
   save_fig_plot_feature_before_mask: Yes
   end_after_step2: No
@@ -72,23 +74,26 @@ getting_masks:
 make_ToT:
   create_new_data_for_ToT: Yes
   create_ToT_with_only_sample_from_cipher: Yes
-  nbre_sample_create_ToT: 10000000
+  nbre_sample_create_ToT: 2000000
 
 make_data_classifier:
   create_new_data_for_classifier: Yes
-  nbre_sample_train_classifier: 1000000
-  nbre_sample_val_classifier: 1000000
+  nbre_sample_train_classifier: 100000
+  nbre_sample_val_classifier: 100000
 
 compare_classifer:
-  retrain_nn_ref: Yes
+  eval_nn_ref: No
+  retrain_nn_ref: No
+  save_data_proba: Yes
   num_epch_2: 20
   batch_size_2: 500
   classifiers_ours: [NN, LGBM] # [NN, LGBM, RF]
-  num_epch_our: 20
+  num_epch_our: 10
   batch_size_our: 500
   retrain_with_import_features: No
   keep_number_most_impactfull: 20
   quality_of_masks: Yes
+  compute_independance_feature: Yes
   alpha_test: 0.05
   end_after_step4: No
 

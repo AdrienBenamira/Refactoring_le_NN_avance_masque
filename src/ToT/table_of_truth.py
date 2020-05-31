@@ -59,7 +59,8 @@ class ToT:
             ddt_entree += (np.uint64(liste_inputsmasked[index]) << debut - 16 * index)
         return ddt_entree
 
-    def convert_proba_pure(self, vals, counts, num_samples):
+        """   def convert_proba_pure(self, vals, counts, num_samples):
+
         nbre_param = len(vals)
         self.ms = int(np.log2(nbre_param))+1
         p_input_sachant_masks = counts / num_samples
@@ -72,6 +73,25 @@ class ToT:
         assert min(p_speck_sachant_input_masks_bar) > 0
         assert max(p_speck_sachant_input_masks_bar) < 1
         p_speck_sachant_input_masks = 1- p_speck_sachant_input_masks_bar
+        assert min(p_speck_sachant_input_masks) > 0
+        assert max(p_speck_sachant_input_masks) < 1
+        return p_speck_sachant_input_masks
+        """
+
+    def convert_proba_pure(self, vals, counts, num_samples):
+        nbre_param = len(vals)
+        self.ms = int(np.log2(nbre_param))
+        p_input_sachant_masks = counts / num_samples
+        # p_input_sachant_random = min(p_input_sachant_masks)
+        assert min(p_input_sachant_masks) >= 0
+        assert max(p_input_sachant_masks) <= 1
+        numerateur = p_input_sachant_masks *0.5
+        denominateur = p_input_sachant_masks * 0.5 + 0.5 * 2 ** (-self.ms)
+        p_speck_sachant_input_masks_bar = self.mat_div(numerateur, denominateur)
+        #print(min(p_speck_sachant_input_masks_bar), max(p_speck_sachant_input_masks_bar), self.ms)
+        assert min(p_speck_sachant_input_masks_bar) > 0
+        assert max(p_speck_sachant_input_masks_bar) < 1
+        p_speck_sachant_input_masks = 1 - p_speck_sachant_input_masks_bar
         assert min(p_speck_sachant_input_masks) > 0
         assert max(p_speck_sachant_input_masks) < 1
         return p_speck_sachant_input_masks
@@ -96,6 +116,8 @@ class ToT:
         #self.X_train_proba_train = np.zeros((len(self.masks[0]), (len(self.c0l_create_ToT))), dtype=np.float16)
         for moment, _ in enumerate(tqdm(self.masks[0])):
             masks_du_moment, name_input_cic = self.create_masked_moment(moment)
+            hamming_number = np.sum([bin(x).count("1") for x in masks_du_moment])
+            self.hamming_number = hamming_number
             ddt_entree = self.create_masked_inputs(liste_inputs, masks_du_moment)
             vals, counts = np.unique(ddt_entree, return_counts=True)
             self.nbre_param_ddt += len(vals)
@@ -105,7 +127,7 @@ class ToT:
                 p_speck_sachant_input_masks = self.convert_proba_impure( vals, counts, num_samples)
             sv = dict(zip(vals, p_speck_sachant_input_masks))
             self.ToT[name_input_cic] = sv
-            hamming_number = np.sum([bin(x).count("1") for x in masks_du_moment])
+
             self.mask_infos_compression.append(1 - self.ms/hamming_number)
             self.mask_infos_hamming.append(hamming_number)
 

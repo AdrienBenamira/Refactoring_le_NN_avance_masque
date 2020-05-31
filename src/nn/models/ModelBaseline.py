@@ -28,17 +28,20 @@ class ModelPaperBaseline(nn.Module):
 
     def forward(self, x):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
+        self.x_input = x[0]
         x = F.relu(self.BN0(self.conv0(x)))
         shortcut = x.clone()
+        self.shorcut = shortcut[0]
         for i in range(len(self.layers_conv)):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
             x = F.relu(x)
             x = x + shortcut
         x = x.view(x.size(0), -1)
-        self.intermediare = x.clone()
+        self.x_end = x.clone()[0]
         x = F.relu(self.BN5(self.fc1(x)))
         x = F.relu(self.BN6(self.fc2(x)))
+        self.intermediare = x.clone()
         x = self.fc3(x)
         x = torch.sigmoid(x)
         return x

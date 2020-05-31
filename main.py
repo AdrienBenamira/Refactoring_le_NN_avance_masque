@@ -36,6 +36,9 @@ parser.add_argument("--type_create_data", default=config.general.type_create_dat
 
 
 parser.add_argument("--retain_model_gohr_ref", default=config.train_nn.retain_model_gohr_ref, type=str2bool)
+parser.add_argument("--load_special", default=config.train_nn.load_special, type=str2bool)
+parser.add_argument("--load_nn_path", default=config.train_nn.load_nn_path)
+
 parser.add_argument("--countinuous_learning", default=config.train_nn.countinuous_learning, type=str2bool)
 parser.add_argument("--curriculum_learning", default=config.train_nn.curriculum_learning, type=str2bool)
 parser.add_argument("--nbre_epoch_per_stage", default=config.train_nn.nbre_epoch_per_stage, type=two_args_str_int)
@@ -100,6 +103,10 @@ parser.add_argument("--batch_size_our", default=config.compare_classifer.batch_s
 parser.add_argument("--alpha_test", default=config.compare_classifer.alpha_test, type=two_args_str_float)
 parser.add_argument("--quality_of_masks", default=config.compare_classifer.quality_of_masks, type=str2bool)
 parser.add_argument("--end_after_step4", default=config.compare_classifer.end_after_step4, type=str2bool)
+parser.add_argument("--eval_nn_ref", default=config.compare_classifer.eval_nn_ref, type=str2bool)
+parser.add_argument("--compute_independance_feature", default=config.compare_classifer.compute_independance_feature, type=str2bool)
+parser.add_argument("--save_data_proba", default=config.compare_classifer.save_data_proba, type=str2bool)
+
 
 
 args = parser.parse_args()
@@ -123,7 +130,7 @@ print()
 print("COUNTINUOUS LEARNING: "+ str(args.countinuous_learning) +  " | CURRICULUM LEARNING: " +  str(args.curriculum_learning) + " | MODEL: " + str(args.type_model))
 print()
 
-nombre_round_eval = args.nombre_round_eval
+"""nombre_round_eval = args.nombre_round_eval
 
 args.nombre_round_eval = nombre_round_eval - 2
 nn_model_ref2 = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
@@ -141,7 +148,8 @@ nn_model_ref3.train_general(name_input)
 
 args.nombre_round_eval = nombre_round_eval
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-nn_model_ref.net = nn_model_ref3.net
+nn_model_ref.net = nn_model_ref3.net"""
+nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 
 
 if args.retain_model_gohr_ref:
@@ -149,6 +157,7 @@ if args.retain_model_gohr_ref:
 else:
     try:
         nn_model_ref.load_nn()
+        #nn_model_ref.eval(["val"])
     except:
         print("ERROR")
         print("NO MODEL AVALAIBLE FOR THIS CONFIG")
@@ -211,7 +220,8 @@ nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train
 nn_model_ref.X_val_nn_binaire = generator_data.X_bin_val
 nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
 nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
-nn_model_ref.eval_all(["train", "val"])
+if args.eval_nn_ref:
+    nn_model_ref.eval_all(["train", "val"])
 all_clfs = All_classifier(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth)
 all_clfs.classify_all()
 

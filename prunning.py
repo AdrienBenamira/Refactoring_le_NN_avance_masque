@@ -1,7 +1,7 @@
 import sys
 import warnings
 import torch
-
+import os
 from src.nn.nn_model_ref import NN_Model_Ref
 
 warnings.filterwarnings('ignore',category=FutureWarning)
@@ -37,6 +37,9 @@ parser.add_argument("--type_create_data", default=config.general.type_create_dat
 
 
 parser.add_argument("--retain_model_gohr_ref", default=config.train_nn.retain_model_gohr_ref, type=str2bool)
+parser.add_argument("--load_special", default=config.train_nn.load_special, type=str2bool)
+parser.add_argument("--load_nn_path", default=config.train_nn.load_nn_path)
+
 parser.add_argument("--countinuous_learning", default=config.train_nn.countinuous_learning, type=str2bool)
 parser.add_argument("--curriculum_learning", default=config.train_nn.curriculum_learning, type=str2bool)
 parser.add_argument("--nbre_epoch_per_stage", default=config.train_nn.nbre_epoch_per_stage, type=two_args_str_int)
@@ -86,9 +89,6 @@ parser.add_argument("--create_new_data_for_ToT", default=config.make_ToT.create_
 parser.add_argument("--create_ToT_with_only_sample_from_cipher", default=config.make_ToT.create_ToT_with_only_sample_from_cipher, type=str2bool)
 parser.add_argument("--nbre_sample_create_ToT", default=config.make_ToT.nbre_sample_create_ToT, type=two_args_str_int)
 
-
-
-
 parser.add_argument("--create_new_data_for_classifier", default=config.make_data_classifier.create_new_data_for_classifier, type=str2bool)
 parser.add_argument("--nbre_sample_train_classifier", default=config.make_data_classifier.nbre_sample_train_classifier, type=two_args_str_int)
 parser.add_argument("--nbre_sample_val_classifier", default=config.make_data_classifier.nbre_sample_val_classifier, type=two_args_str_int)
@@ -101,6 +101,13 @@ parser.add_argument("--retrain_with_import_features", default=config.compare_cla
 parser.add_argument("--keep_number_most_impactfull", default=config.compare_classifer.keep_number_most_impactfull, type=two_args_str_int)
 parser.add_argument("--num_epch_our", default=config.compare_classifer.num_epch_our, type=two_args_str_int)
 parser.add_argument("--batch_size_our", default=config.compare_classifer.batch_size_our, type=two_args_str_int)
+parser.add_argument("--alpha_test", default=config.compare_classifer.alpha_test, type=two_args_str_float)
+parser.add_argument("--quality_of_masks", default=config.compare_classifer.quality_of_masks, type=str2bool)
+parser.add_argument("--end_after_step4", default=config.compare_classifer.end_after_step4, type=str2bool)
+parser.add_argument("--eval_nn_ref", default=config.compare_classifer.eval_nn_ref, type=str2bool)
+parser.add_argument("--compute_independance_feature", default=config.compare_classifer.compute_independance_feature, type=str2bool)
+parser.add_argument("--save_data_proba", default=config.compare_classifer.save_data_proba, type=str2bool)
+
 
 
 args = parser.parse_args()
@@ -128,11 +135,11 @@ nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, 
 
 nn_model_ref.load_nn()
 
-nn_model_ref.eval_all(name_input)
+nn_model_ref.eval_all(["val"])
 
 
 
-for global_sparsity in [0.5, 0.55, 0.6, 0.65]:
+for global_sparsity in [0.8, 0.85, 0.9, 0.95]:
     parameters_to_prune = []
     for name, module in nn_model_ref.net.named_modules():
         if len(name):
@@ -145,20 +152,32 @@ for global_sparsity in [0.5, 0.55, 0.6, 0.65]:
         amount=global_sparsity,
     )
     tot_sparsity = 0
+    tot_weight = 0
     for name, module in nn_model_ref.net.named_modules():
         if len(name):
             if name not in ["layers_batch", "layers_conv"]:
                 tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
-
+                tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
+                """
                 print(
                     "Sparsity in {}.weight: {:.2f}%".format(str(name),
                         100. * float(torch.sum(module.weight == 0))
                         / float(module.weight.nelement())
                     )
                 )
+                """
+    print()
+    print(global_sparsity, tot_weight)
+    print()
+
+    nn_model_ref.eval(["val"])
+
+    #torch.save({'epoch': 0 , 'acc': 0, 'state_dict': nn_model_ref.net.state_dict()},
+    #           os.path.join(nn_model_ref.path_save_model_train,
+    #                        'Gohr_' + nn_model_ref.args.type_model + '_best_nbre_sampletrain_' + str(
+    #                            nn_model_ref.args.nbre_sample_train) + "_prunning_"+str(global_sparsity) + '.pth'))
 
 
-    nn_model_ref.eval_all(name_input)
     del nn_model_ref.net
     nn_model_ref.net = nn_model_ref.choose_model()
     nn_model_ref.load_nn()

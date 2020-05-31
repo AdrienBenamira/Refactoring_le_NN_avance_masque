@@ -104,8 +104,8 @@ class Get_masks:
     def get_data_interest_segmentation(self, valmax, valimin, out_net_val, interet_1, inputs_v, labels_v):
         self.t2 = Variable(torch.Tensor([valimin]))
         self.t3 = Variable(torch.Tensor([valmax]))
-        preds2_val1 = (self.t3.to(self.device) > out_net_val.squeeze(1)).float().cpu() * 1
-        preds2_val2 = (out_net_val.squeeze(1) > self.t2.to(self.device)).float().cpu() * 1
+        preds2_val1 = (self.t3.to(self.device) >= out_net_val.squeeze(1)).float().cpu() * 1
+        preds2_val2 = (out_net_val.squeeze(1) >= self.t2.to(self.device)).float().cpu() * 1
         preds2_val = (preds2_val1.eq(1) & preds2_val2.eq(1)).cpu()
         interet = preds2_val & interet_1
         nbre_interet = interet.detach().numpy().sum(0)

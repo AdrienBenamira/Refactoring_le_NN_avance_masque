@@ -9,6 +9,7 @@ import numpy as np
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 
 
 class All_classifier:
@@ -25,6 +26,17 @@ class All_classifier:
         self.Y_train_proba = generator_data.Y_create_proba_train
         self.X_eval_proba = generator_data.X_proba_val
         self.Y_eval_proba = generator_data.Y_create_proba_val
+        X_t_df = pd.DataFrame(self.X_train_proba, columns=self.table_of_truth.features_name)
+        X_v_df = pd.DataFrame(self.X_eval_proba, columns=self.table_of_truth.features_name)
+        Y_t_df = pd.DataFrame(self.Y_train_proba, columns=["Label"])
+        Y_v_df = pd.DataFrame(self.Y_eval_proba, columns=["Label"])
+        if self.args.save_data_proba:
+            print("START SAVE DATA PROBA")
+            X_t_df.to_csv(path_save_model + "X_train_proba.csv", index=False)
+            X_v_df.to_csv(path_save_model + "X_val_proba.csv", index=False)
+            Y_t_df.to_csv(path_save_model + "Y_train_proba.csv", index=False)
+            Y_v_df.to_csv(path_save_model + "Y_val_proba.csv", index=False)
+            print("END SAVE DATA PROBA")
         self.masks_infos_score = None
         self.masks_infos_rank = None
         self.clf_final = {}
@@ -70,11 +82,26 @@ class All_classifier:
         Y_eval_proba = self.generator_data.Y_create_proba_val
         print("START RETRAIN LINEAR NN GOHR ")
         print()
+
+
+        X_train, X_test, y_train, y_test = train_test_split(X_train_proba_feat, Y_train_proba, test_size=0.05,
+                                                            random_state=42)
+        model = lgb.LGBMClassifier(objective='binary', reg_lambda=1, n_estimators=10000)
+        model.fit(X_train, y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=50, verbose=2)
+
+        y_pred = model.predict(X_eval_proba_feat)
+        print(accuracy_score(y_pred=y_pred, y_true=Y_eval_proba))
+        print(confusion_matrix(y_pred=y_pred, y_true=Y_eval_proba))
+
+
+
+        """
         net_retrain, h = train_speck_distinguisher(args, X_train_proba_feat.shape[1], X_train_proba_feat,
                                                    Y_train_proba, X_eval_proba_feat, Y_eval_proba,
                                                    bs=args.batch_size_2,
                                                    epoch=args.num_epch_2, name_ici="retrain_nn_gohr",
                                                    wdir=self.path_save_model)
+        """
 
         """
         X_DDTpd = pd.DataFrame(data=X_train_proba_feat, columns=[x for x in range(X_train_proba_feat.shape[1])])
@@ -247,7 +274,6 @@ def evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, pat
 
 
 
-    X_eval_proba_feat = nn_model_ref.all_intermediaire_val
     X_eval_proba = generator_data.X_proba_val
     Y_eval_proba = generator_data.Y_create_proba_val
 
@@ -268,6 +294,7 @@ def evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, pat
     del nn_model_ref, generator_data, table_of_truth, qm
 
     if "NN_ref_retrain" in columns_1:
+        X_eval_proba_feat = nn_model_ref.all_intermediaire_val
         clf = all_clfs.clf_final["NN_ref_retrain"]
         predictions = clf.predict(X_eval_proba_feat)
         predictions_acc = predictions > 0.5
@@ -297,8 +324,8 @@ def evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, pat
             met2_predictions_acc = met2_predictions > 0.5
             met2_predictions_acc = met2_predictions_acc.astype(int)
             print("ACCURACY "+str(key)+" OUR : ", accuracy_score(y_pred=met2_predictions_acc, y_true=Y_eval_proba))
-            results_all[key + " prediction proba"] = met2_predictions_p
-            results_all[key + " prediction boolean"] = (met2_predictions_acc + 1 ) % 2
+            results_all[key + " prediction proba"] =  1- met2_predictions_p
+            results_all[key + " prediction boolean"] = (met2_predictions_acc )
         if "RF" == key:
             met2_predictions = clf.predict(X_eval_proba)
             met2_predictions = np.expand_dims(met2_predictions, axis=1)

@@ -63,9 +63,19 @@ class Quality_masks:
         self.df_["min"] = np.array(self.res_all_min)
         self.df_["max"] = np.array(self.res_all_max)
         self.df = pd.DataFrame(self.X_train_proba, columns=self.table_of_truth.features_name)
-        self.independance_feature()
-        self.df_["nbre_dependance_var"] = np.sum(self.res2 < self.args.alpha_test, axis=0)
+        self.save_masks()
+        if self.args.compute_independance_feature:
+            self.independance_feature()
+            self.df_["nbre_dependance_var"] = np.sum(self.res2 < self.args.alpha_test, axis=0)
         self.df_.to_csv(self.path_save_model + "quality_masks.csv", index=False)
+
+
+
+    def save_masks(self):
+        with open(self.path_save_model + "masks_all.txt", "w") as file:
+            for i in range(len(self.args.inputs_type)):
+                file.write(str(self.masks[i]))
+                file.write("\n")
 
 
 
@@ -122,6 +132,8 @@ class Quality_masks:
         plt.savefig(self.path_save_model + "COMPARASION INTRA FEATURES XI 2.png")
         """
         df2.to_csv(self.path_save_model + "COMPARASION INTRA FEATURES XI 2.csv")
+
+
 
 
 
