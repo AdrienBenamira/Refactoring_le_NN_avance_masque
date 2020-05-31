@@ -20,9 +20,9 @@ train_nn:
   curriculum_learning: No
   nbre_epoch_per_stage: 3
   type_model: baseline        # baseline, cnn_attention, multihead, deepset
-  nbre_sample_train: 100000
-  nbre_sample_eval: 100000
-  num_epochs: 200
+  nbre_sample_train: 10000000
+  nbre_sample_eval: 1000000
+  num_epochs: 100
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001
@@ -74,11 +74,11 @@ getting_masks:
 make_ToT:
   create_new_data_for_ToT: Yes
   create_ToT_with_only_sample_from_cipher: Yes
-  nbre_sample_create_ToT: 2000000
+  nbre_sample_create_ToT: 20000000
 
 make_data_classifier:
   create_new_data_for_classifier: Yes
-  nbre_sample_train_classifier: 100000
+  nbre_sample_train_classifier: 1000000
   nbre_sample_val_classifier: 100000
 
 compare_classifer:
@@ -88,7 +88,7 @@ compare_classifer:
   num_epch_2: 20
   batch_size_2: 500
   classifiers_ours: [NN, LGBM] # [NN, LGBM, RF]
-  num_epch_our: 10
+  num_epch_our: 100
   batch_size_our: 500
   retrain_with_import_features: No
   keep_number_most_impactfull: 20
