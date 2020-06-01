@@ -158,14 +158,14 @@ for global_sparsity in [0.8, 0.85, 0.9, 0.95]:
             if name not in ["layers_batch", "layers_conv"]:
                 tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
                 tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
-                """
+
                 print(
                     "Sparsity in {}.weight: {:.2f}%".format(str(name),
                         100. * float(torch.sum(module.weight == 0))
                         / float(module.weight.nelement())
                     )
                 )
-                """
+
     print()
     print(global_sparsity, tot_weight)
     print()

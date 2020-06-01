@@ -1,6 +1,7 @@
 import sys
 import warnings
 warnings.filterwarnings('ignore',category=FutureWarning)
+from collections import Counter
 from src.get_masks.evaluate_quality_masks import Quality_masks
 from src.classifiers.classifier_all import All_classifier, evaluate_all
 from src.ToT.table_of_truth import ToT
@@ -220,9 +221,39 @@ nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train
 nn_model_ref.X_val_nn_binaire = generator_data.X_bin_val
 nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
 nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
+"""
+X_feat_temp = np.zeros((generator_data.X_bin_train.shape[0], 2))
+for index in range(generator_data.X_bin_train.shape[0]):
+    X_act = generator_data.X_bin_train[index,:16]
+    X_act_couple = [(X_act[i], X_act[i + 1]) for i in range(len(X_act) - 1)]
+    compte_X_couple = Counter(X_act_couple)
+    cpt = compte_X_couple[(0,1)] /15 #+ compte_X_couple[(1,0)] /15
+    X_feat_temp[index][0] = cpt
+    X_act = generator_data.X_bin_train[index, 16:32]
+    X_act_couple = [(X_act[i], X_act[i + 1]) for i in range(len(X_act) - 1)]
+    compte_X_couple = Counter(X_act_couple)
+    cpt = compte_X_couple[(0, 0)] / 15 #+ compte_X_couple[(1, 1)] / 15
+    X_feat_temp[index][1] = cpt
+
+
+X_feat_temp_val = np.zeros((generator_data.X_bin_val.shape[0], 2))
+for index in range(generator_data.X_bin_val.shape[0]):
+    X_act = generator_data.X_bin_val[index,:16]
+    X_act_couple = [(X_act[i], X_act[i + 1]) for i in range(len(X_act) - 1)]
+    compte_X_couple = Counter(X_act_couple)
+    cpt = compte_X_couple[(0,1)] /15 #+ compte_X_couple[(1,0)] /15
+    X_feat_temp_val[index][0] = cpt
+    X_act = generator_data.X_bin_val[index, 16:32]
+    X_act_couple = [(X_act[i], X_act[i + 1]) for i in range(len(X_act) - 1)]
+    compte_X_couple = Counter(X_act_couple)
+    cpt = compte_X_couple[(0, 0)] / 15 #+ compte_X_couple[(1, 1)] / 15
+    X_feat_temp_val[index][1] = cpt"""
+
 if args.eval_nn_ref:
     nn_model_ref.eval_all(["train", "val"])
 all_clfs = All_classifier(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth)
+#all_clfs.X_train_proba = np.concatenate((all_clfs.X_train_proba, X_feat_temp), axis = 1)
+#all_clfs.X_eval_proba =  np.concatenate((all_clfs.X_eval_proba, X_feat_temp_val), axis = 1)
 all_clfs.classify_all()
 
 if args.quality_of_masks:

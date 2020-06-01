@@ -5,7 +5,8 @@ general:
   models_path: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 6
-  inputs_type:  [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, V0&inv(V1), inv(V0)&inv(V1)] #
+  inputs_type: [ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1, inv(DeltaL)]
+  #[ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1, inv(DeltaL)] #
   word_size: 16
   alpha: 7
   beta: 2
@@ -22,7 +23,7 @@ train_nn:
   type_model: baseline        # baseline, cnn_attention, multihead, deepset
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 100
+  num_epochs: 50
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001
@@ -46,7 +47,7 @@ train_nn:
 
 getting_masks:
   load_masks: Yes
-  file_mask: results/masks_ref/speck/6/masks_f_6_V0V1_inv_V0_invV1_inv.txt
+  file_mask: results/masks_ref/speck/6/masks_f_6_V0V1_inv_V0_invV1_inv2.txt
   nbre_max_masks_load: 50
   research_new_masks: No
   nbre_generate_data_train_val: 1000
@@ -82,16 +83,16 @@ make_data_classifier:
   nbre_sample_val_classifier: 100000
 
 compare_classifer:
-  eval_nn_ref: No
+  eval_nn_ref: Yes
   retrain_nn_ref: No
   save_data_proba: Yes
-  num_epch_2: 20
+  num_epch_2: 30
   batch_size_2: 500
   classifiers_ours: [NN, LGBM] # [NN, LGBM, RF]
-  num_epch_our: 100
+  num_epch_our: 50
   batch_size_our: 500
-  retrain_with_import_features: No
-  keep_number_most_impactfull: 20
+  retrain_with_import_features: Yes
+  keep_number_most_impactfull: 40
   quality_of_masks: Yes
   compute_independance_feature: Yes
   alpha_test: 0.05

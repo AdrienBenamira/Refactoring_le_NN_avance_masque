@@ -114,7 +114,7 @@ class All_classifier:
 
 
     def classifier_nn(self):
-        net2, h = train_speck_distinguisher(self.args, len(self.get_masks_gen.masks[0]), self.X_train_proba,
+        net2, h = train_speck_distinguisher(self.args, self.X_train_proba.shape[1], self.X_train_proba,
                                             self.Y_train_proba, self.X_eval_proba, self.Y_eval_proba,
                                             bs=self.args.batch_size_our,
                                             epoch=self.args.num_epch_our, name_ici="our_model",
