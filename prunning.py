@@ -1,10 +1,11 @@
 import sys
 import warnings
+warnings.filterwarnings('ignore',category=FutureWarning)
 import torch
 import os
 from src.nn.nn_model_ref import NN_Model_Ref
+import matplotlib.pyplot as plt
 
-warnings.filterwarnings('ignore',category=FutureWarning)
 
 from src.data_cipher.create_data import Create_data_binary
 from src.utils.initialisation_run import init_all_for_run, init_cipher
@@ -108,10 +109,22 @@ parser.add_argument("--eval_nn_ref", default=config.compare_classifer.eval_nn_re
 parser.add_argument("--compute_independance_feature", default=config.compare_classifer.compute_independance_feature, type=str2bool)
 parser.add_argument("--save_data_proba", default=config.compare_classifer.save_data_proba, type=str2bool)
 
+parser.add_argument("--model_to_prune", default=config.prunning.model_to_prune)
+parser.add_argument("--values_prunning", default=config.prunning.values_prunning, type=str2list)
+parser.add_argument("--layers_NOT_to_prune", default=config.prunning.layers_NOT_to_prune, type=str2list)
+parser.add_argument("--save_model_prune", default=config.prunning.save_model_prune, type=str2bool)
+parser.add_argument("--logs_layers", default=config.prunning.logs_layers, type=str2bool)
+parser.add_argument("--nbre_sample_eval_prunning", default=config.prunning.nbre_sample_eval_prunning, type=two_args_str_int)
+
 
 
 args = parser.parse_args()
 
+args.load_special = True
+args.logs_tensorboard = args.logs_tensorboard.replace("test", "prunning")
+args.load_nn_path = args.model_to_prune
+args.nbre_sample_eval = args.nbre_sample_eval_prunning
+args.inputs_type = args.model_to_prune.split("/")[4].split("_")
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #
@@ -126,25 +139,20 @@ creator_data_binary = Create_data_binary(args, cipher, rng)
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 print("---" * 100)
-print("STEP 1 : LOAD/ TRAIN NN REF")
-print()
-print("COUNTINUOUS LEARNING: "+ str(args.countinuous_learning) +  " | CURRICULUM LEARNING: " +  str(args.curriculum_learning) + " | MODEL: " + str(args.type_model))
-print()
+print("PRUNNING")
 
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-
 nn_model_ref.load_nn()
 
-nn_model_ref.eval_all(["val"])
 
-
-
-for global_sparsity in [0.8, 0.85, 0.9, 0.95]:
+flag = True
+acc_retain=[]
+for global_sparsity in args.values_prunning:
     parameters_to_prune = []
     for name, module in nn_model_ref.net.named_modules():
         if len(name):
             if name not in ["layers_batch", "layers_conv"]:
-                if name not in []:
+                if name not in args.layers_NOT_to_prune:
                     parameters_to_prune.append((module, 'weight'))
     prune.global_unstructured(
         parameters_to_prune,
@@ -156,26 +164,29 @@ for global_sparsity in [0.8, 0.85, 0.9, 0.95]:
     for name, module in nn_model_ref.net.named_modules():
         if len(name):
             if name not in ["layers_batch", "layers_conv"]:
-                tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
-                tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
+                if name not in args.layers_NOT_to_prune:
+                    tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
+                    tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
 
-                print(
-                    "Sparsity in {}.weight: {:.2f}%".format(str(name),
-                        100. * float(torch.sum(module.weight == 0))
-                        / float(module.weight.nelement())
-                    )
-                )
+                    if args.logs_layers:
+                        print(
+                        "Sparsity in {}.weight: {:.2f}%".format(str(name),
+                            100. * float(torch.sum(module.weight == 0))
+                            / float(module.weight.nelement())
+                            )
+                        )
+    if flag:
+        nn_model_ref.eval_all(["val"])
+        flag = False
+    else:
+        nn_model_ref.eval(["val"])
+    acc_retain.append(nn_model_ref.acc)
 
-    print()
-    print(global_sparsity, tot_weight)
-    print()
-
-    nn_model_ref.eval(["val"])
-
-    #torch.save({'epoch': 0 , 'acc': 0, 'state_dict': nn_model_ref.net.state_dict()},
-    #           os.path.join(nn_model_ref.path_save_model_train,
-    #                        'Gohr_' + nn_model_ref.args.type_model + '_best_nbre_sampletrain_' + str(
-    #                            nn_model_ref.args.nbre_sample_train) + "_prunning_"+str(global_sparsity) + '.pth'))
+    if args.save_model_prune:
+        torch.save({'epoch': 0 , 'acc': 0, 'state_dict': nn_model_ref.net.state_dict()},
+                   os.path.join(path_save_model,
+                                'Gohr_' + nn_model_ref.args.type_model + '_best_nbre_sampletrain_' + str(
+                                    nn_model_ref.args.nbre_sample_train) + "_prunning_"+str(global_sparsity) + '.pth'))
 
 
     del nn_model_ref.net
@@ -183,7 +194,12 @@ for global_sparsity in [0.8, 0.85, 0.9, 0.95]:
     nn_model_ref.load_nn()
 
 
-print("STEP 1 : DONE")
-print("---" * 100)
-if args.end_after_training:
-    sys.exit(1)
+fig = plt.figure(figsize=(20,20))
+ax = plt.axes()
+ax.plot(args.values_prunning, acc_retain)
+plt.title("model: " +args.model_to_prune)
+plt.xlabel("Pourcentage prunning")
+plt.ylabel("Accuracy")
+plt.savefig(path_save_model + "prunning" + args.model_to_prune.replace('/', "_") + ".png")
+
+

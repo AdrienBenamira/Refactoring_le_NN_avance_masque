@@ -78,37 +78,19 @@ class All_classifier:
         nn_model_ref.batch_size_2 = args.batch_size_2
         nn_model_ref.net.freeze()
         X_train_proba_feat, X_eval_proba_feat = nn_model_ref.all_intermediaire, nn_model_ref.all_intermediaire_val
-        Y_train_proba = self.generator_data.Y_create_proba_train
-        Y_eval_proba = self.generator_data.Y_create_proba_val
+        Y_train_proba = nn_model_ref.Y_train_nn_binaire
+        Y_eval_proba =  nn_model_ref.Y_val_nn_binaire
         print("START RETRAIN LINEAR NN GOHR ")
         print()
-
-
-        X_train, X_test, y_train, y_test = train_test_split(X_train_proba_feat, Y_train_proba, test_size=0.05,
-                                                            random_state=42)
-        model = lgb.LGBMClassifier(objective='binary', reg_lambda=1, n_estimators=10000)
-        model.fit(X_train, y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=50, verbose=2)
-
-        y_pred = model.predict(X_eval_proba_feat)
-        print(accuracy_score(y_pred=y_pred, y_true=Y_eval_proba))
-        print(confusion_matrix(y_pred=y_pred, y_true=Y_eval_proba))
-
-
-
-        """
         net_retrain, h = train_speck_distinguisher(args, X_train_proba_feat.shape[1], X_train_proba_feat,
                                                    Y_train_proba, X_eval_proba_feat, Y_eval_proba,
                                                    bs=args.batch_size_2,
                                                    epoch=args.num_epch_2, name_ici="retrain_nn_gohr",
                                                    wdir=self.path_save_model)
-        """
 
-        """
-        X_DDTpd = pd.DataFrame(data=X_train_proba_feat, columns=[x for x in range(X_train_proba_feat.shape[1])])
-        clf = self.classifier_lgbm_general(X_DDTpd, X_eval_proba_feat, [x for x in range(X_train_proba_feat.shape[1])])
 
-        print(ok)
-        """
+
+
 
         return net_retrain
 
@@ -118,7 +100,7 @@ class All_classifier:
                                             self.Y_train_proba, self.X_eval_proba, self.Y_eval_proba,
                                             bs=self.args.batch_size_our,
                                             epoch=self.args.num_epch_our, name_ici="our_model",
-                                            wdir=self.path_save_model)
+                                            wdir=self.path_save_model, flag_3layes=False)
         return net2
 
 
@@ -291,7 +273,7 @@ def evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, pat
     results_all[key + " prediction proba"] = nn_model_ref.outputs_proba_val
     results_all[key + " prediction boolean"] = nn_model_ref.outputs_pred_val
 
-    del nn_model_ref, generator_data, table_of_truth, qm
+    del generator_data, table_of_truth, qm
 
     if "NN_ref_retrain" in columns_1:
         X_eval_proba_feat = nn_model_ref.all_intermediaire_val
@@ -305,6 +287,8 @@ def evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, pat
         results_all[key + " prediction proba"] = predictions
         results_all[key + " prediction boolean"] = predictions_acc
 
+    del nn_model_ref
+
     for key in columns_1:
         clf = all_clfs.clf_final[key]
         if "NN" == key:
@@ -313,7 +297,7 @@ def evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, pat
             met2_predictions_acc = met2_predictions_acc.astype(int)
             print("ACCURACY "+str(key)+" OUR : ", accuracy_score(y_pred=met2_predictions_acc, y_true=Y_eval_proba))
             results_all[key + " prediction proba"] = met2_predictions
-            results_all[key + " prediction boolean"] = (met2_predictions_acc + 1 ) % 2
+            results_all[key + " prediction boolean"] = (met2_predictions_acc )
         if "LGBM" == key:
             met2_predictions = clf.predict(X_eval_proba)
             met2_predictions = np.expand_dims(met2_predictions, axis=1)
@@ -335,7 +319,7 @@ def evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, pat
             met2_predictions_acc = met2_predictions_acc.astype(int)
             print("ACCURACY "+str(key)+" OUR : ", accuracy_score(y_pred=met2_predictions_acc, y_true=Y_eval_proba))
             results_all[key + " prediction proba"] = met2_predictions_p
-            results_all[key + " prediction boolean"] = (met2_predictions_acc + 1 ) % 2
+            results_all[key + " prediction boolean"] = (met2_predictions_acc  )
         if "LGBM_restricted" == key:
             clf2, indices = clf[0], clf[1]
             met2_predictions = clf2.predict(X_eval_proba[:, indices])
@@ -348,7 +332,7 @@ def evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, pat
             met2_predictions_acc = met2_predictions_acc.astype(int)
             print("ACCURACY "+str(key)+" OUR : ", accuracy_score(y_pred=met2_predictions_acc, y_true=Y_eval_proba))
             results_all[key + " prediction proba"] = met2_predictions_p
-            results_all[key + " prediction boolean"] = (met2_predictions_acc + 1 ) % 2
+            results_all[key + " prediction boolean"] = (met2_predictions_acc )
         if "RF_restricted" == key:
             clf2, indices = clf[0], clf[1]
             met2_predictions = clf2.predict(X_eval_proba[:, indices])
@@ -361,5 +345,5 @@ def evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, pat
             met2_predictions_acc = met2_predictions_acc.astype(int)
             print("ACCURACY "+str(key)+" OUR : ", accuracy_score(y_pred=met2_predictions_acc, y_true=Y_eval_proba))
             results_all[key + " prediction proba"] = met2_predictions_p
-            results_all[key + " prediction boolean"] = (met2_predictions_acc + 1 ) % 2
+            results_all[key + " prediction boolean"] = (met2_predictions_acc )
     results_all.to_csv(path_save_model + "results_finaux.csv", index=False)

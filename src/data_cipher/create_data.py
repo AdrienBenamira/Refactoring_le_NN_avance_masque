@@ -111,6 +111,10 @@ class Create_data_binary:
                 V1 = ctdata1l ^ ctdata1r
                 V0Inv = 65535 - ctdata0l^ctdata0r
                 inputs_toput.append(V1&V0Inv)
+            if args.inputs_type[i] =="V0&inv(V1)":
+                V0 = ctdata0l ^ ctdata0r
+                V1Inv = 65535 - ctdata1l^ctdata1r
+                inputs_toput.append(V0&V1Inv)
             if args.inputs_type[i] =="inv(V0)&inv(V1)":
                 V1Inv = 65535 - ctdata1l ^ ctdata1r
                 V0Inv = 65535 -ctdata0l ^ ctdata0r

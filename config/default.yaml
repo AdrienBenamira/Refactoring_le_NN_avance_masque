@@ -5,7 +5,7 @@ general:
   models_path: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 6
-  inputs_type: [ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1, inv(DeltaL)]
+  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, V0&inv(V1), inv(V0)&inv(V1)]
   #[ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1, inv(DeltaL)] #
   word_size: 16
   alpha: 7
@@ -14,9 +14,9 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
   load_special: No
-  load_nn_path: results/models_trained/speck/6/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/Gohr_baseline_best_nbre_sampletrain_10000000_prunning_0.85.pth
+  load_nn_path: results/models_trained/speck/6/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_V0&inv(V1)_inv(V0)&inv(V1)/Gohr_baseline_best_nbre_sampletrain_10000000.pth
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
@@ -48,7 +48,7 @@ train_nn:
 getting_masks:
   load_masks: Yes
   file_mask: results/masks_ref/speck/6/masks_f_6_V0V1_inv_V0_invV1_inv2.txt
-  nbre_max_masks_load: 50
+  nbre_max_masks_load: 40
   research_new_masks: No
   nbre_generate_data_train_val: 1000
   nbre_necessaire_val_SV: 100
@@ -79,24 +79,33 @@ make_ToT:
 
 make_data_classifier:
   create_new_data_for_classifier: Yes
-  nbre_sample_train_classifier: 1000000
+  nbre_sample_train_classifier: 100000
   nbre_sample_val_classifier: 100000
 
 compare_classifer:
   eval_nn_ref: Yes
-  retrain_nn_ref: No
+  retrain_nn_ref: Yes
   save_data_proba: Yes
-  num_epch_2: 30
+  num_epch_2: 20
   batch_size_2: 500
   classifiers_ours: [NN, LGBM] # [NN, LGBM, RF]
-  num_epch_our: 50
+  num_epch_our: 20
   batch_size_our: 500
-  retrain_with_import_features: Yes
-  keep_number_most_impactfull: 40
+  retrain_with_import_features: No
+  keep_number_most_impactfull: 30
   quality_of_masks: Yes
   compute_independance_feature: Yes
   alpha_test: 0.05
   end_after_step4: No
+
+
+prunning:
+  model_to_prune: results/models_trained/speck/6/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_V0&inv(V1)_inv(V0)&inv(V1)/Gohr_baseline_best_nbre_sampletrain_10000000.pth
+  values_prunning: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95]
+  layers_NOT_to_prune: []
+  save_model_prune: No
+  logs_layers: No
+  nbre_sample_eval_prunning: 100000
 
 
 

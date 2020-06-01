@@ -43,6 +43,16 @@ def make_classifier(input_size=84, d1=64, d2=64, final_activation='sigmoid'):
     dense1 = Dense(d1)(inp);
     dense1 = BatchNormalization()(dense1);
     dense1 = Activation('relu')(dense1);
+    out = Dense(1, activation=final_activation)(dense1);
+    model = Model(inputs=inp, outputs=out);
+    return (model);
+
+def make_classifier2(input_size=84, d1=64, d2=64, final_activation='sigmoid'):
+    # Input and preprocessing layers
+    inp = Input(shape=(input_size,));
+    dense1 = Dense(d1)(inp);
+    dense1 = BatchNormalization()(dense1);
+    dense1 = Activation('relu')(dense1);
     dense2 = Dense(d2)(dense1);
     dense2 = BatchNormalization()(dense2);
     dense2 = Activation('relu')(dense2);
@@ -50,9 +60,12 @@ def make_classifier(input_size=84, d1=64, d2=64, final_activation='sigmoid'):
     model = Model(inputs=inp, outputs=out);
     return (model);
 
-def train_speck_distinguisher(args, n_feat, X, Y, X_eval, Y_eval, epoch, bs, name_ici="", wdir= "./"):
+def train_speck_distinguisher(args, n_feat, X, Y, X_eval, Y_eval, epoch, bs, name_ici="", wdir= "./", flag_3layes=True):
     # create the network
-    net = make_classifier(input_size=n_feat);
+    if flag_3layes:
+        net = make_classifier(input_size=n_feat);
+    else:
+        net = make_classifier2(input_size=n_feat);
     net.compile(optimizer='adam', loss='mse', metrics=['acc']);
     # generate training and validation data
     # set up model checkpoint
@@ -65,6 +78,9 @@ def train_speck_distinguisher(args, n_feat, X, Y, X_eval, Y_eval, epoch, bs, nam
     np.save(wdir + 'h_loss' + str(args.nombre_round_eval) + "_"+ name_ici + '.npy', h.history['val_loss']);
     dump(h.history, open(wdir + 'hist' + str(args.nombre_round_eval) + "_"+ name_ici +  '.p', 'wb'));
     print("Best validation accuracy: ", np.max(h.history['val_acc']));
-    net3 = make_classifier(input_size=n_feat);
+    if flag_3layes:
+        net3 = make_classifier(input_size=n_feat);
+    else:
+        net3 = make_classifier2(input_size=n_feat);
     net3.load_weights(wdir + 'NN_classifier' + str(args.nombre_round_eval) + "_"+ name_ici +  '.h5')
     return (net3, h);

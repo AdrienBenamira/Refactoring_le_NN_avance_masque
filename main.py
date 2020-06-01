@@ -132,24 +132,19 @@ print("COUNTINUOUS LEARNING: "+ str(args.countinuous_learning) +  " | CURRICULUM
 print()
 
 """nombre_round_eval = args.nombre_round_eval
-
 args.nombre_round_eval = nombre_round_eval - 2
 nn_model_ref2 = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 nn_model_ref2.epochs = 10
 nn_model_ref2.train_general(name_input)
-
-
-
 args.nombre_round_eval = nombre_round_eval - 1
 nn_model_ref3 = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 nn_model_ref3.epochs = 10
 nn_model_ref3.net = nn_model_ref2.net
 nn_model_ref3.train_general(name_input)
-
-
 args.nombre_round_eval = nombre_round_eval
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 nn_model_ref.net = nn_model_ref3.net"""
+
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 
 
@@ -221,33 +216,6 @@ nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train
 nn_model_ref.X_val_nn_binaire = generator_data.X_bin_val
 nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
 nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
-"""
-X_feat_temp = np.zeros((generator_data.X_bin_train.shape[0], 2))
-for index in range(generator_data.X_bin_train.shape[0]):
-    X_act = generator_data.X_bin_train[index,:16]
-    X_act_couple = [(X_act[i], X_act[i + 1]) for i in range(len(X_act) - 1)]
-    compte_X_couple = Counter(X_act_couple)
-    cpt = compte_X_couple[(0,1)] /15 #+ compte_X_couple[(1,0)] /15
-    X_feat_temp[index][0] = cpt
-    X_act = generator_data.X_bin_train[index, 16:32]
-    X_act_couple = [(X_act[i], X_act[i + 1]) for i in range(len(X_act) - 1)]
-    compte_X_couple = Counter(X_act_couple)
-    cpt = compte_X_couple[(0, 0)] / 15 #+ compte_X_couple[(1, 1)] / 15
-    X_feat_temp[index][1] = cpt
-
-
-X_feat_temp_val = np.zeros((generator_data.X_bin_val.shape[0], 2))
-for index in range(generator_data.X_bin_val.shape[0]):
-    X_act = generator_data.X_bin_val[index,:16]
-    X_act_couple = [(X_act[i], X_act[i + 1]) for i in range(len(X_act) - 1)]
-    compte_X_couple = Counter(X_act_couple)
-    cpt = compte_X_couple[(0,1)] /15 #+ compte_X_couple[(1,0)] /15
-    X_feat_temp_val[index][0] = cpt
-    X_act = generator_data.X_bin_val[index, 16:32]
-    X_act_couple = [(X_act[i], X_act[i + 1]) for i in range(len(X_act) - 1)]
-    compte_X_couple = Counter(X_act_couple)
-    cpt = compte_X_couple[(0, 0)] / 15 #+ compte_X_couple[(1, 1)] / 15
-    X_feat_temp_val[index][1] = cpt"""
 
 if args.eval_nn_ref:
     nn_model_ref.eval_all(["train", "val"])

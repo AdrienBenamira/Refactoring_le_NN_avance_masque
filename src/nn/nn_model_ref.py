@@ -152,7 +152,7 @@ class NN_Model_Ref:
         print()
         data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device)
         dataloader_train = DataLoader(data_train, batch_size=self.batch_size,
-                                      shuffle=True, num_workers=self.args.num_workers)
+                                      shuffle=False, num_workers=self.args.num_workers)
         data_val = DataLoader_cipher_binary(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device)
         dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
                                       shuffle=False, num_workers=self.args.num_workers)
@@ -298,6 +298,7 @@ class NN_Model_Ref:
                 nbre_sample += n_batches
             epoch_loss = running_loss / nbre_sample
             acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
+            self.acc = acc
             print('{} Loss: {:.4f}'.format(
                 phase, epoch_loss))
             print('{} Acc: {:.4f}'.format(
