@@ -14,7 +14,7 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   load_special: No
   load_nn_path: results/models_trained/speck/6/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_V0&inv(V1)_inv(V0)&inv(V1)/Gohr_baseline_best_nbre_sampletrain_10000000.pth
   countinuous_learning: No
@@ -23,7 +23,7 @@ train_nn:
   type_model: baseline        # baseline, cnn_attention, multihead, deepset
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 50
+  num_epochs: 30
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001
@@ -48,7 +48,7 @@ train_nn:
 getting_masks:
   load_masks: Yes
   file_mask: results/masks_ref/speck/6/masks_f_6_V0V1_inv_V0_invV1_inv2.txt
-  nbre_max_masks_load: 40
+  nbre_max_masks_load: 50
   research_new_masks: No
   nbre_generate_data_train_val: 1000
   nbre_necessaire_val_SV: 100
@@ -79,8 +79,8 @@ make_ToT:
 
 make_data_classifier:
   create_new_data_for_classifier: Yes
-  nbre_sample_train_classifier: 100000
-  nbre_sample_val_classifier: 100000
+  nbre_sample_train_classifier: 1000000
+  nbre_sample_val_classifier: 1000000
 
 compare_classifer:
   eval_nn_ref: Yes
@@ -93,7 +93,7 @@ compare_classifer:
   batch_size_our: 500
   retrain_with_import_features: No
   keep_number_most_impactfull: 30
-  quality_of_masks: Yes
+  quality_of_masks: No
   compute_independance_feature: Yes
   alpha_test: 0.05
   end_after_step4: No
