@@ -3,9 +3,10 @@ general:
   device: 2
   logs_tensorboard: ./results/test_v2/
   models_path: ./results/models_trained_v2/
+  models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 6
-  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  nombre_round_eval: 5
+  inputs_type: [ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1]
   #[ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1, inv(DeltaL)] #
   word_size: 16
   alpha: 7
@@ -16,14 +17,16 @@ general:
 train_nn:
   retain_model_gohr_ref: No    # Retrain le model de Gohr or load
   load_special: No
+  finetunning: Yes
+  model_finetunne: baseline
   load_nn_path: results/models_trained/speck/6/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/Gohr_baseline_best_nbre_sampletrain_10000000_prunning_0.8.pth
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline_bin        # baseline, cnn_attention, multihead, deepset
+  type_model: baseline_bin        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 30
+  num_epochs: 50
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001
@@ -100,13 +103,13 @@ compare_classifer:
 
 
 prunning:
-  model_to_prune: results/models_trained/speck/6/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_V0&inv(V1)_inv(V0)&inv(V1)/Gohr_baseline_best_nbre_sampletrain_10000000.pth
+  inputs_type_prunning: [ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1]
+  model_to_prune: results/biniraze_expe/5/ctdata0l^ctdata1l_inv(DeltaV)_inv(V0)&inv(V1)_inv(V0)&V1/Gohr_baseline_bin_best_nbre_sampletrain_10000000.pth
   values_prunning: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95]
-  layers_NOT_to_prune: []
+  layers_NOT_to_prune: [quantize_fn, act_q]
   save_model_prune: No
   logs_layers: No
   nbre_sample_eval_prunning: 100000
-
 
 
 

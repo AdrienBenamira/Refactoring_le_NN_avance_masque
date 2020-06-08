@@ -115,6 +115,7 @@ parser.add_argument("--layers_NOT_to_prune", default=config.prunning.layers_NOT_
 parser.add_argument("--save_model_prune", default=config.prunning.save_model_prune, type=str2bool)
 parser.add_argument("--logs_layers", default=config.prunning.logs_layers, type=str2bool)
 parser.add_argument("--nbre_sample_eval_prunning", default=config.prunning.nbre_sample_eval_prunning, type=two_args_str_int)
+parser.add_argument("--inputs_type_prunning", default=config.general.inputs_type, type=transform_input_type)
 
 
 
@@ -124,7 +125,7 @@ args.load_special = True
 args.logs_tensorboard = args.logs_tensorboard.replace("test.txt", "prunning")
 args.load_nn_path = args.model_to_prune
 args.nbre_sample_eval = args.nbre_sample_eval_prunning
-args.inputs_type = args.model_to_prune.split("/")[4].split("_")
+args.inputs_type = args.inputs_type_prunning
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #
@@ -145,14 +146,18 @@ nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, 
 nn_model_ref.load_nn()
 
 
-flag = True
+flag2 = True
 acc_retain=[]
 for global_sparsity in args.values_prunning:
     parameters_to_prune = []
     for name, module in nn_model_ref.net.named_modules():
         if len(name):
             if name not in ["layers_batch", "layers_conv"]:
-                if name not in args.layers_NOT_to_prune:
+                flag = True
+                for layer_forbidden in args.layers_NOT_to_prune:
+                    if layer_forbidden in name:
+                        flag = False
+                if flag:
                     parameters_to_prune.append((module, 'weight'))
     prune.global_unstructured(
         parameters_to_prune,
@@ -164,7 +169,11 @@ for global_sparsity in args.values_prunning:
     for name, module in nn_model_ref.net.named_modules():
         if len(name):
             if name not in ["layers_batch", "layers_conv"]:
-                if name not in args.layers_NOT_to_prune:
+                flag = True
+                for layer_forbidden in args.layers_NOT_to_prune:
+                    if layer_forbidden in name:
+                        flag = False
+                if flag:
                     tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
                     tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
 
@@ -175,9 +184,9 @@ for global_sparsity in args.values_prunning:
                             / float(module.weight.nelement())
                             )
                         )
-    if flag:
+    if flag2:
         nn_model_ref.eval_all(["val"])
-        flag = False
+        flag2 = False
     else:
         nn_model_ref.eval(["val"])
     acc_retain.append(nn_model_ref.acc)

@@ -27,6 +27,7 @@ parser.add_argument("--seed", default=config.general.seed, type=two_args_str_int
 parser.add_argument("--device", default=config.general.device, type=two_args_str_int, choices=[i for i in range(100)])
 parser.add_argument("--logs_tensorboard", default=config.general.logs_tensorboard)
 parser.add_argument("--models_path", default=config.general.models_path)
+parser.add_argument("--models_path_load", default=config.general.models_path_load)
 parser.add_argument("--cipher", default=config.general.cipher, choices=["speck", "simon", "aes228", "aes224", "simeck", "gimli"])
 parser.add_argument("--nombre_round_eval", default=config.general.nombre_round_eval, type=two_args_str_int)
 parser.add_argument("--inputs_type", default=config.general.inputs_type, type=transform_input_type)
@@ -38,12 +39,13 @@ parser.add_argument("--type_create_data", default=config.general.type_create_dat
 
 parser.add_argument("--retain_model_gohr_ref", default=config.train_nn.retain_model_gohr_ref, type=str2bool)
 parser.add_argument("--load_special", default=config.train_nn.load_special, type=str2bool)
+parser.add_argument("--finetunning", default=config.train_nn.finetunning, type=str2bool)
+parser.add_argument("--model_finetunne", default=config.train_nn.model_finetunne, choices=["baseline", "cnn_attention", "multihead", "deepset", "baseline_bin", "baseline_bin_v2"])
 parser.add_argument("--load_nn_path", default=config.train_nn.load_nn_path)
-
 parser.add_argument("--countinuous_learning", default=config.train_nn.countinuous_learning, type=str2bool)
 parser.add_argument("--curriculum_learning", default=config.train_nn.curriculum_learning, type=str2bool)
 parser.add_argument("--nbre_epoch_per_stage", default=config.train_nn.nbre_epoch_per_stage, type=two_args_str_int)
-parser.add_argument("--type_model", default=config.train_nn.type_model, choices=["baseline", "cnn_attention", "multihead", "deepset"])
+parser.add_argument("--type_model", default=config.train_nn.type_model, choices=["baseline", "cnn_attention", "multihead", "deepset", "baseline_bin", "baseline_bin_v2"])
 parser.add_argument("--nbre_sample_train", default=config.train_nn.nbre_sample_train, type=two_args_str_int)
 parser.add_argument("--nbre_sample_eval", default=config.train_nn.nbre_sample_eval, type=two_args_str_int)
 parser.add_argument("--num_epochs", default=config.train_nn.num_epochs, type=two_args_str_int)
@@ -151,11 +153,13 @@ nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, 
 if args.retain_model_gohr_ref:
     nn_model_ref.train_general(name_input)
 else:
-    #nn_model_ref.load_nn()
     try:
-        nn_model_ref.load_nn()
-        nn_model_ref.train_from_scractch(name_input + "fine-tune")
+        if args.finetunning:
+            nn_model_ref.load_nn()
+            nn_model_ref.train_from_scractch(name_input + "fine-tune")
         #nn_model_ref.eval(["val"])
+        else:
+            nn_model_ref.load_nn()
     except:
         print("ERROR")
         print("NO MODEL AVALAIBLE FOR THIS CONFIG")

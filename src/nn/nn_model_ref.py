@@ -12,6 +12,7 @@ from torch.autograd import Variable
 import numpy as np
 
 from src.nn.models.ModelBaseline_binarized import ModelPaperBaseline_bin
+from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
 from src.nn.models.Multi_Headed import Multihead
 from src.nn.models.deepset import DTanh
@@ -35,6 +36,7 @@ class NN_Model_Ref:
         self.t = Variable(torch.Tensor([0.5]))
         self.writer = writer
         self.path_save_model_train = path_save_model_train
+        self.path_load_model_train = path_save_model_train.replace(args.models_path, args.models_path_load)
         self.device =device
         self.rng =rng
         self.cipher = cipher
@@ -57,6 +59,8 @@ class NN_Model_Ref:
             return ModelPaperBaseline(self.args).to(self.device)
         if self.args.type_model=="baseline_bin":
             return ModelPaperBaseline_bin(self.args).to(self.device)
+        if self.args.type_model == "baseline_bin_v2":
+            return ModelPaperBaseline_bin2(self.args).to(self.device)
         if self.args.type_model=="cnn_attention":
             return Modelbaseline_CNN_ATTENTION(self.args).to(self.device)
         if self.args.type_model=="multihead":
@@ -97,11 +101,17 @@ class NN_Model_Ref:
         self.train(name_input)
 
     def load_nn(self):
-        if not self.args.load_special:
+        if self.args.finetunning:
+            self.net.load_state_dict(torch.load(
+                os.path.join(self.path_load_model_train,
+                             'Gohr_' + self.args.model_finetunne + '_best_nbre_sampletrain_' + str(
+                                 self.args.nbre_sample_train) + '.pth'),
+                map_location=self.device)['state_dict'], strict=False)
+        elif not self.args.load_special:
             self.net.load_state_dict(torch.load(
             os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'),
             map_location=self.device)['state_dict'], strict=False)
-        else:
+        elif self.args.load_special:
             self.net.load_state_dict(torch.load(self.args.load_nn_path,
                 map_location=self.device)['state_dict'], strict=False)
         self.net.to(self.device)
