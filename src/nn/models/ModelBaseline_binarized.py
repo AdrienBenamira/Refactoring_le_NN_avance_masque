@@ -14,7 +14,7 @@ class ModelPaperBaseline_bin(nn.Module):
         self.args = args
         Conv1d = conv1d_Q_fn(w_bit=1)
         Linear = linear_Q_fn(w_bit=1)
-        self.act_q = activation_quantize_fn(a_bit=2)
+        self.act_q = activation_quantize_fn(a_bit=args.a_bit)
         self.word_size = args.word_size
         self.conv0 = Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel0, kernel_size=1)
         self.BN0 = nn.BatchNorm1d(args.out_channel0, eps=0.01, momentum=0.99)

@@ -12,7 +12,6 @@ from torch.autograd import Variable
 import numpy as np
 
 from src.nn.models.ModelBaseline_binarized import ModelPaperBaseline_bin
-from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
 from src.nn.models.Multi_Headed import Multihead
 from src.nn.models.deepset import DTanh
@@ -59,8 +58,6 @@ class NN_Model_Ref:
             return ModelPaperBaseline(self.args).to(self.device)
         if self.args.type_model=="baseline_bin":
             return ModelPaperBaseline_bin(self.args).to(self.device)
-        if self.args.type_model == "baseline_bin_v2":
-            return ModelPaperBaseline_bin2(self.args).to(self.device)
         if self.args.type_model=="cnn_attention":
             return Modelbaseline_CNN_ATTENTION(self.args).to(self.device)
         if self.args.type_model=="multihead":

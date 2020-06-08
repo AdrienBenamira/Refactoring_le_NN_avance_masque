@@ -28,6 +28,7 @@ parser.add_argument("--seed", default=config.general.seed, type=two_args_str_int
 parser.add_argument("--device", default=config.general.device, type=two_args_str_int, choices=[i for i in range(100)])
 parser.add_argument("--logs_tensorboard", default=config.general.logs_tensorboard)
 parser.add_argument("--models_path", default=config.general.models_path)
+parser.add_argument("--models_path_load", default=config.general.models_path_load)
 parser.add_argument("--cipher", default=config.general.cipher, choices=["speck", "simon", "aes228", "aes224", "simeck", "gimli"])
 parser.add_argument("--nombre_round_eval", default=config.general.nombre_round_eval, type=two_args_str_int)
 parser.add_argument("--inputs_type", default=config.general.inputs_type, type=transform_input_type)
@@ -39,12 +40,13 @@ parser.add_argument("--type_create_data", default=config.general.type_create_dat
 
 parser.add_argument("--retain_model_gohr_ref", default=config.train_nn.retain_model_gohr_ref, type=str2bool)
 parser.add_argument("--load_special", default=config.train_nn.load_special, type=str2bool)
+parser.add_argument("--finetunning", default=config.train_nn.finetunning, type=str2bool)
+parser.add_argument("--model_finetunne", default=config.train_nn.model_finetunne, choices=["baseline", "cnn_attention", "multihead", "deepset", "baseline_bin"])
 parser.add_argument("--load_nn_path", default=config.train_nn.load_nn_path)
-
 parser.add_argument("--countinuous_learning", default=config.train_nn.countinuous_learning, type=str2bool)
 parser.add_argument("--curriculum_learning", default=config.train_nn.curriculum_learning, type=str2bool)
 parser.add_argument("--nbre_epoch_per_stage", default=config.train_nn.nbre_epoch_per_stage, type=two_args_str_int)
-parser.add_argument("--type_model", default=config.train_nn.type_model, choices=["baseline", "cnn_attention", "multihead", "deepset"])
+parser.add_argument("--type_model", default=config.train_nn.type_model, choices=["baseline", "cnn_attention", "multihead", "deepset", "baseline_bin"])
 parser.add_argument("--nbre_sample_train", default=config.train_nn.nbre_sample_train, type=two_args_str_int)
 parser.add_argument("--nbre_sample_eval", default=config.train_nn.nbre_sample_eval, type=two_args_str_int)
 parser.add_argument("--num_epochs", default=config.train_nn.num_epochs, type=two_args_str_int)
@@ -116,12 +118,13 @@ parser.add_argument("--save_model_prune", default=config.prunning.save_model_pru
 parser.add_argument("--logs_layers", default=config.prunning.logs_layers, type=str2bool)
 parser.add_argument("--nbre_sample_eval_prunning", default=config.prunning.nbre_sample_eval_prunning, type=two_args_str_int)
 parser.add_argument("--inputs_type_prunning", default=config.general.inputs_type, type=transform_input_type)
-
+parser.add_argument("--a_bit", default=config.train_nn.a_bit, type=two_args_str_int)
 
 
 args = parser.parse_args()
 
 args.load_special = True
+args.finetunning = False
 args.logs_tensorboard = args.logs_tensorboard.replace("test.txt", "prunning")
 args.load_nn_path = args.model_to_prune
 args.nbre_sample_eval = args.nbre_sample_eval_prunning
