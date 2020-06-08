@@ -48,7 +48,7 @@ class DTanh(nn.Module):
 
 
 
-  def forward(self, x, test = "test"):
+  def forward(self, x, test = "test.txt"):
     x = x.view(-1, len(self.args.inputs_type), self.args.word_size)
     x = torch.tanh(self.PermEqui1_mean1(x))
     shortcut = x.clone()

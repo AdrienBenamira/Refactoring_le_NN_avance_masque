@@ -121,7 +121,7 @@ parser.add_argument("--nbre_sample_eval_prunning", default=config.prunning.nbre_
 args = parser.parse_args()
 
 args.load_special = True
-args.logs_tensorboard = args.logs_tensorboard.replace("test", "prunning")
+args.logs_tensorboard = args.logs_tensorboard.replace("test.txt", "prunning")
 args.load_nn_path = args.model_to_prune
 args.nbre_sample_eval = args.nbre_sample_eval_prunning
 args.inputs_type = args.model_to_prune.split("/")[4].split("_")

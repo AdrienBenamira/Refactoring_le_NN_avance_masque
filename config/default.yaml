@@ -1,10 +1,10 @@
 general:
   seed: 0
   device: 2
-  logs_tensorboard: ./results/test/
-  models_path: ./results/models_trained/
+  logs_tensorboard: ./results/test_v2/
+  models_path: ./results/models_trained_v2/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 6
+  nombre_round_eval: 5
   inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, V0&inv(V1), inv(V0)&inv(V1)]
   #[ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1, inv(DeltaL)] #
   word_size: 16
@@ -20,10 +20,10 @@ train_nn:
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline        # baseline, cnn_attention, multihead, deepset
+  type_model: baseline_bin        # baseline, cnn_attention, multihead, deepset
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 30
+  num_epochs: 20
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001
@@ -42,31 +42,31 @@ train_nn:
   kernel_size1: 3
   num_workers: 2
   clip_grad_norm: 0.6
-  end_after_training: No
+  end_after_training: Yes
 
 
 getting_masks:
   load_masks: Yes
-  file_mask: results/masks_ref/speck/6/masks_f_6_V0V1_inv_V0_invV1_inv2.txt
-  nbre_max_masks_load: 50
+  file_mask: results/masks_ref/speck/masks_inter_round.txt
+  nbre_max_masks_load: -1
   research_new_masks: No
-  nbre_generate_data_train_val: 1000
-  nbre_necessaire_val_SV: 100
-  nbre_max_batch: 100
-  liste_segmentation_prediction: ["1, 0.5"]
-  liste_methode_extraction: [IntegratedGradients, IntegratedGradients_tunnel, DeepLift, GradientShap, FeatureAblation, Saliency, ShapleyValueSampling, Occlusion]
+  nbre_generate_data_train_val: 1000000
+  nbre_necessaire_val_SV: 5000
+  nbre_max_batch: 3
+  liste_segmentation_prediction: ["1, 0.9", "0.9, 0.5", "1, 0.8", "1, 0.5"]
+  liste_methode_extraction: [DeepLift, GradientShap, FeatureAblation, Saliency] #
   #[IntegratedGradients, IntegratedGradients_tunnel, DeepLift, GradientShap, FeatureAblation, Saliency, ShapleyValueSampling, Occlusion]
   #temps get_mask IntegratedGradients 0.6 for 100 samples
-  #temps get_mask IntegratedGradients_tunnel 3.7 for 100 samples
+  #temps get_mask IntegratedGradients_tunnel 3.7 for 100 samples NE PAS PRENDRE
   #temps get_mask DeepLift 0.02 for 100 samples
   #temps get_mask GradientShap 0.04 for 100 samples
   #temps get_mask FeatureAblation 0.2 for 100 samples
   #temps get_mask Saliency 0.03 for 100 samples
   #temps get_mask ShapleyValueSampling 4 for 100 samples
   #temps get_mask Occlusion 0.15 for 100 samples
-  liste_methode_selection: [PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
+  liste_methode_selection: [PCA, abs_sum, abs_median, abs_mean]
   #[PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
-  hamming_weigth: [16, 18]
+  hamming_weigth: [20]
   thr_value: []
   save_fig_plot_feature_before_mask: Yes
   end_after_step2: No
@@ -83,20 +83,20 @@ make_data_classifier:
   nbre_sample_val_classifier: 1000000
 
 compare_classifer:
-  eval_nn_ref: Yes
-  retrain_nn_ref: Yes
-  save_data_proba: Yes
+  eval_nn_ref: No
+  retrain_nn_ref: No
+  save_data_proba: No
   num_epch_2: 20
   batch_size_2: 500
   classifiers_ours: [NN, LGBM] # [NN, LGBM, RF]
-  num_epch_our: 20
+  num_epch_our: 60
   batch_size_our: 500
   retrain_with_import_features: No
-  keep_number_most_impactfull: 30
+  keep_number_most_impactfull: 40
   quality_of_masks: No
-  compute_independance_feature: Yes
+  compute_independance_feature: No
   alpha_test: 0.05
-  end_after_step4: No
+  end_after_step4: Yes
 
 
 prunning:

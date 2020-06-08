@@ -151,6 +151,13 @@ class All_classifier:
         X_DDTpd = pd.DataFrame(data=self.X_train_proba[:, indices],
                                columns=np.array(self.table_of_truth.features_name)[indices])
         clf = self.classifier_lgbm_general(X_DDTpd, self.X_eval_proba[:, indices], np.array(self.table_of_truth.features_name)[indices])
+
+
+        with open(self.path_save_model + "masks_all_most_imp.txt", "w") as file:
+            for i in range(len(self.args.inputs_type)):
+                file.write(str(list(np.array(self.get_masks_gen.masks[i])[indices])))
+                file.write("\n")
+
         return clf, indices
 
 
