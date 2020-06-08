@@ -4,8 +4,8 @@ general:
   logs_tensorboard: ./results/test_v2/
   models_path: ./results/models_trained_v2/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 5
-  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, V0&inv(V1), inv(V0)&inv(V1)]
+  nombre_round_eval: 6
+  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1, inv(DeltaL)] #
   word_size: 16
   alpha: 7
@@ -14,16 +14,16 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
   load_special: No
-  load_nn_path: results/models_trained/speck/6/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_V0&inv(V1)_inv(V0)&inv(V1)/Gohr_baseline_best_nbre_sampletrain_10000000.pth
+  load_nn_path: results/models_trained/speck/6/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/Gohr_baseline_best_nbre_sampletrain_10000000_prunning_0.8.pth
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
   type_model: baseline_bin        # baseline, cnn_attention, multihead, deepset
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 20
+  num_epochs: 30
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001

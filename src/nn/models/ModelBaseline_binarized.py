@@ -5,6 +5,7 @@ import numpy as np
 
 import math
 
+#DoReFaNet
 
 class ModelPaperBaseline_bin(nn.Module):
 

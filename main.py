@@ -151,9 +151,10 @@ nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, 
 if args.retain_model_gohr_ref:
     nn_model_ref.train_general(name_input)
 else:
-    nn_model_ref.load_nn()
+    #nn_model_ref.load_nn()
     try:
         nn_model_ref.load_nn()
+        nn_model_ref.train_from_scractch(name_input + "fine-tune")
         #nn_model_ref.eval(["val"])
     except:
         print("ERROR")
