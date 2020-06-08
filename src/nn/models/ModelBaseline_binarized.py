@@ -107,15 +107,7 @@ class BinaryTanh(nn.Module):
         output = binarize(output)
         return output
 
-"""class BinaryRelu(nn.Module):
-    def __init__(self):
-        super(BinaryTanh, self).__init__()
-        self.hardtanh = nn.Hardtanh()
 
-    def forward(self, input):
-        output = self.hardtanh(input)
-        output = binarize(output)
-        return output"""
 
 
 class BinaryLinear(nn.Linear):
