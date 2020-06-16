@@ -91,6 +91,14 @@ class Create_data_binary:
                 inputs_toput.append(ctdata0r)
             if args.inputs_type[i] =="ctdata1r":
                 inputs_toput.append(ctdata1r)
+            if args.inputs_type[i] =="V0&V1":
+                V0 = ctdata0l ^ ctdata0r
+                V1 = ctdata1l ^ ctdata1r
+                inputs_toput.append(V0&V1)
+            if args.inputs_type[i] =="V0|V1":
+                V0 = ctdata0l ^ ctdata0r
+                V1 = ctdata1l ^ ctdata1r
+                inputs_toput.append(V0 | V1)
             if args.inputs_type[i] =="ctdata0l^ctdata1l":
                 inputs_toput.append(ctdata0l^ctdata1l)
             if args.inputs_type[i] =="ctdata0l^ctdata0r":
