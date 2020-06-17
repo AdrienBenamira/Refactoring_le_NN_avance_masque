@@ -18,10 +18,16 @@ os.system(command)"""
 
 
 
-for model in ["baseline"]:
-    for round in ([5, 6, 7, 8]):
-        command = "python3 main.py --nombre_round_eval " + str(round) #+ " --inputs_type '[ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1]'   --load_nn_path results/models_trained/speck/6/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_V0&inv(V1)_inv(V0)&inv(V1)/Gohr_baseline_best_nbre_sampletrain_10000000.pth"
-        os.system(command)
+#for input in ['[ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r]', '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]', "[ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1]"]:
+
+command = "python3 main.py --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]'"
+os.system(command)
+
+command = "python3 main.py --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]'"
+os.system(command)
+
+command = "python3 main.py "
+os.system(command)
 
 
 

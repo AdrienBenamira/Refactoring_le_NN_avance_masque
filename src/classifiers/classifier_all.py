@@ -10,6 +10,10 @@ from sklearn import metrics
 from sklearn.metrics import confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.decomposition import PCA
 
 
 class All_classifier:
@@ -119,8 +123,24 @@ class All_classifier:
             'bootstrap': True,
             'dart': False
         }
+
+        scaler = StandardScaler().fit(X_DDTpd)
+        X_DDTpd = scaler.transform(X_DDTpd)
+        X_eval = scaler.transform(X_eval)
+        #poly = PolynomialFeatures(2)
+        #X_DDTpd = poly.fit_transform(X_DDTpd)
+        #X_eval = poly.fit_transform
+        #pca = PCA(n_components=50).fit(X_DDTpd)
+        #print(pca.explained_variance_ratio_)
+        #X_DDTpd = pca.transform(X_DDTpd)
+        #X_eval = pca.transform(X_eval)
+
+
         final_model = lgb.LGBMClassifier(**best_params_, random_state=self.args.seed)
+        cv_score_best = cross_val_score(final_model, X_DDTpd, self.Y_train_proba, cv=5, verbose=6)
+        print(cv_score_best.mean(), cv_score_best.std())
         final_model.fit(X_DDTpd, self.Y_train_proba)
+
         self.plot_feat_importance(final_model, features,
                                   self.path_save_model + "features_importances_LGBM_nbrefeat_"+str(len(features))+".png")
         y_pred = final_model.predict(X_eval)
