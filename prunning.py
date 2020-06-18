@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 from src.data_cipher.create_data import Create_data_binary
 from src.utils.initialisation_run import init_all_for_run, init_cipher
 
-
+import pandas as pd
+import numpy as np
 from src.utils.config import Config
 import argparse
 from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
@@ -198,21 +199,55 @@ for global_sparsity in args.values_prunning:
         x_input[2][6:8] = 1
         x_input[2][10:12] = 1
         x_input[2][14:] = 1
+
         for k in range(8):
             x_input[3][1 + 2*k] = 1
-        #nn_model_ref.net(x_input.unsqueeze(0))
-        #print(x_input)
+
+        x_input[:, 1] = 0
+        x_input[:, 2] = 0
+        x_input[:, 4] = 0
+        x_input[:, 7] = 0
+        x_input[:, 9] = 0
+        x_input[:, 10] = 0
+        x_input[:, 12] = 0
+        x_input[:, 15] = 0
+
+        df_dico = {}
+
+
+        print()
+        print(nn_model_ref.net.x_input)
+        print()
         for index_x, x in enumerate(nn_model_ref.net.shorcut):
             if torch.sum(x)>0:
                 print(index_x, x.detach().cpu().numpy())
-
         print()
-
-        for index_x, x in enumerate(nn_model_ref.net.x_dico[0][0]):
-            if torch.sum(x)>0:
+        for index_x, x in enumerate(nn_model_ref.net.classify):
+            if torch.sum(x) > 0:
                 print(index_x, x.detach().cpu().numpy())
 
+        nn_model_ref.net(x_input.unsqueeze(0))
+        print()
+        print(nn_model_ref.net.x_input)
+        print()
+        for index_x, x in enumerate(nn_model_ref.net.shorcut):
+
+            if torch.sum(x)>0:
+                df_dico[index_x] = x.detach().cpu().numpy()
+                print(index_x, x.detach().cpu().numpy())
+        print()
+        for index_x, x in enumerate(nn_model_ref.net.classify):
+            if torch.sum(x) > 0:
+                numpy_x = x.detach().cpu().numpy()
+                print(index_x, x.detach().cpu().numpy())
+        print()
+
+        df = pd.DataFrame.from_dict(df_dico)
+
+        print(df)
+        #df.to_csv("test.csv")
         print(ok)
+
     else:
         nn_model_ref.eval(["val"])
     acc_retain.append(nn_model_ref.acc)
