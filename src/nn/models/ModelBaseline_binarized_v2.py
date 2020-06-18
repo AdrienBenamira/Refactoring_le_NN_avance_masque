@@ -22,32 +22,28 @@ class ModelPaperBaseline_bin2(nn.Module):
         for i in range(args.numLayers - 1):
             if i ==0:
                 self.layers_conv.append(
-                    nn.Conv1d(in_channels=args.out_channel0, out_channels=args.out_channel1, kernel_size=2, padding =1))
+                    nn.Conv1d(in_channels=args.out_channel0, out_channels=args.out_channel1, kernel_size=3, padding =1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
             else:
                 self.layers_conv.append(
                 nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-        self.fc1 = nn.Linear(args.out_channel1 * (args.word_size + 1), args.hidden1)  # 6*6 from image dimension
+        self.fc1 = nn.Linear(args.out_channel1 * args.word_size, args.hidden1)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc3 = nn.Linear(args.hidden1, 1)
 
-
     def forward(self, x):
-
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
+        self.x_input = x[0]
         x = F.relu(self.BN0(self.conv0(x)))
         shortcut = x.clone()
-        col_zeros = torch.zeros((shortcut.shape[0], shortcut.shape[1], 1)).to(x.device)
-        shortcut = torch.cat([col_zeros, shortcut], dim=2)
         self.shorcut = shortcut[0]
         for i in range(len(self.layers_conv)):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
             x = F.relu(x)
-
             x = x + shortcut
         x = self.act_q(x)
         self.classify = x[0]
