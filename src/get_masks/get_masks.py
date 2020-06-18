@@ -9,7 +9,7 @@ from captum.attr import IntegratedGradients, DeepLift, GradientShap, NoiseTunnel
 import torch
 from sklearn.decomposition import PCA
 
-from alibi.explainers import AnchorTabular
+
 
 class Get_masks:
 
