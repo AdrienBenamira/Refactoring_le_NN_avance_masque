@@ -20,11 +20,13 @@ os.system(command)"""
 
 #for input in ['[ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r]', '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]', "[ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1]"]:
 
+command = "python3 main.py --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]'"
+os.system(command)
+
 command = "python3 main.py --inputs_type '[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]'"
 os.system(command)
 
-command = "python3 main.py --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]'"
-os.system(command)
+
 
 command = "python3 main.py "
 os.system(command)
