@@ -40,7 +40,7 @@ class ModelPaperBaseline_bin2(nn.Module):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
         x = F.relu(self.BN0(self.conv0(x)))
         shortcut = x.clone()
-        col_zeros = torch.zeros((shortcut.shape[0], shortcut.shape[1], 1))
+        col_zeros = torch.zeros((shortcut.shape[0], shortcut.shape[1], 1)).to(x.device)
         shortcut = torch.cat([col_zeros, shortcut], dim=2)
         self.shorcut = shortcut[0]
         for i in range(len(self.layers_conv)):
