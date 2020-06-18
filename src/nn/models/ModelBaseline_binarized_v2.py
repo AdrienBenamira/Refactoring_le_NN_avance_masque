@@ -38,6 +38,7 @@ class ModelPaperBaseline_bin2(nn.Module):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
         self.x_input = x[0]
         x = F.relu(self.BN0(self.conv0(x)))
+        x = self.act_q(x)
         shortcut = x.clone()
         self.shorcut = shortcut[0]
         for i in range(len(self.layers_conv)):
