@@ -39,7 +39,7 @@ class ModelPaperBaseline_bin2(nn.Module):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
             x = F.relu(x)
-            x = x + shortcut
+            x = self.act_q(x + shortcut)
         x = x.view(x.size(0), -1)
         x = F.relu(self.BN5(self.fc1(x)))
         self.intermediare = x.clone()

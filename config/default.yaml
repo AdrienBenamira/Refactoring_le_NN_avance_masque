@@ -6,7 +6,9 @@ general:
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 5
-  inputs_type: [ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1]
+  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  #[ctdata0l, ctdata0r, ctdata1l, ctdata1r]
+  #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1, inv(DeltaL)] #
   word_size: 16
   alpha: 7
@@ -27,7 +29,7 @@ train_nn:
   a_bit: 1
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 10
+  num_epochs: 5
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001
@@ -46,11 +48,11 @@ train_nn:
   kernel_size1: 3
   num_workers: 2
   clip_grad_norm: 0.6
-  end_after_training: No
+  end_after_training: Yes
 
 
 getting_masks:
-  load_masks: Yes
+  load_masks: No
   file_mask: results/masks_ref/speck/masks_inter_round.txt
   nbre_max_masks_load: -1
   research_new_masks: No
@@ -104,12 +106,12 @@ compare_classifer:
 
 
 prunning:
-  inputs_type_prunning: [ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1]
-  model_to_prune: ./results/test_binaire_train/speck/5/ctdata0l^ctdata1l_inv(DeltaV)_inv(V0)&inv(V1)_inv(V0)&V1/2020_06_09_15_25_32_261605/0.917762_bestacc.pth
-  values_prunning: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95]
+  inputs_type_prunning: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  model_to_prune: ./results/models_trained/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/Gohr_baseline_best_nbre_sampletrain_10000000.pth
+  values_prunning: [0.8, 0.85, 0.9, 0.95]
   layers_NOT_to_prune: [quantize_fn, act_q]
   save_model_prune: No
-  logs_layers: No
+  logs_layers: Yes
   nbre_sample_eval_prunning: 100000
 
 

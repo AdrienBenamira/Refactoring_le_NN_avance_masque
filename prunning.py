@@ -190,6 +190,29 @@ for global_sparsity in args.values_prunning:
     if flag2:
         nn_model_ref.eval_all(["val"])
         flag2 = False
+        x_input = torch.zeros((4,16))
+        x_input[0][8:]= 1
+        x_input[1][4:8] = 1
+        x_input[1][12:] = 1
+        x_input[2][2:4] = 1
+        x_input[2][6:8] = 1
+        x_input[2][10:12] = 1
+        x_input[2][14:] = 1
+        for k in range(8):
+            x_input[3][1 + 2*k] = 1
+        #nn_model_ref.net(x_input.unsqueeze(0))
+        #print(x_input)
+        for index_x, x in enumerate(nn_model_ref.net.shorcut):
+            if torch.sum(x)>0:
+                print(index_x, x.detach().cpu().numpy())
+
+        print()
+
+        for index_x, x in enumerate(nn_model_ref.net.x_dico[0][0]):
+            if torch.sum(x)>0:
+                print(index_x, x.detach().cpu().numpy())
+
+        print(ok)
     else:
         nn_model_ref.eval(["val"])
     acc_retain.append(nn_model_ref.acc)

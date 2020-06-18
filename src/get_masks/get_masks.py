@@ -9,6 +9,7 @@ from captum.attr import IntegratedGradients, DeepLift, GradientShap, NoiseTunnel
 import torch
 from sklearn.decomposition import PCA
 
+from alibi.explainers import AnchorTabular
 
 class Get_masks:
 
@@ -342,6 +343,8 @@ class Get_masks:
                 self.valmax_mnt) + "|" + str(self.valimin_mnt) + "number " + str(self.cpt) + " " + str(index_m)
             plt.legend(legends, loc=1)
             plt.savefig(self.path_file_models + title + ".png")
+
+
 
 
 

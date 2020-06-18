@@ -32,11 +32,13 @@ class ModelPaperBaseline(nn.Module):
         x = F.relu(self.BN0(self.conv0(x)))
         shortcut = x.clone()
         self.shorcut = shortcut[0]
+        self.x_dico = {}
         for i in range(len(self.layers_conv)):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
             x = F.relu(x)
             x = x + shortcut
+            self.x_dico[i] = x
         x = x.view(x.size(0), -1)
         x = F.relu(self.BN5(self.fc1(x)))
         self.intermediare = x.clone()
