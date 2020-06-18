@@ -22,7 +22,7 @@ class ModelPaperBaseline_bin2(nn.Module):
         for i in range(args.numLayers - 1):
             if i ==0:
                 self.layers_conv.append(
-                    nn.Conv1d(in_channels=args.out_channel0, out_channels=args.out_channel1, kernel_size=2, dilation = 2, padding = 1))
+                    nn.Conv1d(in_channels=args.out_channel0, out_channels=args.out_channel1, kernel_size=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
             else:
                 self.layers_conv.append(
