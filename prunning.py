@@ -16,6 +16,74 @@ from src.utils.config import Config
 import argparse
 from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
 import torch.nn.utils.prune as prune
+import math
+
+def generate_binary(n):
+
+  # 2^(n-1)  2^n - 1 inclusive
+  bin_arr = range(0, int(math.pow(2,n)))
+  bin_arr = [bin(i)[2:] for i in bin_arr]
+
+  # Prepending 0's to binary strings
+  max_len = len(max(bin_arr, key=len))
+  bin_arr = [i.zfill(max_len) for i in bin_arr]
+
+  return bin_arr
+
+def incremente_dico(nn_model_ref, index_sample, df_dico_second_tot, res2, df_dico_name_tot):
+    input_name = nn_model_ref.net.x_input[index_sample][:, 4:7].detach().cpu().numpy().transpose()
+    input_name2 = np.hstack([input_name[i, :] for i in range(input_name.shape[0])])
+    input_name3 = '_'.join(map(str, input_name2))
+    if input_name3 in list(df_dico_second_tot.keys()):
+        for k in range(len(res2[5])):
+            assert (res2[5][k] == df_dico_second_tot[input_name3][k])
+    else:
+        df_dico_second_tot[input_name3] = res2[5]
+        df_dico_name_tot[input_name3] = input_name2
+
+
+    input_name = nn_model_ref.net.x_input[index_sample][:, 5:8].detach().cpu().numpy().transpose()
+    input_name2 = np.hstack([input_name[i, :] for i in range(input_name.shape[0])])
+    input_name3 = '_'.join(map(str, input_name2))
+    if input_name3 in list(df_dico_second_tot.keys()):
+        for k in range(len(res2[6])):
+            assert (res2[6][k] == df_dico_second_tot[input_name3][k])
+    else:
+        df_dico_second_tot[input_name3] = res2[6]
+        df_dico_name_tot[input_name3] = input_name2
+
+    input_name = nn_model_ref.net.x_input[index_sample][:, 6:9].detach().cpu().numpy().transpose()
+    input_name2 = np.hstack([input_name[i, :] for i in range(input_name.shape[0])])
+    input_name3 = '_'.join(map(str, input_name2))
+    if input_name3 in list(df_dico_second_tot.keys()):
+        for k in range(len(res2[7])):
+            assert (res2[7][k] == df_dico_second_tot[input_name3][k])
+    else:
+        df_dico_second_tot[input_name3] = res2[7]
+        df_dico_name_tot[input_name3] = input_name2
+
+    input_name = nn_model_ref.net.x_input[index_sample][:, 7:10].detach().cpu().numpy().transpose()
+    input_name2 = np.hstack([input_name[i, :] for i in range(input_name.shape[0])])
+    input_name3 = '_'.join(map(str, input_name2))
+    if input_name3 in list(df_dico_second_tot.keys()):
+        for k in range(len(res2[8])):
+            assert (res2[8][k] == df_dico_second_tot[input_name3][k])
+    else:
+        df_dico_second_tot[input_name3] = res2[8]
+        df_dico_name_tot[input_name3] = input_name2
+
+    input_name = nn_model_ref.net.x_input[index_sample][:, 8:11].detach().cpu().numpy().transpose()
+    input_name2 = np.hstack([input_name[i, :] for i in range(input_name.shape[0])])
+    input_name3 = '_'.join(map(str, input_name2))
+    if input_name3 in list(df_dico_second_tot.keys()):
+        for k in range(len(res2[9])):
+            assert (res2[9][k] == df_dico_second_tot[input_name3][k])
+    else:
+        df_dico_second_tot[input_name3] = res2[9]
+        df_dico_name_tot[input_name3] = input_name2
+
+    return df_dico_second_tot, df_dico_name_tot
+
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
@@ -192,6 +260,40 @@ for global_sparsity in args.values_prunning:
         nn_model_ref.eval_all(["val"])
         flag2 = False
         x_input = torch.zeros((4,16))
+        arr2 = generate_binary(9)
+        l = []
+        for x in arr2:
+            l += [np.array([int(d) for d in x])]
+        l2 = np.array(l)
+        #print(l2.shape)
+        l3 = l2.reshape(-1, 3, 3)
+        #print(l3)
+        #print(l3.shape)
+        l4 = np.transpose(l3, axes=(0,2,1))
+        #print(l4)
+        #print(l4.shape)
+        #print("-"*10)
+
+        V0 = l4[:,1,:]
+        V1 = l4[:, 2, :]
+        Dv = V0^V1
+        x_input_f = np.insert(l4, 1, Dv, 1)
+
+        #print(x_input_f)
+        #print(x_input_f.shape)
+
+        rest = np.zeros((512,4,6))
+        rest2 = np.zeros((512, 4, 7))
+
+        x_input_f1b = np.append(rest, x_input_f, axis=2)
+        x_input_f2 = np.append(x_input_f1b, rest2, axis=2)
+        #print(x_input_f2)
+        #print(x_input_f2.shape)
+
+        x_input_f2 = torch.Tensor(x_input_f2)
+
+        """print(ok)
+
         x_input[0][8:]= 1
         x_input[1][4:8] = 1
         x_input[1][12:] = 1
@@ -210,43 +312,29 @@ for global_sparsity in args.values_prunning:
         x_input[:, 9] = 0
         x_input[:, 10] = 0
         x_input[:, 12] = 0
-        x_input[:, 15] = 0
+        x_input[:, 15] = 0"""
 
-        df_dico = {}
+        df_dico_name_tot = {}
+        df_dico_second_tot = {}
+
+        nn_model_ref.net(x_input_f2)
+        for index in range(nn_model_ref.net.x_input.shape[0]):
+            res = []
+            for index_x, x in enumerate(nn_model_ref.net.classify[index]):
+                res.append(x.detach().cpu().numpy())
+            res2 = np.array(res).transpose()
+            df_dico_second_tot, df_dico_name_tot = incremente_dico(nn_model_ref, index, df_dico_second_tot, res2, df_dico_name_tot)
 
 
-        print()
-        print(nn_model_ref.net.x_input)
-        print()
-        for index_x, x in enumerate(nn_model_ref.net.shorcut):
-            if torch.sum(x)>0:
-                print(index_x, x.detach().cpu().numpy())
-        print()
-        for index_x, x in enumerate(nn_model_ref.net.classify):
-            if torch.sum(x) > 0:
-                print(index_x, x.detach().cpu().numpy())
 
-        nn_model_ref.net(x_input.unsqueeze(0))
-        print()
-        print(nn_model_ref.net.x_input)
-        print()
-        for index_x, x in enumerate(nn_model_ref.net.shorcut):
+        df = pd.DataFrame.from_dict(df_dico_second_tot)
+        df_name = pd.DataFrame.from_dict(df_dico_name_tot)
 
-            if torch.sum(x)>0:
-                df_dico[index_x] = x.detach().cpu().numpy()
-                print(index_x, x.detach().cpu().numpy())
-        print()
-        for index_x, x in enumerate(nn_model_ref.net.classify):
-            if torch.sum(x) > 0:
-                numpy_x = x.detach().cpu().numpy()
-                print(index_x, x.detach().cpu().numpy())
-        print()
+        df2 = df.T
+        df2_name = df_name.T
 
-        df = pd.DataFrame.from_dict(df_dico)
-
-        print(df)
-        #df.to_csv("test.csv")
-        print(ok)
+        df2.to_csv("table_of_tructh_0922_prunning.csv")
+        df2_name.to_csv("table_of_tructh_0922_name_pruning.csv")
 
     else:
         nn_model_ref.eval(["val"])

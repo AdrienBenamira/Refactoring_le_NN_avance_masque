@@ -37,14 +37,14 @@ train_nn:
   weight_decay_nn: 0.00001
   momentum_nn: 0.9 #only for SGD
   optimizer_type: Adam #Adam - AdamW - SGD
-  scheduler_type: CyclicLR #CyclicLR - None
+  scheduler_type: None #CyclicLR - None
   base_lr:  0.001      #Only if CyclicLR
   max_lr: 0.002        #Only if CyclicLR
   demicycle_1: 6  #Only if CyclicLR
   numLayers: 2
-  out_channel0: 32
-  out_channel1: 32
-  hidden1: 64
+  out_channel0: 64
+  out_channel1: 64
+  hidden1: 128
   kernel_size0: 1
   kernel_size1: 3
   num_workers: 2
@@ -108,9 +108,9 @@ compare_classifer:
 
 prunning:
   inputs_type_prunning: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
-  model_to_prune: ./results/results_binary/2020_06_18_18_17_53_541695/0.917202_bestacc.pth
-  values_prunning: [0.3, 0.8, 0.85, 0.9, 0.95]
-  layers_NOT_to_prune: [quantize_fn, act_q]
+  model_to_prune: ./results/results_binary_922/0.920842_bestacc.pth
+  values_prunning: [0.4]
+  layers_NOT_to_prune: [quantize_fn, act_q, fc, BN]
   save_model_prune: No
   logs_layers: Yes
   nbre_sample_eval_prunning: 100000
