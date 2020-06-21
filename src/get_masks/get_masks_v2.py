@@ -95,7 +95,7 @@ class Get_masks_v2:
         inputs_t, labels_t = data_t
         inputs_v, labels_v = data_v
         # out_net_train = self.net(inputs_t).squeeze(1)
-        out_net_val = self.net(inputs_v)
+        out_net_val = self.net(inputs_v.to(self.device))
         preds_val = (out_net_val.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
         TP_val = (preds_val.eq(1) & labels_v.eq(1)).cpu()
         TN_val = (preds_val.eq(0) & labels_v.eq(0)).cpu()
