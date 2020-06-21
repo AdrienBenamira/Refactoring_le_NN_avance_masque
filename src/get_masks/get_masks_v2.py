@@ -65,7 +65,7 @@ class Get_masks_v2:
     def extract_DL(self, X_test):
         dl = DeepLift(self.net)
         start = time.time()
-        dl_attr_test = dl.attribute(X_test)
+        dl_attr_test = dl.attribute(X_test.to(self.device))
         print("temps train", time.time() - start)
         return dl_attr_test.detach().numpy()
 
