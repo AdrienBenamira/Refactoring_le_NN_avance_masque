@@ -7,10 +7,10 @@ import math
 
 #DoReFaNet
 
-class ModelPaperBaseline_bin2(nn.Module):
+class NN_linear(nn.Module):
 
     def __init__(self, args):
-        super(ModelPaperBaseline_bin2, self).__init__()
+        super(NN_linear, self).__init__()
         self.args = args
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
@@ -35,21 +35,6 @@ class ModelPaperBaseline_bin2(nn.Module):
         self.fc3 = nn.Linear(args.hidden1, 1)
 
     def forward(self, x):
-        x = x.view(-1, len(self.args.inputs_type), self.word_size)
-        self.x_input = x
-        x = F.relu(self.BN0(self.conv0(x)))
-        x = self.act_q(x)
-        shortcut = x.clone()
-        self.shorcut = shortcut
-        for i in range(len(self.layers_conv)):
-            x = self.layers_conv[i](x)
-            x = self.layers_batch[i](x)
-            x = F.relu(x)
-            x = x + shortcut
-        x = self.act_q(x)
-        self.classify = x
-        x = x.view(x.size(0), -1)
-        self.intermediare = x.clone()
         x = F.relu(self.BN5(self.fc1(x)))
         x = F.relu(self.BN6(self.fc2(x)))
         x = self.fc3(x)

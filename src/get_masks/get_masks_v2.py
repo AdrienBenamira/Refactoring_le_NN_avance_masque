@@ -8,10 +8,10 @@ from captum.attr import Saliency, ShapleyValueSampling
 from captum.attr import IntegratedGradients, DeepLift, GradientShap, NoiseTunnel, FeatureAblation, Occlusion
 import torch
 from sklearn.decomposition import PCA
+import collections
 
 
-
-class Get_masks:
+class Get_masks_v2:
 
 
     def __init__(self, args, net, path_file_models, rng, creator_data_binary, device):
@@ -21,6 +21,9 @@ class Get_masks:
         self.net = net
         self.all_masks = []
         self.masks = [[] for x in range(len(self.args.inputs_type))]
+
+        self.masks_v2 = []
+
         self.masks_infos = []
         self.path_file_models = path_file_models
         self.rng = rng
@@ -76,10 +79,10 @@ class Get_masks:
 
 
     def create_data(self):
-        self.X_deltaout_train, self.Y_tf, _, _, _, _= self.creator_data_binary.make_data(
+        """self.X_deltaout_train, self.Y_tf, _, _, _, _= self.creator_data_binary.make_data(
             self.args.nbre_generate_data_train_val);
         self.X_eval, self.Y_eval, _, _, _, _ = self.creator_data_binary.make_data(
-            self.args.nbre_generate_data_train_val);
+            self.args.nbre_generate_data_train_val);"""
         data_train = DataLoader_cipher_binary(self.X_deltaout_train, self.Y_tf, self.device)
         self.dataloader_train = DataLoader(data_train, batch_size=self.args.batch_size,
                                       shuffle=False, num_workers=self.args.num_workers)
@@ -238,11 +241,21 @@ class Get_masks:
         return all_v
 
     def transform_into_mask_hw(self, data_X_bin2, key, methode_selection):
-        nbit = self.args.word_size * len(self.args.inputs_type)
+        #nbit = self.args.word_size * len(self.args.inputs_type)
+        nbit = 1024
         for thrh in self.args.hamming_weigth:
             mask = np.zeros(nbit)
             all_vmask = np.argsort(data_X_bin2)[::-1][:int(thrh)]
             mask[all_vmask] = 1
+            flag_add_2 = True
+            if len(self.masks_v2)>0:
+                for elem in self.masks_v2:
+                    if (elem == mask).all():
+                        flag_add_2=False
+                        #self.masks_v2.append(mask)
+            if flag_add_2:
+                self.masks_v2.append(mask)
+            print(len(self.masks_v2))
             masks_for_moment = []
             for index_m in range(len(self.args.inputs_type)):
                 masks_for_moment.append(int("".join(str(int(x)) for x in mask[ self.args.word_size * index_m: self.args.word_size * index_m +  self.args.word_size]), 2))
@@ -312,7 +325,9 @@ class Get_masks:
             #axs = axs.ravel()
 
 
-            x_axis_data = np.arange(self.args.word_size * len(self.args.inputs_type))
+            #x_axis_data = np.arange(self.args.word_size * len(self.args.inputs_type))
+            x_axis_data = np.arange(1024)
+
             width = 0.14
             #x_axis_data_labels = list(map(lambda idx: feature_names[idx], x_axis_data))
 

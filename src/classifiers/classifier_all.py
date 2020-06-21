@@ -86,11 +86,35 @@ class All_classifier:
         Y_eval_proba =  nn_model_ref.Y_val_nn_binaire
         print("START RETRAIN LINEAR NN GOHR ")
         print()
-        net_retrain, h = train_speck_distinguisher(args, X_train_proba_feat.shape[1], X_train_proba_feat,
+        """net_retrain, h = train_speck_distinguisher(args, X_train_proba_feat.shape[1], X_train_proba_feat,
                                                    Y_train_proba, X_eval_proba_feat, Y_eval_proba,
                                                    bs=args.batch_size_2,
                                                    epoch=args.num_epch_2, name_ici="retrain_nn_gohr",
-                                                   wdir=self.path_save_model)
+                                                   wdir=self.path_save_model)"""
+
+
+
+        from alibi.explainers import AnchorTabular
+        #from alibi.explainers import AnchorImage
+        from sklearn.ensemble import RandomForestClassifier
+
+        clf = RandomForestClassifier(n_estimators=50)
+        clf.fit(X_train_proba_feat, Y_train_proba)
+        predict_fn = lambda x: clf.predict_proba(x)
+        feature_names = [i for i in range(X_train_proba_feat.shape[1])]
+        explainer = AnchorTabular(predict_fn, feature_names)
+        idx = 0
+        explainer.fit(X_train_proba_feat, disc_perc=(25))
+        print('Prediction: ', explainer.predictor(X_eval_proba_feat[idx].reshape(1, -1))[0])
+
+        #print('Prediction: ', explainer.predict_fn(X_eval_proba_feat[idx].reshape(1, -1))[0])
+        explanation = explainer.explain(X_eval_proba_feat[idx], threshold=0.8)
+        print('Anchor: %s' % (' AND '.join(explanation['names'])))
+        print('Precision: %.2f' % explanation['precision'])
+        print('Coverage: %.2f' % explanation['coverage'])
+
+        print(ok)
+
 
 
 

@@ -37,7 +37,7 @@ def make_checkpoint(datei):
     res = ModelCheckpoint(datei, monitor='val_loss', save_best_only=True);
     return (res);
 
-def make_classifier(input_size=84, d1=64, d2=64, final_activation='sigmoid'):
+def make_classifier(input_size=84, d1=128, d2=64, final_activation='sigmoid'):
     # Input and preprocessing layers
     inp = Input(shape=(input_size,));
     dense1 = Dense(d1)(inp);
@@ -47,7 +47,7 @@ def make_classifier(input_size=84, d1=64, d2=64, final_activation='sigmoid'):
     model = Model(inputs=inp, outputs=out);
     return (model);
 
-def make_classifier2(input_size=84, d1=64, d2=64, final_activation='sigmoid'):
+def make_classifier2(input_size=84, d1=1024, d2=512, final_activation='sigmoid'):
     # Input and preprocessing layers
     inp = Input(shape=(input_size,));
     dense1 = Dense(d1)(inp);
@@ -60,7 +60,7 @@ def make_classifier2(input_size=84, d1=64, d2=64, final_activation='sigmoid'):
     model = Model(inputs=inp, outputs=out);
     return (model);
 
-def train_speck_distinguisher(args, n_feat, X, Y, X_eval, Y_eval, epoch, bs, name_ici="", wdir= "./", flag_3layes=True):
+def train_speck_distinguisher(args, n_feat, X, Y, X_eval, Y_eval, epoch, bs, name_ici="", wdir= "./", flag_3layes=False):
     # create the network
     if flag_3layes:
         net = make_classifier(input_size=n_feat);
