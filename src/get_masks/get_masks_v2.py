@@ -67,7 +67,7 @@ class Get_masks_v2:
         start = time.time()
         dl_attr_test = dl.attribute(X_test.to(self.device))
         print("temps train", time.time() - start)
-        return dl_attr_test.detach().numpy()
+        return dl_attr_test.detach().cpu().numpy()
 
     def extract_IG(self, X_test, steps=50):
         ig = IntegratedGradients(self.net)
