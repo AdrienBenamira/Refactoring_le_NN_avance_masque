@@ -265,11 +265,21 @@ class Get_masks_v2:
 
 
     def transform_into_mask_thr(self, data_X_bin2,key, methode_selection):
-        nbit = self.args.word_size * len(self.args.inputs_type)
+        #nbit = self.args.word_size * len(self.args.inputs_type)
+        nbit = 1024
         for thrh in self.args.thr_value:
             mask = np.zeros(nbit)
             all_vmask = data_X_bin2 > thrh
             mask[all_vmask] = 1
+            flag_add_2 = True
+            if len(self.masks_v2) > 0:
+                for elem in self.masks_v2:
+                    if (elem == mask).all():
+                        flag_add_2 = False
+                        # self.masks_v2.append(mask)
+            if flag_add_2:
+                self.masks_v2.append(mask)
+            print(len(self.masks_v2))
             masks_for_moment = []
             for index_m in range(len(self.args.inputs_type)):
                 masks_for_moment.append(int("".join(str(int(x)) for x in mask[ self.args.word_size * index_m: self.args.word_size * index_m +  self.args.word_size]), 2))

@@ -325,9 +325,10 @@ for moment, _ in enumerate(tqdm(get_masks_gen.masks_v2)):
             liste_inputsmasked.append(res_ici_v & res22222)
         flag_do_it = False
     else:
+        #liste_inputsmasked_array = np.load("input_DDT.npy",allow_pickle=True)
+        #liste_input_int = liste_inputsmasked_array.tolist()
         for index, input_v in enumerate(tqdm(liste_input_int)):
             liste_inputsmasked.append(input_v & res22222)
-
     vals, counts = np.unique(liste_inputsmasked, return_counts=True)
     nbre_param_ddt += len(vals)
     nbre_param = len(vals)
@@ -349,7 +350,8 @@ for moment, _ in enumerate(tqdm(get_masks_gen.masks_v2)):
     sv = dict(zip(vals, p_speck_sachant_input_masks))
     ToT[name_input_cic] = sv
 
-
+liste_inputsmasked_array = np.array(liste_input_int)
+np.save(path_save_model + "input_DDT.npy", liste_inputsmasked_array)
 print()
 print("NUMBER OF ENTRIES IN DDT :", nbre_param_ddt)
 print()
@@ -442,7 +444,7 @@ generator_data.X_proba_val = X_proba_val
 
 
 args.save_data_proba = True
-args.classifiers_ours = ["LGBM", "NN"]
+args.classifiers_ours = ["NN", "LGBM"]
 
 table_of_truth.features_name = features_name
 all_clfs = All_classifier(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth)
