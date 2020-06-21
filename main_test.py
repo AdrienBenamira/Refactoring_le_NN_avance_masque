@@ -235,16 +235,16 @@ nn_model_ref.eval_all(["train", "val"])
 
 net_linear = NN_linear(args)
 
-net_linear.fc1.weight = nn_model_ref.net.fc1.weight
-net_linear.fc2.weight = nn_model_ref.net.fc2.weight
-net_linear.fc3.weight = nn_model_ref.net.fc3.weight
-net_linear.BN5.weight = nn_model_ref.net.BN5.weight
-net_linear.BN6.weight = nn_model_ref.net.BN6.weight
+net_linear.fc1.weight = nn_model_ref.net.fc1.weight.to(device)
+net_linear.fc2.weight = nn_model_ref.net.fc2.weight.to(device)
+net_linear.fc3.weight = nn_model_ref.net.fc3.weight.to(device)
+net_linear.BN5.weight = nn_model_ref.net.BN5.weight.to(device)
+net_linear.BN6.weight = nn_model_ref.net.BN6.weight.to(device)
 
 net_all = nn_model_ref.net
 del nn_model_ref.net
 #change model
-nn_model_ref.net = net_linear
+nn_model_ref.net = net_linear.to(device)
 #change data
 nn_model_ref.X_train_nn_binaire = nn_model_ref.all_intermediaire
 nn_model_ref.X_val_nn_binaire = nn_model_ref.all_intermediaire_val
