@@ -72,9 +72,9 @@ class Get_masks_v2:
     def extract_IG(self, X_test, steps=50):
         ig = IntegratedGradients(self.net)
         start = time.time()
-        ig_attr_test = ig.attribute(X_test, n_steps=steps)
+        ig_attr_test = ig.attribute(X_test.to(self.device), n_steps=steps)
         print("temps train", time.time() - start)
-        return ig_attr_test.detach().numpy()
+        return ig_attr_test.detach().cpu().numpy()
 
 
 
@@ -112,7 +112,7 @@ class Get_masks_v2:
         preds2_val2 = (out_net_val.squeeze(1) >= self.t2.to(self.device)).float().cpu() * 1
         preds2_val = (preds2_val1.eq(1) & preds2_val2.eq(1)).cpu()
         interet = preds2_val & interet_1
-        nbre_interet = interet.detach().numpy().sum(0)
+        nbre_interet = interet.detach().cpu().numpy().sum(0)
         nbre_iter_max = nbre_interet // self.args.nbre_necessaire_val_SV
         data_X_bin = inputs_v[interet]
         data_Y = labels_v[interet]
@@ -149,47 +149,47 @@ class Get_masks_v2:
         ig = IntegratedGradients(self.net)
         ig_nt = NoiseTunnel(ig)
         start = time.time()
-        ig_nt_attr_test = ig_nt.attribute(X_test)
+        ig_nt_attr_test = ig_nt.attribute(X_test.to(self.device))
         print("temps train", time.time() - start)
-        return ig_nt_attr_test.detach().numpy()
+        return ig_nt_attr_test.detach().cpu().numpy()
 
 
     def extract_GS(self, X_train, X_test):
         gs = GradientShap(self.net)
         start = time.time()
-        gs_attr_test = gs.attribute(X_test, X_train)
+        gs_attr_test = gs.attribute(X_test.to(self.device), X_train.to(self.device))
         print("temps train", time.time() - start)
-        return gs_attr_test.detach().numpy()
+        return gs_attr_test.detach().cpu().numpy()
 
 
     def extract_FA(self, X_test):
         fa = FeatureAblation(self.net)
         start = time.time()
-        fa_attr_test = fa.attribute(X_test)
+        fa_attr_test = fa.attribute(X_test.to(self.device))
         print("temps train", time.time() - start)
-        return fa_attr_test.detach().numpy()
+        return fa_attr_test.detach().cpu().numpy()
 
     def extract_Sa(self, X_test):
         saliency = Saliency(self.net)
         start = time.time()
-        saliency_attr_test = saliency.attribute(X_test)
+        saliency_attr_test = saliency.attribute(X_test.to(self.device))
         print("temps train", time.time() - start)
-        return saliency_attr_test.detach().numpy()
+        return saliency_attr_test.detach().cpu().numpy()
 
     def extract_SV(self, X_test):
         Sv = ShapleyValueSampling(self.net)
         start = time.time()
-        sv_attr_test = Sv.attribute(X_test)
+        sv_attr_test = Sv.attribute(X_test.to(self.device))
         print("temps train", time.time() - start)
-        return sv_attr_test.detach().numpy()
+        return sv_attr_test.detach().cpu().numpy()
 
 
     def extract_Oc(self, X_test, sliding_window = (4,)):
         oc = Occlusion(self.net)
         start = time.time()
-        oc_attr_test = oc.attribute(X_test, sliding_window_shapes=sliding_window)
+        oc_attr_test = oc.attribute(X_test.to(self.device), sliding_window_shapes=sliding_window)
         print("temps train", time.time() - start)
-        return oc_attr_test.detach().numpy()
+        return oc_attr_test.detach().cpu().numpy()
 
     def apply_selection(self, dico_res_dico):
         for_plot_dico = {}
