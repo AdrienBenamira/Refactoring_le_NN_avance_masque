@@ -325,7 +325,8 @@ for moment, _ in enumerate(tqdm(get_masks_gen.masks_v2)):
             liste_inputsmasked.append(res_ici_v & res22222)
         flag_do_it = False
     else:
-        liste_inputsmasked_array = np.load("input_DDT.npy",allow_pickle=True)
+        path = "./results/test_v2/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_06_22_03_26_31_116493/"
+        liste_inputsmasked_array = np.load(path + "input_DDT.npy",allow_pickle=True)
         liste_input_int = liste_inputsmasked_array.tolist()
         for index, input_v in enumerate(tqdm(liste_input_int)):
             liste_inputsmasked.append(input_v & res22222)
@@ -351,7 +352,7 @@ for moment, _ in enumerate(tqdm(get_masks_gen.masks_v2)):
     ToT[name_input_cic] = sv
 
 #liste_inputsmasked_array = np.array(liste_input_int)
-#np.save(path_save_model + "input_DDT.npy", liste_inputsmasked_array)
+#np.save("input_DDT.npy", liste_inputsmasked_array)
 print()
 print("NUMBER OF ENTRIES IN DDT :", nbre_param_ddt)
 print()
