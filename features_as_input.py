@@ -120,6 +120,9 @@ parser.add_argument("--save_data_proba", default=config.compare_classifer.save_d
 
 args = parser.parse_args()
 
+args.logs_tensorboard = args.logs_tensorboard.replace("test", "feature_as_inpput")
+
+
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #

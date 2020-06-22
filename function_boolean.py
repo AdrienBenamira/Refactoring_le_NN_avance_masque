@@ -4,8 +4,8 @@ warnings.filterwarnings('ignore',category=FutureWarning)
 import torch
 import os
 from src.nn.nn_model_ref import NN_Model_Ref
-from sympy.logic import SOPform, POSform
-from sympy import symbols
+import matplotlib.pyplot as plt
+
 
 from src.data_cipher.create_data import Create_data_binary
 from src.utils.initialisation_run import init_all_for_run, init_cipher
@@ -17,58 +17,6 @@ import argparse
 from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
 import torch.nn.utils.prune as prune
 import math
-
-def generate_binary(n):
-
-  # 2^(n-1)  2^n - 1 inclusive
-  bin_arr = range(0, int(math.pow(2,n)))
-  bin_arr = [bin(i)[2:] for i in bin_arr]
-
-  # Prepending 0's to binary strings
-  max_len = len(max(bin_arr, key=len))
-  bin_arr = [i.zfill(max_len) for i in bin_arr]
-
-  return bin_arr
-
-def incremente_dico(nn_model_ref, index_sample, df_dico_second_tot, res2, df_dico_name_tot):
-    for index_interet in range(5):
-        input_name = nn_model_ref.net.x_input[index_sample][:, 4+index_interet:7+index_interet].detach().cpu().numpy().transpose()
-        input_name2 = np.hstack([input_name[i, :] for i in range(input_name.shape[0])])
-        input_name3 = '_'.join(map(str, input_name2))
-        if input_name3 in list(df_dico_second_tot.keys()):
-            for k in range(len(res2[5+index_interet])):
-                assert (res2[5+index_interet][k] == df_dico_second_tot[input_name3][k])
-        else:
-            df_dico_second_tot[input_name3] = res2[5+index_interet]
-            df_dico_name_tot[input_name3] = input_name2
-
-
-    input_name = nn_model_ref.net.x_input[index_sample][:, :2].detach().cpu().numpy().transpose()
-    input_name2 = np.hstack([input_name[i, :] for i in range(input_name.shape[0])])
-    input_name3 = '_'.join(map(str, input_name2))
-    input_name4 = "PAD_PAD_PAD_PAD_" + input_name3
-    input_name6 = np.append(np.array(["PAD", "PAD", "PAD", "PAD"]), input_name2, axis=0)
-    if input_name4 in list(df_dico_second_tot.keys()):
-        for k in range(len(res2[0])):
-            assert (res2[0][k] == df_dico_second_tot[input_name4][k])
-    else:
-        df_dico_second_tot[input_name4] = res2[0]
-        df_dico_name_tot[input_name4] = input_name6
-
-    input_name = nn_model_ref.net.x_input[index_sample][:, -2:].detach().cpu().numpy().transpose()
-    input_name2 = np.hstack([input_name[i, :] for i in range(input_name.shape[0])])
-    input_name3 = '_'.join(map(str, input_name2))
-    input_name4 =  input_name3 + "_PAD_PAD_PAD_PAD"
-    input_name6 = np.append(input_name2, np.array(["PAD", "PAD", "PAD", "PAD"]), axis=0)
-    if input_name4 in list(df_dico_second_tot.keys()):
-        for k in range(len(res2[0])):
-            assert (res2[0][k] == df_dico_second_tot[input_name4][k])
-    else:
-        df_dico_second_tot[input_name4] = res2[0]
-        df_dico_name_tot[input_name4] = input_name6
-
-
-    return df_dico_second_tot, df_dico_name_tot
 
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -180,7 +128,7 @@ args = parser.parse_args()
 
 args.load_special = True
 args.finetunning = False
-args.logs_tensorboard = args.logs_tensorboard.replace("test", "table_of_truth")
+args.logs_tensorboard = args.logs_tensorboard.replace("test", "function_bool")
 args.load_nn_path = args.model_to_prune
 args.nbre_sample_eval = args.nbre_sample_eval_prunning
 args.inputs_type = args.inputs_type_prunning
@@ -198,221 +146,112 @@ creator_data_binary = Create_data_binary(args, cipher, rng)
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 print("---" * 100)
-print("TABLE OF TRUTH")
+print("FUNCTION BOOLEAN")
 
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-if args.retain_model_gohr_ref:
-    nn_model_ref.train_general(name_input)
-else:
-    #nn_model_ref.load_nn()
-    try:
-        if args.finetunning:
-            nn_model_ref.load_nn()
-            nn_model_ref.train_from_scractch(name_input + "fine-tune")
-        #nn_model_ref.eval(["val"])
-        else:
-            nn_model_ref.load_nn()
-    except:
-        print("ERROR")
-        print("NO MODEL AVALAIBLE FOR THIS CONFIG")
-        print("CHANGE ARGUMENT retain_model_gohr_ref")
-        print()
-        sys.exit(1)
-
-if args.create_new_data_for_ToT and args.create_new_data_for_classifier:
-    del nn_model_ref.X_train_nn_binaire, nn_model_ref.X_val_nn_binaire, nn_model_ref.Y_train_nn_binaire, nn_model_ref.Y_val_nn_binaire
-    del nn_model_ref.c0l_train_nn, nn_model_ref.c0l_val_nn, nn_model_ref.c0r_train_nn, nn_model_ref.c0r_val_nn
-    del nn_model_ref.c1l_train_nn, nn_model_ref.c1l_val_nn, nn_model_ref.c1r_train_nn, nn_model_ref.c1r_val_nn
+nn_model_ref.load_nn()
 
 
-print("STEP 1 : DONE")
-print("---" * 100)
-if args.end_after_training:
-    sys.exit(1)
-
-
-flag2 = True
+flag_test = False
 acc_retain=[]
-global_sparsity = 0.
-#for global_sparsity in args.values_prunning:
-parameters_to_prune = []
-for name, module in nn_model_ref.net.named_modules():
-    if len(name):
-        if name not in ["layers_batch", "layers_conv"]:
-            flag = True
-            for layer_forbidden in args.layers_NOT_to_prune:
-                if layer_forbidden in name:
-                    flag = False
-            if flag:
-                parameters_to_prune.append((module, 'weight'))
-prune.global_unstructured(
-    parameters_to_prune,
-    pruning_method=prune.L1Unstructured,
-    amount=global_sparsity,
-)
-tot_sparsity = 0
-tot_weight = 0
-for name, module in nn_model_ref.net.named_modules():
-    if len(name):
-        if name not in ["layers_batch", "layers_conv"]:
-            flag = True
-            for layer_forbidden in args.layers_NOT_to_prune:
-                if layer_forbidden in name:
-                    flag = False
-            if flag:
-                tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
-                tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
-
-                if args.logs_layers:
-                    print(
-                    "Sparsity in {}.weight: {:.2f}%".format(str(name),
-                        100. * float(torch.sum(module.weight == 0))
-                        / float(module.weight.nelement())
-                        )
-                    )
-
-#nn_model_ref.eval_all(["val"])
-
-x_input = torch.zeros((4,16))
-arr2 = generate_binary(9)
-l = []
-for x in arr2:
-    l += [np.array([int(d) for d in x])]
-l2 = np.array(l)
-print(l2.shape)
-l3 = l2.reshape(-1, 3, 3)
-#print(l3)
-#print(l3.shape)
-l4 = np.transpose(l3, axes=(0,2,1))
-#print(l4)
-#print(l4.shape)
-#print("-"*10)
-
-#print(l5)
-#print(l5.shape)
-
-V0 = l4[:,1,:]
-V1 = l4[:, 2, :]
-Dv = V0^V1
-x_input_f = np.insert(l4, 1, Dv, 1)
-
-l5 = x_input_f[:,:,1:]
-
-#print(x_input_f)
-#print(x_input_f.shape)
-
-rest = np.zeros((512,4,6))
-rest2 = np.zeros((512, 4, 7))
-
-rest = np.zeros((512,4,6))
-rest[:,:,:2] = l5
-
-rest2[:,:,5:] = l5
-
-x_input_f1b = np.append(rest, x_input_f, axis=2)
-x_input_f2 = np.append(x_input_f1b, rest2, axis=2)
+nn_model_ref.eval_all(["train", "val"])
+X_eval_proba_feat = nn_model_ref.all_intermediaire_val
+Y_eval_proba = nn_model_ref.Y_val_nn_binaire
+X_train_proba_feat = nn_model_ref.all_intermediaire
+Y_train_proba = nn_model_ref.Y_train_nn_binaire
 
 
-x_input_f2 = torch.Tensor(x_input_f2)
-df_dico_name_tot = {}
-df_dico_second_tot = {}
+df = pd.read_csv("results/table_of_truth_5round/table_of_truth_0922_final_with_pad.csv", index_col= 0)
 
-nn_model_ref.net(x_input_f2)
-for index in range(nn_model_ref.net.x_input.shape[0]):
-    res = []
-    for index_x, x in enumerate(nn_model_ref.net.classify[index]):
-        res.append(x.detach().cpu().numpy())
-    res2 = np.array(res).transpose()
-    df_dico_second_tot, df_dico_name_tot = incremente_dico(nn_model_ref, index, df_dico_second_tot, res2, df_dico_name_tot)
+if flag_test:
+    for index_sample in range(len(nn_model_ref.X_val_nn_binaire[0])):
+        X_org = nn_model_ref.X_val_nn_binaire[index_sample]
+        X = X_org.reshape(4,16)
+        X_desir = nn_model_ref.all_intermediaire_val[index_sample]
+        X_transform = np.zeros((64,16))
+        for i in range(16):
+            if i == 0:
+                conditions_im1 = (df['DL[i-1]'] == "PAD") & (df['DV[i-1]'] == "PAD") & (df['V0[i-1]'] == "PAD") & (df['V1[i-1]'] == "PAD")
+                conditions_i = (df['DL[i]'] == X[0][i]) & (df['DV[i]'] == X[1][i]) & (df['V0[i]'] ==X[2][i]) & (df['V1[i]'] ==X[3][i])
+                conditions_ip1 = (df['DL[i+1]'] ==  str(X[0][i+1]) + ".0") & (df['DV[i+1]'] == str(X[1][i+1]) + ".0") & (df['V0[i+1]'] ==str(X[2][i+1]) + ".0") & (df['V1[i+1]'] ==str(X[3][i+1]) + ".0")
+                X_b = df.loc[conditions_im1 & conditions_ip1 & conditions_i].values[0][12:]
+            elif i ==15:
+                conditions_im1 = (df['DL[i+1]'] == "PAD") & (df['DV[i+1]'] == "PAD") & (df['V0[i+1]'] == "PAD") & (
+                            df['V1[i+1]'] == "PAD")
+                conditions_i = (df['DL[i]'] == X[0][i]) & (df['DV[i]'] == X[1][i]) & (df['V0[i]'] == X[2][i]) & (
+                            df['V1[i]'] == X[3][i])
+                conditions_ip1 = (df['DL[i-1]'] == str(X[0][i - 1]) + ".0") & (df['DV[i-1]'] == str(X[1][i - 1]) + ".0") & (
+                            df['V0[i-1]'] == str(X[2][i - 1]) + ".0") & (df['V1[i-1]'] == str(X[3][i - 1]) + ".0")
+                X_b = df.loc[conditions_im1 & conditions_ip1 & conditions_i].values[0][12:]
+                #print(df.loc[conditions_im1 & conditions_ip1 & conditions_i].values[0][:12])
+            else:
+                conditions_im1 = (df['DL[i-1]'] == str(X[0][i - 1]) + ".0") & (df['DV[i-1]'] == str(X[1][i - 1]) + ".0") & (
+                            df['V0[i-1]'] == str(X[2][i - 1]) + ".0") & (df['V1[i-1]'] == str(X[3][i - 1]) + ".0")
+                conditions_i = (df['DL[i]'] == X[0][i]) & (df['DV[i]'] == X[1][i]) & (df['V0[i]'] == X[2][i]) & (
+                            df['V1[i]'] == X[3][i])
+                conditions_ip1 = (df['DL[i+1]'] == str(X[0][i + 1]) + ".0") & (df['DV[i+1]'] == str(X[1][i + 1]) + ".0") & (
+                            df['V0[i+1]'] == str(X[2][i + 1]) + ".0") & (df['V1[i+1]'] == str(X[3][i + 1]) + ".0")
+                X_b = df.loc[conditions_im1 & conditions_ip1 & conditions_i].values[0][12:]
+                #print(df.loc[conditions_im1 & conditions_ip1 & conditions_i].values[0][:12])
+
+            X_transform[:,i] = X_b
+        X_f = X_transform.flatten()
+        assert np.sum(X_f == X_desir)/1024 ==1
 
 
 
-df = pd.DataFrame.from_dict(df_dico_second_tot)
-df_name = pd.DataFrame.from_dict(df_dico_name_tot)
+from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dense, Input, BatchNormalization, Activation
+import numpy as np
+from pickle import dump
+
+#NN
+from tqdm import tqdm
+
+def cyclic_lr(num_epochs, high_lr, low_lr):
+    res = lambda i: low_lr + ((num_epochs - 1) - i % num_epochs) / (num_epochs - 1) * (high_lr - low_lr);
+    return (res);
 
 
+def make_checkpoint(datei):
+    res = ModelCheckpoint(datei, monitor='val_loss', save_best_only=True);
+    return (res);
 
-df2 = df.T
-df2_name = df_name.T
+def make_classifier(input_size=84, d1=1024, d2=512, final_activation='sigmoid'):
+    # Input and preprocessing layers
+    inp = Input(shape=(input_size,));
+    dense1 = Dense(d1)(inp);
+    dense1 = BatchNormalization()(dense1);
+    dense1 = Activation('relu')(dense1);
+    dense2 = Dense(d2)(dense1);
+    dense2 = BatchNormalization()(dense2);
+    dense2 = Activation('relu')(dense2);
+    out = Dense(1, activation=final_activation)(dense2);
+    model = Model(inputs=inp, outputs=out);
+    return (model);
 
-df2.to_csv("table_of_tructh_0922.csv")
-df2_name.to_csv("table_of_tructh_0922_name.csv")
-
-
-
-df = pd.read_csv("table_of_tructh_0922.csv")
-df_name = pd.read_csv("table_of_tructh_0922_name.csv")
-
-df = df.rename(columns={"Unnamed: 0": "Key"})
-df = df.rename(columns={str(i): "Filter_" + str(i) for i in range(64)})
-
-df_name = df_name.rename(columns={"Unnamed: 0": "Key",
-                                  "0": "DL[i-1]",
-                                  "1": "DV[i-1]",
-                                  "2": "V0[i-1]",
-                                  "3": "V1[i-1]",
-                                  "4": "DL[i]",
-                                  "5": "DV[i]",
-                                  "6": "V0[i]",
-                                  "7": "V1[i]",
-                                  "8": "DL[i+1]",
-                                  "9": "DV[i+1]",
-                                  "10": "V0[i+1]",
-                                  "11": "V1[i+1]",
-
-                                  })
-
-df_m = pd.merge(df_name, df, on='Key')
-del df_m['Key']
-
-print (df_m.head(5))
-
-
-df_m.to_csv("table_of_truth_0922_final_with_pad.csv")
-
-df_m2=df_m.drop(df_m.index[df_m["DL[i-1]"] == "PAD"])
-df_m_f=df_m2.drop(df_m2.index[df_m2["DL[i+1]"] == "PAD"])
-
-#print (df_m_f)
-df_m_f= df_m_f.reset_index()
-print (df_m_f.head(5))
-
-df_m_f.to_csv("table_of_truth_0922_final_without_pad.csv")
+def train_speck_distinguisher(n_feat, X, Y, X_eval, Y_eval, epoch, bs, name_ici="", wdir= "./"):
+    # create the network
+    net = make_classifier(input_size=n_feat);
+    net.compile(optimizer='adam', loss='mse', metrics=['acc']);
+    # generate training and validation data
+    # set up model checkpoint
+    check = make_checkpoint(wdir + 'NN_classifier' + str(6) + "_"+ name_ici + '.h5');
+    # create learnrate schedule
+    lr = LearningRateScheduler(cyclic_lr(10, 0.002, 0.001));
+    # train and evaluate
+    h = net.fit(X, Y, epochs=epoch, batch_size=bs, validation_data=(X_eval, Y_eval), callbacks=[lr, check]);
+    np.save(wdir + 'h_acc_' + str(np.max(h.history['val_acc'])) + "_"+ name_ici +  '.npy', h.history['val_acc']);
+    np.save(wdir + 'h_loss' + str(6) + "_"+ name_ici + '.npy', h.history['val_loss']);
+    dump(h.history, open(wdir + 'hist' + str(6) + "_"+ name_ici +  '.p', 'wb'));
+    print("Best validation accuracy: ", np.max(h.history['val_acc']));
+    net3 = make_classifier(input_size=n_feat);
+    net3.load_weights(wdir + 'NN_classifier' + str(6) + "_"+ name_ici +  '.h5')
+    return (net3, h);
 
 
-
-
-dictionnaire_res_fin_expression = {}
-
-for index_f in range(64):
-    print("Fliter ", index_f)
-    index_intere = df_m_f.index[df_m_f['Filter_'+str(index_f)] == 1].tolist()
-    print()
-    if len(index_intere) ==0:
-        print("Empty")
-    else:
-        dictionnaire_res_fin_expression["Filter "+ str(index_f)] = []
-        condtion_filter = []
-        for col in ["DL[i-1]", "V0[i-1]", "V1[i-1]", "DL[i]", "V0[i]", "V1[i]", "DL[i+1]", "V0[i+1]", "V1[i+1]"]:
-            s = df_m_f[col].values
-            my_dict = {"0.0": 0.0, "1.0": 1.0, 0.0: 0.0, 1.0: 1.0}
-            s2 = np.array([my_dict[zi] for zi in s])
-            condtion_filter.append(s2[index_intere])
-
-        condtion_filter2 = np.array(condtion_filter).transpose()
-        condtion_filter3 = [x.tolist() for x in condtion_filter2]
-        assert len(condtion_filter3) == len(index_intere)
-        assert len(condtion_filter3[0]) == 9
-        w1, x1, y1, w2, x2, y2, w3, x3, y3 = symbols('DL[i-1], V0[i-1], V1[i-1], DL[i], V0[i], V1[i], DL[i+1], V0[i+1], V1[i+1]')
-        minterms = condtion_filter3
-        exp =SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-        print(exp)
-        dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-        exp = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-        print(exp)
-        dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-        print()
-
-df_expression_bool = pd.DataFrame.from_dict(dictionnaire_res_fin_expression)
-
-df_expression_bool.to_csv("expression_bool_per_filter.csv")
+net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,
+                                                   Y_train_proba, X_eval_proba_feat, Y_eval_proba,
+                                                   bs=500,
+                                                   epoch=20, name_ici="test")

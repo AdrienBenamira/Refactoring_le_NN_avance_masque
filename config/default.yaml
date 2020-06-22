@@ -6,7 +6,7 @@ general:
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 5
-  inputs_type: [DLi, DVi, V0i, V1i, DLi-1, DVi-1, V0i-1, V1i-1, DLi+1, DVi+1, V0i+1, V1i+1]
+  inputs_type: [DLi, DVi, V0i, V1i]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l, ctdata0r, ctdata1l, ctdata1r]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
@@ -18,18 +18,18 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
-  load_special: No
-  load_nn_path: ./results/results_binary_922/0.920842_bestacc.pth
+  load_special: Yes
+  load_nn_path: ./results/results_binary_922/0.921894_bestacc.pth
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline        # baseline, cnn_attention, multihead, deepset, baseline_bin
+  type_model: baseline_bin_v2        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2
   a_bit: 1
-  nbre_sample_train: 10000000
-  nbre_sample_eval: 1000000
+  nbre_sample_train: 100000
+  nbre_sample_eval: 100000
   num_epochs: 10
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1

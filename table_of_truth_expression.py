@@ -11,8 +11,8 @@ print(exp)"""
 
 
 
-df = pd.read_csv("table_of_tructh_0922.csv")
-df_name = pd.read_csv("table_of_tructh_0922_name.csv")
+df = pd.read_csv("results/table_of_truth_5round/table_of_tructh_0922.csv")
+df_name = pd.read_csv("results/table_of_truth_5round/table_of_tructh_0922_name.csv")
 
 df = df.rename(columns={"Unnamed: 0": "Key"})
 df = df.rename(columns={str(i): "Filter_" + str(i) for i in range(64)})
