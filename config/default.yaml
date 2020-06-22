@@ -73,7 +73,7 @@ getting_masks:
   #temps get_mask Occlusion 0.15 for 100 samples
   liste_methode_selection: [PCA, abs_sum, abs_median, abs_mean]
   #[PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
-  hamming_weigth: [32]
+  hamming_weigth: [256]
   thr_value: []
   save_fig_plot_feature_before_mask: No
   end_after_step2: No

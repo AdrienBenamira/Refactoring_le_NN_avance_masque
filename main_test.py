@@ -304,7 +304,7 @@ nbre_param_ddt = 0
 
 ToT = {}
 # self.X_train_proba_train = np.zeros((len(self.masks[0]), (len(self.c0l_create_ToT))), dtype=np.float16)
-flag_do_it = True
+flag_do_it = False
 liste_input_int = []
 features_name = []
 for moment, _ in enumerate(tqdm(get_masks_gen.masks_v2)):
@@ -325,8 +325,8 @@ for moment, _ in enumerate(tqdm(get_masks_gen.masks_v2)):
             liste_inputsmasked.append(res_ici_v & res22222)
         flag_do_it = False
     else:
-        #liste_inputsmasked_array = np.load("input_DDT.npy",allow_pickle=True)
-        #liste_input_int = liste_inputsmasked_array.tolist()
+        liste_inputsmasked_array = np.load("input_DDT.npy",allow_pickle=True)
+        liste_input_int = liste_inputsmasked_array.tolist()
         for index, input_v in enumerate(tqdm(liste_input_int)):
             liste_inputsmasked.append(input_v & res22222)
     vals, counts = np.unique(liste_inputsmasked, return_counts=True)
@@ -350,8 +350,8 @@ for moment, _ in enumerate(tqdm(get_masks_gen.masks_v2)):
     sv = dict(zip(vals, p_speck_sachant_input_masks))
     ToT[name_input_cic] = sv
 
-liste_inputsmasked_array = np.array(liste_input_int)
-np.save(path_save_model + "input_DDT.npy", liste_inputsmasked_array)
+#liste_inputsmasked_array = np.array(liste_input_int)
+#np.save(path_save_model + "input_DDT.npy", liste_inputsmasked_array)
 print()
 print("NUMBER OF ENTRIES IN DDT :", nbre_param_ddt)
 print()
