@@ -201,7 +201,34 @@ print("---" * 100)
 print("TABLE OF TRUTH")
 
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-nn_model_ref.load_nn()
+if args.retain_model_gohr_ref:
+    nn_model_ref.train_general(name_input)
+else:
+    #nn_model_ref.load_nn()
+    try:
+        if args.finetunning:
+            nn_model_ref.load_nn()
+            nn_model_ref.train_from_scractch(name_input + "fine-tune")
+        #nn_model_ref.eval(["val"])
+        else:
+            nn_model_ref.load_nn()
+    except:
+        print("ERROR")
+        print("NO MODEL AVALAIBLE FOR THIS CONFIG")
+        print("CHANGE ARGUMENT retain_model_gohr_ref")
+        print()
+        sys.exit(1)
+
+if args.create_new_data_for_ToT and args.create_new_data_for_classifier:
+    del nn_model_ref.X_train_nn_binaire, nn_model_ref.X_val_nn_binaire, nn_model_ref.Y_train_nn_binaire, nn_model_ref.Y_val_nn_binaire
+    del nn_model_ref.c0l_train_nn, nn_model_ref.c0l_val_nn, nn_model_ref.c0r_train_nn, nn_model_ref.c0r_val_nn
+    del nn_model_ref.c1l_train_nn, nn_model_ref.c1l_val_nn, nn_model_ref.c1r_train_nn, nn_model_ref.c1r_val_nn
+
+
+print("STEP 1 : DONE")
+print("---" * 100)
+if args.end_after_training:
+    sys.exit(1)
 
 
 flag2 = True

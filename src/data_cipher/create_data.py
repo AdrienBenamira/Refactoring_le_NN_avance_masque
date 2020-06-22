@@ -137,6 +137,42 @@ class Create_data_binary:
                 DeltaV = ctdata0l ^ ctdata1l ^ ctdata0r ^ ctdata1r
                 DeltaL = ctdata0l ^ ctdata1l
                 inputs_toput.append(DeltaL&DeltaV)
+            if args.inputs_type[i] == "DLi":
+                DeltaL = ctdata0l ^ ctdata1l
+                inputs_toput.append(DeltaL)
+            if args.inputs_type[i] == "DLi-1":
+                DeltaL = ctdata0l ^ ctdata1l
+                inputs_toput.append(DeltaL>>1)
+            if args.inputs_type[i] == "DLi+1":
+                DeltaL = ctdata0l ^ ctdata1l
+                inputs_toput.append(DeltaL<<1)
+            if args.inputs_type[i] == "DVi":
+                DeltaV = ctdata0l ^ ctdata1l ^ ctdata0r ^ ctdata1r
+                inputs_toput.append(DeltaV)
+            if args.inputs_type[i] == "DVi-1":
+                DeltaV = ctdata0l ^ ctdata1l ^ ctdata0r ^ ctdata1r
+                inputs_toput.append(DeltaV>>1)
+            if args.inputs_type[i] == "DVi+1":
+                DeltaV = ctdata0l ^ ctdata1l ^ ctdata0r ^ ctdata1r
+                inputs_toput.append(DeltaV<<1)
+            if args.inputs_type[i] == "V0i":
+                V0 = ctdata0l ^ ctdata0r
+                inputs_toput.append(V0)
+            if args.inputs_type[i] == "V0i-1":
+                V0 = ctdata0l ^ ctdata0r
+                inputs_toput.append(V0>>1)
+            if args.inputs_type[i] == "V0i+1":
+                V0 = ctdata0l ^ ctdata0r
+                inputs_toput.append(V0<<1)
+            if args.inputs_type[i] == "V1i":
+                V1 = ctdata1l ^ ctdata1r
+                inputs_toput.append(V1)
+            if args.inputs_type[i] == "V1i-1":
+                V1 = ctdata1l ^ ctdata1r
+                inputs_toput.append(V1>>1)
+            if args.inputs_type[i] == "V1i+1":
+                V1 = ctdata1l ^ ctdata1r
+                inputs_toput.append(V1<<1)
         return inputs_toput
 
 

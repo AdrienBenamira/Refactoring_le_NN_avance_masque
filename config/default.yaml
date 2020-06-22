@@ -6,7 +6,7 @@ general:
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 5
-  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  inputs_type: [DLi, DVi, V0i, V1i, DLi-1, DVi-1, V0i-1, V1i-1, DLi+1, DVi+1, V0i+1, V1i+1]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l, ctdata0r, ctdata1l, ctdata1r]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
@@ -18,26 +18,26 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
-  load_special: Yes
+  load_special: No
   load_nn_path: ./results/results_binary_922/0.920842_bestacc.pth
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline_bin_v2        # baseline, cnn_attention, multihead, deepset, baseline_bin
+  type_model: baseline        # baseline, cnn_attention, multihead, deepset, baseline_bin
   a_bit: 1
-  nbre_sample_train: 10000
-  nbre_sample_eval: 100000
-  num_epochs: 4
+  nbre_sample_train: 10000000
+  nbre_sample_eval: 1000000
+  num_epochs: 10
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.001
   weight_decay_nn: 0.00001
   momentum_nn: 0.9 #only for SGD
   optimizer_type: Adam #Adam - AdamW - SGD
-  scheduler_type: None #CyclicLR - None
+  scheduler_type: CyclicLR #CyclicLR - None
   base_lr:  0.001      #Only if CyclicLR
   max_lr: 0.002        #Only if CyclicLR
   demicycle_1: 6  #Only if CyclicLR
@@ -56,7 +56,7 @@ getting_masks:
   load_masks: No
   file_mask: results/masks_ref/speck/masks_inter_round.txt
   nbre_max_masks_load: -1
-  research_new_masks: No
+  research_new_masks: Yes
   nbre_generate_data_train_val: 1000000
   nbre_necessaire_val_SV: 5000
   nbre_max_batch: 2
@@ -73,7 +73,7 @@ getting_masks:
   #temps get_mask Occlusion 0.15 for 100 samples
   liste_methode_selection: [PCA, abs_sum, abs_median, abs_mean]
   #[PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
-  hamming_weigth: [256]
+  hamming_weigth: [18]
   thr_value: []
   save_fig_plot_feature_before_mask: No
   end_after_step2: No
@@ -90,20 +90,20 @@ make_data_classifier:
   nbre_sample_val_classifier: 100000
 
 compare_classifer:
-  eval_nn_ref: Yes
+  eval_nn_ref: No
   retrain_nn_ref: No
   save_data_proba: No
   num_epch_2: 5
   batch_size_2: 500
-  classifiers_ours: [] # [NN, LGBM, RF]
-  num_epch_our: 60
+  classifiers_ours: [NN] # [NN, LGBM, RF]
+  num_epch_our: 20
   batch_size_our: 500
   retrain_with_import_features: No
   keep_number_most_impactfull: 40
   quality_of_masks: No
   compute_independance_feature: No
   alpha_test: 0.05
-  end_after_step4: No
+  end_after_step4: Yes
 
 
 prunning:
