@@ -218,7 +218,7 @@ def make_checkpoint(datei):
     res = ModelCheckpoint(datei, monitor='val_loss', save_best_only=True);
     return (res);
 
-def make_classifier(input_size=84, d1=1024, d2=512, final_activation='sigmoid'):
+def make_classifier(input_size=84, d1=1014, d2=512, final_activation='sigmoid'):
     # Input and preprocessing layers
     inp = Input(shape=(input_size,));
     dense1 = Dense(d1)(inp);
@@ -239,7 +239,7 @@ def train_speck_distinguisher(n_feat, X, Y, X_eval, Y_eval, epoch, bs, name_ici=
     # set up model checkpoint
     check = make_checkpoint(wdir + 'NN_classifier' + str(6) + "_"+ name_ici + '.h5');
     # create learnrate schedule
-    lr = LearningRateScheduler(cyclic_lr(10, 0.002, 0.001));
+    lr = LearningRateScheduler(cyclic_lr(10, 0.002, 0.0001));
     # train and evaluate
     h = net.fit(X, Y, epochs=epoch, batch_size=bs, validation_data=(X_eval, Y_eval), callbacks=[lr, check]);
     np.save(wdir + 'h_acc_' + str(np.max(h.history['val_acc'])) + "_"+ name_ici +  '.npy', h.history['val_acc']);
