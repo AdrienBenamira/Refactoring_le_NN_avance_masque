@@ -21,7 +21,7 @@ train_nn:
   retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
-  load_special: Yes
+  load_special: No
   load_nn_path: ./results/results_binary_922/0.921894_bestacc.pth
   countinuous_learning: No
   curriculum_learning: No
