@@ -5,7 +5,7 @@ general:
   models_path: ./results/models_trained_v2/
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 5
+  nombre_round_eval: 6
   inputs_type: [DLi, DVi, V0i, V1i]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l, ctdata0r, ctdata1l, ctdata1r]
@@ -28,7 +28,7 @@ train_nn:
   nbre_epoch_per_stage: 3
   type_model: baseline_bin_v2        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2
   a_bit: 1
-  nbre_sample_train: 100000
+  nbre_sample_train: 1000000
   nbre_sample_eval: 100000
   num_epochs: 10
   batch_size: 5000

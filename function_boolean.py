@@ -218,7 +218,7 @@ def make_checkpoint(datei):
     res = ModelCheckpoint(datei, monitor='val_loss', save_best_only=True);
     return (res);
 
-def make_classifier(input_size=84, d1=1014, d2=512, final_activation='sigmoid'):
+def make_classifier(input_size=84, d1=1024, d2=512, final_activation='sigmoid'):
     # Input and preprocessing layers
     inp = Input(shape=(input_size,));
     dense1 = Dense(d1)(inp);
@@ -253,5 +253,5 @@ def train_speck_distinguisher(n_feat, X, Y, X_eval, Y_eval, epoch, bs, name_ici=
 
 net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,
                                                    Y_train_proba, X_eval_proba_feat, Y_eval_proba,
-                                                   bs=500,
+                                                   bs=5000,
                                                    epoch=20, name_ici="test")
