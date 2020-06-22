@@ -201,35 +201,49 @@ print("---" * 100)
 print("TABLE OF TRUTH")
 
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-if args.retain_model_gohr_ref:
-    nn_model_ref.train_general(name_input)
-else:
-    #nn_model_ref.load_nn()
-    try:
-        if args.finetunning:
-            nn_model_ref.load_nn()
-            nn_model_ref.train_from_scractch(name_input + "fine-tune")
-        #nn_model_ref.eval(["val"])
-        else:
-            nn_model_ref.load_nn()
-    except:
-        print("ERROR")
-        print("NO MODEL AVALAIBLE FOR THIS CONFIG")
-        print("CHANGE ARGUMENT retain_model_gohr_ref")
-        print()
-        sys.exit(1)
-
-if args.create_new_data_for_ToT and args.create_new_data_for_classifier:
-    del nn_model_ref.X_train_nn_binaire, nn_model_ref.X_val_nn_binaire, nn_model_ref.Y_train_nn_binaire, nn_model_ref.Y_val_nn_binaire
-    del nn_model_ref.c0l_train_nn, nn_model_ref.c0l_val_nn, nn_model_ref.c0r_train_nn, nn_model_ref.c0r_val_nn
-    del nn_model_ref.c1l_train_nn, nn_model_ref.c1l_val_nn, nn_model_ref.c1r_train_nn, nn_model_ref.c1r_val_nn
+nn_model_ref.load_nn()
 
 
-print("STEP 1 : DONE")
-print("---" * 100)
-if args.end_after_training:
-    sys.exit(1)
+flag2 = True
+acc_retain=[]
+global_sparsity = 0.25
+parameters_to_prune = []
+for name, module in nn_model_ref.net.named_modules():
+    if len(name):
+        if name not in ["layers_batch", "layers_conv"]:
+            flag = True
+            for layer_forbidden in args.layers_NOT_to_prune:
+                if layer_forbidden in name:
+                    flag = False
+            if flag:
+                parameters_to_prune.append((module, 'weight'))
+prune.global_unstructured(
+    parameters_to_prune,
+    pruning_method=prune.L1Unstructured,
+    amount=global_sparsity,
+)
+tot_sparsity = 0
+tot_weight = 0
+for name, module in nn_model_ref.net.named_modules():
+    if len(name):
+        if name not in ["layers_batch", "layers_conv"]:
+            flag = True
+            for layer_forbidden in args.layers_NOT_to_prune:
+                if layer_forbidden in name:
+                    flag = False
+            if flag:
+                tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
+                tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
 
+                if args.logs_layers:
+                    print(
+                    "Sparsity in {}.weight: {:.2f}%".format(str(name),
+                        100. * float(torch.sum(module.weight == 0))
+                        / float(module.weight.nelement())
+                        )
+                    )
+if flag2:
+    nn_model_ref.eval_all(["val"])
 
 #nn_model_ref.eval_all(["val"])
 
@@ -388,6 +402,6 @@ df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
 row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
 df_filtre.to_csv(path_save_model + "dictionnaire_perfiler.csv")
 df_row = pd.DataFrame(row)
-df_filtre.to_csv(path_save_model + "clause_unique.csv")
-df_expression_bool = pd.DataFrame.from_dict(dictionnaire_res_fin_expression)
+df_row.to_csv(path_save_model + "clause_unique.csv")
+df_expression_bool = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
 df_expression_bool.to_csv(path_save_model + "expression_bool_per_filter.csv")

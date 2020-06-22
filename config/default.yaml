@@ -42,9 +42,9 @@ train_nn:
   max_lr: 0.002        #Only if CyclicLR
   demicycle_1: 6  #Only if CyclicLR
   numLayers: 2
-  out_channel0: 32
-  out_channel1: 32
-  hidden1: 64
+  out_channel0: 64
+  out_channel1: 64
+  hidden1: 512
   kernel_size0: 1
   kernel_size1: 3
   num_workers: 2
@@ -110,7 +110,7 @@ prunning:
   inputs_type_prunning: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   model_to_prune: ./results/results_binary_922/0.920842_bestacc.pth
   values_prunning: [0.8]
-  layers_NOT_to_prune: [quantize_fn, act_q, conv, layers_batch]
+  layers_NOT_to_prune: [quantize_fn, act_q]
   save_model_prune: No
   logs_layers: Yes
   nbre_sample_eval_prunning: 100000
