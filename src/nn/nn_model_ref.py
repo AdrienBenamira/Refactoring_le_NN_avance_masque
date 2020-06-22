@@ -85,6 +85,31 @@ class NN_Model_Ref:
         dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
                                       shuffle=False, num_workers=self.args.num_workers)
         self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
+
+        net_old = self.choose_model()
+        self.old_net = self.load_nn_round(net_old, self.args.nombre_round_eval)
+        self.pred_final_train = np.zeros((len(self.X_train_nn_binaire)), dtype=np.uint8)
+        self.pred_final_val = np.zeros((len(self.X_train_nn_binaire)), dtype=np.uint8)
+        for phase in ["train"]:
+            self.old_net.eval()
+            tk0 = tqdm(self.dataloaders[phase], total=int(len(self.dataloaders[phase])))
+            for i, data in enumerate(tk0):
+                inputs, labels = data
+                outputs = self.net(inputs.to(self.device))
+                preds = (outputs.squeeze(1) > self.t.to(self.device)).detach().cpu().numpy().astype(np.uint8) * 1
+                if phase == "train":
+                    self.pred_final_train[i * self.batch_size:(i + 1) * self.batch_size] = preds
+                else:
+                    self.pred_final_val[i * self.batch_size:(i + 1) * self.batch_size] = preds
+
+        del data_train, data_val, dataloader_train, dataloader_val, self.dataloaders
+        data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.pred_final_train, self.device)
+        dataloader_train = DataLoader(data_train, batch_size=self.batch_size,
+                                      shuffle=True, num_workers=self.args.num_workers)
+        data_val = DataLoader_cipher_binary(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device)
+        dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
+                                    shuffle=False, num_workers=self.args.num_workers)
+        self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
         self.load_general_train()
         self.train(name_input)
 
@@ -119,13 +144,17 @@ class NN_Model_Ref:
         self.net.eval()
 
     def load_nn_round(self, net, nr):
-        print(net.fc1.bias)
         path_save_model_train_v2 = self.path_save_model_train.replace("/"+str(self.args.nombre_round_eval)+"/", "/"+str(nr)+"/")
         net.load_state_dict(torch.load(
-            os.path.join(path_save_model_train_v2, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'),
+            os.path.join(path_save_model_train_v2, 'Gohr_'+self.args.model_finetunne+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'),
         map_location=self.device)['state_dict'], strict=False)
         net.to(self.device)
         net.eval()
+
+        self.args.out_channel0 = 64
+        self.args.out_channel1 = 64
+        self.args.hidden1 = 512
+
 
         return net
 
