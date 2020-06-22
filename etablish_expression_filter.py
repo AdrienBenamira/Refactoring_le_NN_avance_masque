@@ -342,6 +342,10 @@ df_m_f.to_csv(path_save_model + "table_of_truth_0922_final_without_pad.csv")
 
 dictionnaire_res_fin_expression = {}
 
+dictionnaire_perfiler = {}
+
+doublon = []
+
 for index_f in range(64):
     print("Fliter ", index_f)
     index_intere = df_m_f.index[df_m_f['Filter_'+str(index_f)] == 1].tolist()
@@ -364,16 +368,26 @@ for index_f in range(64):
         w1, x1, y1, w2, x2, y2, w3, x3, y3 = symbols('DL[i-1], V0[i-1], V1[i-1], DL[i], V0[i], V1[i], DL[i+1], V0[i+1], V1[i+1]')
         minterms = condtion_filter3
         exp =SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-        print(exp)
-        dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
+
+        if exp not in doublon:
+            print(exp)
+            doublon.append(exp)
+            dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
+            expV2 = str(exp).split(" | ")
+            dictionnaire_perfiler["Filter " + str(index_f)] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
+            exp = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
+            print(exp)
+            dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
 
 
 
-        exp = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-        print(exp)
-        dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
         print()
 
-df_expression_bool = pd.DataFrame.from_dict(dictionnaire_res_fin_expression)
 
+df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
+row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
+df_filtre.to_csv(path_save_model + "dictionnaire_perfiler.csv")
+df_row = pd.DataFrame(row)
+df_filtre.to_csv(path_save_model + "clause_unique.csv")
+df_expression_bool = pd.DataFrame.from_dict(dictionnaire_res_fin_expression)
 df_expression_bool.to_csv(path_save_model + "expression_bool_per_filter.csv")

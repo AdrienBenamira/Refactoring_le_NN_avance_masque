@@ -5,7 +5,7 @@ general:
   models_path: ./results/models_trained_v2/
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 6
+  nombre_round_eval: 5
   inputs_type: [DLi, DVi, V0i, V1i]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l, ctdata0r, ctdata1l, ctdata1r]
@@ -18,7 +18,7 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
   load_special: Yes
@@ -33,23 +33,23 @@ train_nn:
   num_epochs: 10
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
-  lr_nn: 0.001
+  lr_nn: 0.0001
   weight_decay_nn: 0.00001
   momentum_nn: 0.9 #only for SGD
   optimizer_type: Adam #Adam - AdamW - SGD
   scheduler_type: CyclicLR #CyclicLR - None
-  base_lr:  0.001      #Only if CyclicLR
+  base_lr:  0.0001      #Only if CyclicLR
   max_lr: 0.002        #Only if CyclicLR
   demicycle_1: 6  #Only if CyclicLR
   numLayers: 2
   out_channel0: 64
   out_channel1: 64
-  hidden1: 128
+  hidden1: 1024
   kernel_size0: 1
   kernel_size1: 3
   num_workers: 2
   clip_grad_norm: 0.6
-  end_after_training: No
+  end_after_training: Yes
 
 
 getting_masks:

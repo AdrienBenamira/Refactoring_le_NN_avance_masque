@@ -218,7 +218,7 @@ def make_checkpoint(datei):
     res = ModelCheckpoint(datei, monitor='val_loss', save_best_only=True);
     return (res);
 
-def make_classifier(input_size=84, d1=1024, d2=512, final_activation='sigmoid'):
+def make_classifier(input_size=84, d1=1024, d2=64, final_activation='sigmoid'):
     # Input and preprocessing layers
     inp = Input(shape=(input_size,));
     dense1 = Dense(d1)(inp);
