@@ -5,7 +5,7 @@ import torch
 import os
 from src.nn.nn_model_ref import NN_Model_Ref
 import matplotlib.pyplot as plt
-
+from tqdm import tqdm
 
 from src.data_cipher.create_data import Create_data_binary
 from src.utils.initialisation_run import init_all_for_run, init_cipher
@@ -129,9 +129,6 @@ args = parser.parse_args()
 args.load_special = True
 args.finetunning = False
 args.logs_tensorboard = args.logs_tensorboard.replace("test", "function_bool")
-args.load_nn_path = args.model_to_prune
-args.nbre_sample_eval = args.nbre_sample_eval_prunning
-args.inputs_type = args.inputs_type_prunning
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #
@@ -151,24 +148,54 @@ print("FUNCTION BOOLEAN")
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 nn_model_ref.load_nn()
 
+global_sparsity = 0.95
+parameters_to_prune = []
+for name, module in nn_model_ref.net.named_modules():
+    if len(name):
+        if name not in ["layers_batch", "layers_conv"]:
+            flag = True
+            for layer_forbidden in args.layers_NOT_to_prune:
+                if layer_forbidden in name:
+                    flag = False
+            if flag:
+                parameters_to_prune.append((module, 'weight'))
+prune.global_unstructured(
+    parameters_to_prune,
+    pruning_method=prune.L1Unstructured,
+    amount=global_sparsity,
+)
+tot_sparsity = 0
+tot_weight = 0
+for name, module in nn_model_ref.net.named_modules():
+    if len(name):
+        if name not in ["layers_batch", "layers_conv"]:
+            flag = True
+            for layer_forbidden in args.layers_NOT_to_prune:
+                if layer_forbidden in name:
+                    flag = False
+            if flag:
+                tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
+                tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
+
+                if args.logs_layers:
+                    print(
+                    "Sparsity in {}.weight: {:.2f}%".format(str(name),
+                        100. * float(torch.sum(module.weight == 0))
+                        / float(module.weight.nelement())
+                        )
+                    )
 
 flag_test = False
 acc_retain=[]
 nn_model_ref.eval_all(["train", "val"])
-X_eval_proba_feat = nn_model_ref.all_intermediaire_val
-Y_eval_proba = nn_model_ref.Y_val_nn_binaire
-X_train_proba_feat = nn_model_ref.all_intermediaire
-Y_train_proba = nn_model_ref.Y_train_nn_binaire
-
-
 df = pd.read_csv("results/table_of_truth_5round/table_of_truth_0922_final_with_pad.csv", index_col= 0)
 
 if flag_test:
-    for index_sample in range(len(nn_model_ref.X_val_nn_binaire[0])):
+    for index_sample in range(100):
         X_org = nn_model_ref.X_val_nn_binaire[index_sample]
         X = X_org.reshape(4,16)
         X_desir = nn_model_ref.all_intermediaire_val[index_sample]
-        X_transform = np.zeros((64,16))
+        X_transform = np.zeros((args.out_channel0,16))
         for i in range(16):
             if i == 0:
                 conditions_im1 = (df['DL[i-1]'] == "PAD") & (df['DV[i-1]'] == "PAD") & (df['V0[i-1]'] == "PAD") & (df['V1[i-1]'] == "PAD")
@@ -196,7 +223,99 @@ if flag_test:
 
             X_transform[:,i] = X_b
         X_f = X_transform.flatten()
-        assert np.sum(X_f == X_desir)/1024 ==1
+        assert np.sum(X_f == X_desir)/(16*args.out_channel0) == 1
+
+df_matter = pd.read_csv("results/table_of_truth_5round/dictionnaire_perfiler.csv", index_col= 0)
+
+drop_col = []
+
+for x in df.columns:
+    if '[i' not in x:
+        x2 = x.replace("_", " ")
+        if x2 not in df_matter.columns:
+            drop_col.append(x)
+
+
+
+df = df.drop(drop_col, axis=1)
+
+print(df.columns, df_matter.columns)
+
+X_train_proba_feat = np.zeros((len(nn_model_ref.Y_train_nn_binaire), (len(df_matter.columns)), 16), dtype = np.uint8)
+X_eval_proba_feat = np.zeros((len(nn_model_ref.Y_val_nn_binaire), (len(df_matter.columns)), 16), dtype = np.uint8)
+
+for phase in ["train", "val"]:
+    if phase == "train":
+        X_desir = nn_model_ref.all_intermediaire
+    else:
+        X_desir = nn_model_ref.all_intermediaire_val
+    X_desir2 = X_desir.reshape(-1, 128, 16)
+
+
+    for index_col, col in enumerate(df_matter.columns):
+        int_interest = int(col.split(" ")[1])
+        X_f = X_desir2[:, int_interest, :]
+
+
+
+        if phase == "train":
+            X_train_proba_feat[:, index_col, :] = X_f
+        if phase == "val":
+            X_eval_proba_feat[:, index_col, :] = X_f
+
+X_train_proba_feat = X_train_proba_feat.reshape(-1, (len(df_matter.columns))* 16)
+X_eval_proba_feat = X_eval_proba_feat.reshape(-1, (len(df_matter.columns)) * 16)
+
+"""
+for phase in ["train", "val"]:
+    for index_sample in tqdm(range(len(nn_model_ref.Y_train_nn_binaire))):
+        if phase=="train":
+            X_org = nn_model_ref.X_train_nn_binaire[index_sample]
+            X_desir = nn_model_ref.all_intermediaire[index_sample]
+        else:
+            X_org = nn_model_ref.X_val_nn_binaire[index_sample]
+            X_desir = nn_model_ref.all_intermediaire_val[index_sample]
+        X = X_org.reshape(4, 16)
+        X_transform = np.zeros((len(df.columns)-12, 16))
+        for i in range(16):
+            if i == 0:
+                conditions_im1 = (df['DL[i-1]'] == "PAD") & (df['DV[i-1]'] == "PAD") & (df['V0[i-1]'] == "PAD") & (
+                            df['V1[i-1]'] == "PAD")
+                conditions_i = (df['DL[i]'] == X[0][i]) & (df['DV[i]'] == X[1][i]) & (df['V0[i]'] == X[2][i]) & (
+                            df['V1[i]'] == X[3][i])
+                conditions_ip1 = (df['DL[i+1]'] == str(X[0][i + 1]) + ".0") & (df['DV[i+1]'] == str(X[1][i + 1]) + ".0") & (
+                            df['V0[i+1]'] == str(X[2][i + 1]) + ".0") & (df['V1[i+1]'] == str(X[3][i + 1]) + ".0")
+                X_b = df.loc[conditions_im1 & conditions_ip1 & conditions_i].values[0][12:]
+            elif i == 15:
+                conditions_im1 = (df['DL[i+1]'] == "PAD") & (df['DV[i+1]'] == "PAD") & (df['V0[i+1]'] == "PAD") & (
+                        df['V1[i+1]'] == "PAD")
+                conditions_i = (df['DL[i]'] == X[0][i]) & (df['DV[i]'] == X[1][i]) & (df['V0[i]'] == X[2][i]) & (
+                        df['V1[i]'] == X[3][i])
+                conditions_ip1 = (df['DL[i-1]'] == str(X[0][i - 1]) + ".0") & (df['DV[i-1]'] == str(X[1][i - 1]) + ".0") & (
+                        df['V0[i-1]'] == str(X[2][i - 1]) + ".0") & (df['V1[i-1]'] == str(X[3][i - 1]) + ".0")
+                X_b = df.loc[conditions_im1 & conditions_ip1 & conditions_i].values[0][12:]
+                # print(df.loc[conditions_im1 & conditions_ip1 & conditions_i].values[0][:12])
+            else:
+                conditions_im1 = (df['DL[i-1]'] == str(X[0][i - 1]) + ".0") & (df['DV[i-1]'] == str(X[1][i - 1]) + ".0") & (
+                        df['V0[i-1]'] == str(X[2][i - 1]) + ".0") & (df['V1[i-1]'] == str(X[3][i - 1]) + ".0")
+                conditions_i = (df['DL[i]'] == X[0][i]) & (df['DV[i]'] == X[1][i]) & (df['V0[i]'] == X[2][i]) & (
+                        df['V1[i]'] == X[3][i])
+                conditions_ip1 = (df['DL[i+1]'] == str(X[0][i + 1]) + ".0") & (df['DV[i+1]'] == str(X[1][i + 1]) + ".0") & (
+                        df['V0[i+1]'] == str(X[2][i + 1]) + ".0") & (df['V1[i+1]'] == str(X[3][i + 1]) + ".0")
+                X_b = df.loc[conditions_im1 & conditions_ip1 & conditions_i].values[0][12:]
+            X_transform[:, i] = X_b
+        X_f = X_transform.flatten()
+
+        #assert np.sum(X_f == X_desir) - (16 * args.out_channel0) == 0
+
+
+        if phase=="train":
+            X_train_proba_feat[index_sample] = X_f
+        if phase == "val":
+            X_eval_proba_feat[index_sample] = X_f
+"""
+
+
 
 
 
@@ -218,7 +337,7 @@ def make_checkpoint(datei):
     res = ModelCheckpoint(datei, monitor='val_loss', save_best_only=True);
     return (res);
 
-def make_classifier(input_size=84, d1=1024, d2=64, final_activation='sigmoid'):
+def make_classifier(input_size=84, d1=1024, d2=128, final_activation='sigmoid'):
     # Input and preprocessing layers
     inp = Input(shape=(input_size,));
     dense1 = Dense(d1)(inp);
@@ -249,6 +368,17 @@ def train_speck_distinguisher(n_feat, X, Y, X_eval, Y_eval, epoch, bs, name_ici=
     net3 = make_classifier(input_size=n_feat);
     net3.load_weights(wdir + 'NN_classifier' + str(6) + "_"+ name_ici +  '.h5')
     return (net3, h);
+
+#print(X_eval_proba_feat[0].tolist())
+#print(nn_model_ref.all_intermediaire_val[0].tolist())
+
+#print(ok)
+
+#X_eval_proba_feat = nn_model_ref.all_intermediaire_val
+Y_eval_proba = nn_model_ref.Y_val_nn_binaire
+#X_train_proba_feat = nn_model_ref.all_intermediaire
+Y_train_proba = nn_model_ref.Y_train_nn_binaire
+
 
 
 net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,

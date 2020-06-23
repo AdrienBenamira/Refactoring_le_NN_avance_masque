@@ -181,7 +181,6 @@ args = parser.parse_args()
 args.load_special = True
 args.finetunning = False
 args.logs_tensorboard = args.logs_tensorboard.replace("test", "table_of_truth")
-args.load_nn_path = args.model_to_prune
 args.nbre_sample_eval = args.nbre_sample_eval_prunning
 args.inputs_type = args.inputs_type_prunning
 
@@ -206,7 +205,7 @@ nn_model_ref.load_nn()
 
 flag2 = True
 acc_retain=[]
-global_sparsity = 0.25
+global_sparsity = 0.95
 parameters_to_prune = []
 for name, module in nn_model_ref.net.named_modules():
     if len(name):
@@ -244,6 +243,29 @@ for name, module in nn_model_ref.net.named_modules():
                     )
 if flag2:
     nn_model_ref.eval_all(["val"])
+
+
+t = nn_model_ref.net.fc1.weight_mask.sum(0).detach().cpu().numpy().tolist()
+index_filter_time_keep = [i for i, x in enumerate(t) if x!=0.0]
+
+liste_feature = []
+for j in range(args.out_channel0):
+    liste_feature += ["F"+str(j)+"_" + str(i) for i in range(16)]
+
+liste_feature_importance = [liste_feature[q] for q in index_filter_time_keep]
+
+print("FEATURES IMPORTANTES: ", liste_feature_importance)
+print("NBRE FEATURES IMPORTANTES: ", len(liste_feature_importance))
+
+dico_important = {}
+for filter_ici in liste_feature_importance:
+    filter_ici_key = filter_ici.split("_")[0]
+    time = filter_ici.split("_")[1]
+    if filter_ici_key in list(dico_important.keys()):
+        dico_important[filter_ici_key].append(time)
+    else:
+        dico_important[filter_ici_key] = [time]
+
 
 #nn_model_ref.eval_all(["val"])
 
@@ -326,7 +348,7 @@ print(df2_name.head(5))
 
 
 #df3 = df2.rename(columns={"Unnamed: 0": "Key"})
-df2.columns=["Filter_" + str(i) for i in range(64)]
+df2.columns=["Filter_" + str(i) for i in range(args.out_channel0)]
 
 df2_name.columns=["DL[i-1]","DV[i-1]","V0[i-1]","V1[i-1]","DL[i]","DV[i]","V0[i]","V1[i]","DL[i+1]","DV[i+1]","V0[i+1]","V1[i+1]"]
 
@@ -360,38 +382,45 @@ dictionnaire_perfiler = {}
 
 doublon = []
 
-for index_f in range(64):
+for index_f in range(args.out_channel0):
     print("Fliter ", index_f)
-    index_intere = df_m_f.index[df_m_f['Filter_'+str(index_f)] == 1].tolist()
-    print()
-    if len(index_intere) ==0:
-        print("Empty")
-    else:
-        dictionnaire_res_fin_expression["Filter "+ str(index_f)] = []
-        condtion_filter = []
-        for col in ["DL[i-1]", "V0[i-1]", "V1[i-1]", "DL[i]", "V0[i]", "V1[i]", "DL[i+1]", "V0[i+1]", "V1[i+1]"]:
-            s = df_m_f[col].values
-            my_dict = {"0.0": 0.0, "1.0": 1.0, 0.0: 0.0, 1.0: 1.0}
-            s2 = np.array([my_dict[zi] for zi in s])
-            condtion_filter.append(s2[index_intere])
+    if "F"+str(index_f) in list(dico_important.keys()):
+        index_intere = df_m_f.index[df_m_f['Filter_'+str(index_f)] == 1].tolist()
+        print()
+        if len(index_intere) ==0:
+            print("Empty")
+        else:
+            dictionnaire_res_fin_expression["Filter "+ str(index_f)] = []
+            condtion_filter = []
+            for col in ["DL[i-1]", "V0[i-1]", "V1[i-1]", "DL[i]", "V0[i]", "V1[i]", "DL[i+1]", "V0[i+1]", "V1[i+1]"]:
+                s = df_m_f[col].values
+                my_dict = {"0.0": 0.0, "1.0": 1.0, 0.0: 0.0, 1.0: 1.0}
+                s2 = np.array([my_dict[zi] for zi in s])
+                condtion_filter.append(s2[index_intere])
 
-        condtion_filter2 = np.array(condtion_filter).transpose()
-        condtion_filter3 = [x.tolist() for x in condtion_filter2]
-        assert len(condtion_filter3) == len(index_intere)
-        assert len(condtion_filter3[0]) == 9
-        w1, x1, y1, w2, x2, y2, w3, x3, y3 = symbols('DL[i-1], V0[i-1], V1[i-1], DL[i], V0[i], V1[i], DL[i+1], V0[i+1], V1[i+1]')
-        minterms = condtion_filter3
-        exp =SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
+            condtion_filter2 = np.array(condtion_filter).transpose()
+            condtion_filter3 = [x.tolist() for x in condtion_filter2]
+            assert len(condtion_filter3) == len(index_intere)
+            assert len(condtion_filter3[0]) == 9
+            w1, x1, y1, w2, x2, y2, w3, x3, y3 = symbols('DL[i-1], V0[i-1], V1[i-1], DL[i], V0[i], V1[i], DL[i+1], V0[i+1], V1[i+1]')
+            minterms = condtion_filter3
+            exp =SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
 
-        if exp not in doublon:
-            print(exp)
-            doublon.append(exp)
-            dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-            expV2 = str(exp).split(" | ")
-            dictionnaire_perfiler["Filter " + str(index_f)] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
-            exp = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-            print(exp)
-            dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
+
+
+            if exp in doublon:
+                print(exp, "DOUBLON")
+            elif str(exp) == 'True':
+                print(exp, "True")
+            else:
+                print(exp)
+                doublon.append(exp)
+                dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
+                expV2 = str(exp).split(" | ")
+                dictionnaire_perfiler["Filter " + str(index_f)] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
+                #exp = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
+                #print(exp)
+                #dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
 
 
 
@@ -405,3 +434,6 @@ df_row = pd.DataFrame(row)
 df_row.to_csv(path_save_model + "clause_unique.csv")
 df_expression_bool = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
 df_expression_bool.to_csv(path_save_model + "expression_bool_per_filter.csv")
+
+df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
+df_expression_bool.to_csv(path_save_model + "time_important_per_filter.csv")
