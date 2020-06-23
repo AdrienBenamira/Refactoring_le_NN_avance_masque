@@ -279,8 +279,8 @@ class NN_Model_Ref:
         pourcentage = 3
         #phase = "val"
         #self.intermediaires = {x:[] for x in val_phase }
-        data_train = np.zeros((len(self.X_train_nn_binaire), 2048),  dtype = np.uint8)
-        data_val = np.zeros((len(self.X_val_nn_binaire), 2048), dtype = np.uint8)
+        data_train = np.zeros((len(self.X_train_nn_binaire), 2048),  dtype = np.bool_)
+        data_val = np.zeros((len(self.X_val_nn_binaire), 2048), dtype = np.bool_)
         #x = self.net.intermediare.detach().cpu().numpy().astype(np.uint8)
         #data_train = np.zeros_like(x, dtype = np.uint8)
         #data_val = np.zeros_like(x, dtype = np.uint8)
