@@ -14,6 +14,8 @@ import pandas as pd
 
 from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
 from src.nn.models.ModelBaseline_binarized import ModelPaperBaseline_bin
+from src.nn.models.ModelBaseline_binarized_v3 import ModelPaperBaseline_bin3
+from src.nn.models.ModelBaseline_binarized_v4 import ModelPaperBaseline_bin4
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
 from src.nn.models.Multi_Headed import Multihead
 from src.nn.models.deepset import DTanh
@@ -62,6 +64,10 @@ class NN_Model_Ref_v2:
             return ModelPaperBaseline_bin(self.args).to(self.device)
         if self.args.type_model=="baseline_bin_v2":
             return ModelPaperBaseline_bin2(self.args).to(self.device)
+        if self.args.type_model=="baseline_bin_v3":
+            return ModelPaperBaseline_bin3(self.args).to(self.device)
+        if self.args.type_model=="baseline_bin_v4":
+            return ModelPaperBaseline_bin4(self.args).to(self.device)
         if self.args.type_model=="cnn_attention":
             return Modelbaseline_CNN_ATTENTION(self.args).to(self.device)
         if self.args.type_model=="multihead":

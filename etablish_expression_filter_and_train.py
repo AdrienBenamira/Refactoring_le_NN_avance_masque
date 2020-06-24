@@ -1,6 +1,6 @@
 import sys
 import warnings
-
+import random
 from src.nn.nn_model_ref_v2 import NN_Model_Ref_v2
 
 warnings.filterwarnings('ignore',category=FutureWarning)
@@ -124,6 +124,92 @@ def incremente_dico(nn_model_ref, index_sample, df_dico_second_tot, res2, df_dic
 
     return df_dico_second_tot, df_dico_name_tot
 
+
+
+def DPLL(exp, M):
+    print(exp)
+    if len(exp) ==0:
+        return (M)
+    if len(exp) >0:
+        #int_random =random.randint(0,len(exp)-1)
+        clause = exp[0].replace(" ", "")
+        if '|' not in clause:
+            M = increment(M, clause)
+            exp = exp[1:].copy()
+            return DPLL(exp, M)
+        else:
+            vars = clause.split('|')
+            #int_random = random.randint(0, len(vars) - 1)
+            #for var in vars:
+            var = vars[0]
+            M = increment(M, var.replace(" ", "").replace(")", "").replace("(", ""))
+            #exp = exp[1:].copy()
+            exp = nettoyer(exp, var.replace(" ", "").replace(")", "").replace("(", "")).copy()
+            return DPLL(exp, M)
+
+def increment(M, el_c):
+    if "V0" in el_c:
+        if "~" in el_c:
+            F = 4
+        else:
+            F = 1
+    elif "V1" in el_c:
+        if "~" in el_c:
+            F = 5
+        else:
+            F = 2
+    elif "DL" in el_c:
+        if "~" in el_c:
+            F = 3
+        else:
+            F = 0
+    if "[i]" in el_c:
+        offset = 1
+    elif "[i+1]" in el_c:
+        offset = 2
+    elif "[i-1]" in el_c:
+        offset = 0
+    M[F][offset] = 1
+    return M
+
+def nettoyer(exp, var):
+    exp2 = []
+    flag_neg = "~" in var
+    if not flag_neg:
+        var_neg = "~" + var
+    for var2 in exp:
+        if not flag_neg:
+            if var not in var2 or var_neg in var2:
+                exp2.append(var2)
+            #if var_neg in var2:
+            #    exp2.append(var2.replace(var_neg, "").replace(" ", "").replace(")", "").replace("(", "").replace("|", ""))
+            else:
+                var3 = var2 + " | "
+                var4 = " | " + var2
+                var5 = var.replace(var3, "").replace(var4, "")
+                if "|" in var:
+                    exp2.append(var5)
+                else:
+                    exp2.append(var5.replace("(", "").replace(")", "").replace(" ", ""))
+        else:
+            if var not in var2:
+                exp2.append(var2)
+            else:
+
+                var3 = var + "|"
+                var4 = "|" + var
+                var5 = var2.replace(" ", "").replace(var3, "").replace(var4, "")
+
+
+                if "|" in var5:
+                    exp2.append(var5.replace(" ", ""))
+                else:
+                    exp2.append(var5.replace("(", "").replace(")", "").replace(" ", ""))
+
+
+
+    exp2.sort(key=lambda x: len(x.split("|")), reverse=False)
+    return exp2
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
@@ -430,10 +516,16 @@ df_m_f.to_csv(path_save_model + "table_of_truth_0985_final_without_pad.csv")
 
 
 dictionnaire_res_fin_expression = {}
+dictionnaire_res_fin_expression_POS = {}
 
 dictionnaire_perfiler = {}
+dictionnaire_perfiler_POS = {}
 
 doublon = []
+
+expPOS_tot =[]
+
+cpteur = 0
 
 for index_f in range(args.out_channel0):
     print("Fliter ", index_f)
@@ -444,6 +536,7 @@ for index_f in range(args.out_channel0):
             print("Empty")
         else:
             dictionnaire_res_fin_expression["Filter "+ str(index_f)] = []
+            dictionnaire_res_fin_expression_POS["Filter " + str(index_f)] = []
             condtion_filter = []
             for col in ["DL[i-1]", "V0[i-1]", "V1[i-1]", "DL[i]", "V0[i]", "V1[i]", "DL[i+1]", "V0[i+1]", "V1[i+1]"]:
                 s = df_m_f[col].values
@@ -459,8 +552,6 @@ for index_f in range(args.out_channel0):
             minterms = condtion_filter3
             exp =SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
 
-
-
             if exp in doublon:
                 print(exp, "DOUBLON")
             elif str(exp) == 'True':
@@ -471,14 +562,25 @@ for index_f in range(args.out_channel0):
                 dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
                 expV2 = str(exp).split(" | ")
                 dictionnaire_perfiler["Filter " + str(index_f)] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
-                #exp = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-                #print(exp)
+                print()
+                expPOS = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
+                print(expPOS)
+                expPOS_tot.append(str(expPOS))
+                dictionnaire_res_fin_expression_POS["Filter " + str(index_f)].append(expPOS)
+                expV2POS = str(expPOS).split(" & ")
+                print(len(expV2POS))
+
+                cpteur += 2**len(expV2POS)
+
+                dictionnaire_perfiler_POS["Filter " + str(index_f)] = [str(expV2POS)] + [x.replace("(", "").replace(")", "") for
+                                                                                x in expV2POS]
                 #dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
 
 
 
         print()
 
+print(cpteur)
 
 df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
 row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
@@ -488,9 +590,88 @@ df_row.to_csv(path_save_model + "clause_unique.csv")
 df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
 df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter.csv")
 
+
+df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler_POS, orient='index').T
+row3 = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
+df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_POS.csv")
+df_row = pd.DataFrame(row3)
+df_row.to_csv(path_save_model + "clause_unique_POS.csv")
+df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression_POS, orient='index').T
+df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS.csv")
+
 df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
 df_expression_bool.to_csv(path_save_model + "time_important_per_filter.csv")
 
+all_masksPOS = [[], [], [],[], [], []]
+for exp_iter in expPOS_tot:
+    expression = exp_iter.split("&")
+    M = np.zeros((6, 16), dtype=np.uint8)
+    #for iterici in range(2*len(expression)):
+    M2 = DPLL(expression, M)
+    for offset in range(15):
+        for index_m_f, m_f in enumerate(M2):
+            liste_ici = m_f.tolist()
+            result = int("".join(str(i) for i in liste_ici), 2)
+            all_masksPOS[index_m_f].append(result>>offset)
+
+print("NBRE DE MASKS CREE:", len(all_masksPOS[0]))
+
+with open(path_save_model + "masks_allPOS.txt", "w") as file:
+    for i in range(6):
+        file.write(str(all_masksPOS[i]))
+        file.write("\n")
+
+print(ok)
+
+row_v2 = []
+for r in row:
+    if r is not None:
+        if "(" not in r:
+            row_v2.append(r)
+
+print("NBRE DE CLAUSE UNIQUE:", len(row_v2))
+all_masks = [[], [], [],[], [], []]
+for clause_ici in row_v2:
+    element_clause = clause_ici.split("&")
+    for index_mask in range(1,15):
+        M = np.zeros((6,16), dtype = np.uint8)
+        for el_c in element_clause:
+            if "V0" in el_c:
+                if "~" in el_c:
+                    F = 4
+                else:
+                    F = 1
+            elif "V1" in el_c:
+                if "~" in el_c:
+                    F = 5
+                else:
+                    F = 2
+            elif "DL" in el_c:
+                if "~" in el_c:
+                    F = 3
+                else:
+                    F = 0
+            if "[i]" in el_c:
+                offset = 0
+            elif "[i+1]" in el_c:
+                offset = 1
+            elif "[i-1]" in el_c:
+                offset = -1
+            M[F][index_mask + offset] = 1
+
+        for index_m_f, m_f in enumerate(M):
+            liste_ici = m_f.tolist()
+            result = int("".join(str(i) for i in liste_ici), 2)
+            all_masks[index_m_f].append(result)
+
+print("NBRE DE MASKS CREE:", len(all_masks[0]))
+
+with open(path_save_model + "masks_all.txt", "w") as file:
+    for i in range(6):
+        file.write(str(all_masks[i]))
+        file.write("\n")
+
+print(ok)
 
 del nn_model_ref
 

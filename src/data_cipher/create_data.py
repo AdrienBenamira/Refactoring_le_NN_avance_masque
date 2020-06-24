@@ -173,6 +173,24 @@ class Create_data_binary:
             if args.inputs_type[i] == "V1i+1":
                 V1 = ctdata1l ^ ctdata1r
                 inputs_toput.append(V1<<1)
+            if args.inputs_type[i] == "DL":
+                DeltaL = ctdata0l ^ ctdata1l
+                inputs_toput.append(DeltaL)
+            if args.inputs_type[i] == "inv(DL)":
+                DeltaL = 65535 - (ctdata0l ^ ctdata1l)
+                inputs_toput.append(DeltaL)
+            if args.inputs_type[i] == "V0":
+                V0 = ctdata0l ^ ctdata0r
+                inputs_toput.append(V0)
+            if args.inputs_type[i] == "inv(V0)":
+                V0 = 65535 - (ctdata0l ^ ctdata0r)
+                inputs_toput.append(V0)
+            if args.inputs_type[i] == "V1":
+                V1 = ctdata1l ^ ctdata1r
+                inputs_toput.append(V1)
+            if args.inputs_type[i] == "inv(V1)":
+                V1 = 65535 - (ctdata1l ^ ctdata1r)
+                inputs_toput.append(V1)
         return inputs_toput
 
 

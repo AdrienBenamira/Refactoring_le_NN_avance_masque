@@ -4,28 +4,31 @@ from torch.nn import functional as F
 import numpy as np
 
 import math
-
+from src.nn.models.attention_augmented_conv import AugmentedConv
 #DoReFaNet
 
-class ModelPaperBaseline_bin2(nn.Module):
+class ModelPaperBaseline_bin4(nn.Module):
 
     def __init__(self, args):
-        super(ModelPaperBaseline_bin2, self).__init__()
+        super(ModelPaperBaseline_bin4, self).__init__()
         self.args = args
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
-        self.convm1 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=len(self.args.inputs_type), kernel_size=1)
-        self.BNm1 = nn.BatchNorm1d(len(self.args.inputs_type), eps=0.01, momentum=0.99)
-        self.conv0 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel0, kernel_size=1)
-        self.BN0 = nn.BatchNorm1d(args.out_channel0, eps=0.01, momentum=0.99)
+        #self.convm1 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=len(self.args.inputs_type), kernel_size=1)
+        self.convm1 = AugmentedConv(in_channels=len(self.args.inputs_type), out_channels=self.args.out_channel0, dk=40, dv=4, Nh=4, kernel_size=1)
+        self.BNm1 = nn.BatchNorm2d(self.args.out_channel0, eps=0.01, momentum=0.99)
+        self.conv0 = AugmentedConv(in_channels=self.args.out_channel0, out_channels=self.args.out_channel0, dk=40, dv=40, Nh=4, kernel_size=1)
+        #self.conv0 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel0, kernel_size=1)
+        self.BN0 = nn.BatchNorm2d(args.out_channel0, eps=0.01, momentum=0.99)
         self.layers_conv = nn.ModuleList()
         self.layers_batch = nn.ModuleList()
         self.numLayers = args.numLayers
         for i in range(args.numLayers - 1):
             if i ==0:
                 self.layers_conv.append(
-                    nn.Conv1d(in_channels=args.out_channel0, out_channels=args.out_channel1, kernel_size=3, padding =1))
-                self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
+                    AugmentedConv(in_channels=self.args.out_channel1, out_channels=self.args.out_channel1,
+                                  kernel_size=3, dk=40, dv=4, Nh=4))
+                self.layers_batch.append(nn.BatchNorm2d(args.out_channel1, eps=0.01, momentum=0.99))
             else:
                 self.layers_conv.append(
                 nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
@@ -37,9 +40,9 @@ class ModelPaperBaseline_bin2(nn.Module):
         self.fc3 = nn.Linear(args.hidden1, 1)
 
     def forward(self, x):
-        x = x.view(-1, len(self.args.inputs_type), self.word_size)
+        x = x.view(-1, len(self.args.inputs_type), self.word_size, 1)
         self.x_input = x
-        #x = F.relu(self.BNm1(self.convm1(x)))
+        x = F.relu(self.BNm1(self.convm1(x)))
         x = F.relu(self.BN0(self.conv0(x)))
         x = self.act_q(x)
         shortcut = x.clone()
