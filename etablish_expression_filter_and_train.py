@@ -366,7 +366,7 @@ x_input_f2 = torch.Tensor(x_input_f2)
 df_dico_name_tot = {}
 df_dico_second_tot = {}
 
-nn_model_ref.net(x_input_f2)
+nn_model_ref.net(x_input_f2.to(device))
 for index in range(nn_model_ref.net.x_input.shape[0]):
     res = []
     for index_x, x in enumerate(nn_model_ref.net.classify[index]):
