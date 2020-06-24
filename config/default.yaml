@@ -22,7 +22,7 @@ train_nn:
   finetunning: No
   model_finetunne: baseline
   load_special: No
-  load_nn_path: ./results/0.925608_bestacc.pth
+  load_nn_path: results/0.781974_bestacc.pth #./results/0.925608_bestacc.pth
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3

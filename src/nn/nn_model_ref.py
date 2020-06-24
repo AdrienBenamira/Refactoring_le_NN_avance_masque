@@ -10,7 +10,7 @@ import os
 import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
-import pandas as pd
+
 
 from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
 from src.nn.models.ModelBaseline_binarized import ModelPaperBaseline_bin
@@ -279,16 +279,11 @@ class NN_Model_Ref:
         pourcentage = 3
         #phase = "val"
         #self.intermediaires = {x:[] for x in val_phase }
-        #data_train = np.zeros((len(self.X_train_nn_binaire), 2048),  dtype = np.bool_)
-        #data_val = np.zeros((len(self.X_val_nn_binaire), 2048), dtype = np.bool_)
+        data_train = np.zeros((len(self.X_train_nn_binaire), 16*self.args.out_channel1),  dtype = np.uint8)
+        data_val = np.zeros((len(self.X_val_nn_binaire), 16*self.args.out_channel1), dtype = np.uint8)
         #x = self.net.intermediare.detach().cpu().numpy().astype(np.uint8)
         #data_train = np.zeros_like(x, dtype = np.uint8)
         #data_val = np.zeros_like(x, dtype = np.uint8)
-
-        df_matter = pd.read_csv("results/table_of_truth_5round/dictionnaire_perfiler.csv", index_col=0)
-        X_train_proba_feat = np.zeros((len(self.Y_train_nn_binaire), (len(df_matter.columns)), 16),
-                                      dtype=np.bool_)
-        X_eval_proba_feat = np.zeros((len(self.Y_val_nn_binaire), (len(df_matter.columns)), 16), dtype=np.bool_)
 
         self.outputs_proba = {x: [] for x in val_phase}
         self.outputs_pred = {x: [] for x in val_phase}
@@ -305,18 +300,11 @@ class NN_Model_Ref:
                 inputs, labels = data
                 outputs = self.net(inputs.to(self.device))
                 data_ici = self.net.intermediare.detach().cpu().numpy().astype(np.uint8)
-
-                X_desir2 = data_ici.reshape(-1, 128, 16)
-
-                for index_col, col in enumerate(df_matter.columns):
-                    int_interest = int(col.split(" ")[1])
-                    X_f = X_desir2[:, int_interest, :]
-
-                    if phase == "train":
-                        X_train_proba_feat[i*self.batch_size:(i+1)*self.batch_size,index_col, :] = X_f
-                    else:
-                        X_eval_proba_feat[i*self.batch_size:(i+1)*self.batch_size,index_col,:] = X_f
-                    #del data_ici
+                if phase == "train":
+                    data_train[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
+                else:
+                    data_val[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
+                del data_ici
 
                 #self.intermediaires[phase].append(self.net.intermediare.detach().cpu().numpy().astype(np.uint8))
                 #self.outputs_proba[phase].append(outputs.detach().cpu().numpy().astype(np.float16))
@@ -355,7 +343,7 @@ class NN_Model_Ref:
                 #del self.dataloaders["train"]
                 #data = data_train #np.array(self.intermediaires[phase]).astype(np.uint8).reshape(num1 * self.batch_size, -1)
                 #data2 = scaler1.fit_transform(data)
-                self.all_intermediaire = X_train_proba_feat.reshape(-1, (len(df_matter.columns))* 16)
+                self.all_intermediaire = data_train
                 #self.outputs_proba_train = np.array(self.outputs_proba[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
                 #self.outputs_pred_train = np.array(self.outputs_pred[phase]).astype(np.float16).reshape(num1 * self.batch_size, -1)
                 #if not self.args.retrain_nn_ref:
@@ -366,7 +354,7 @@ class NN_Model_Ref:
                 #data = data_val
                 #data = np.array(self.intermediaires[phase]).astype(np.uint8).reshape(num1 * self.batch_size, -1)
                 #data2 = scaler2.fit_transform(data)
-                self.all_intermediaire_val = X_eval_proba_feat.reshape(-1, (len(df_matter.columns))* 16)
+                self.all_intermediaire_val = data_val
                 #self.outputs_proba_val = np.array(self.outputs_proba[phase]).astype(np.float16).reshape(num2 * self.batch_size, -1)
                 #self.outputs_pred_val = np.array(self.outputs_pred[phase]).astype(np.float16).reshape(
                 #    num2 * self.batch_size, -1)
