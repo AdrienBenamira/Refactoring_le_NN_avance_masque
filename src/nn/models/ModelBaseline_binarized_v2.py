@@ -14,6 +14,8 @@ class ModelPaperBaseline_bin2(nn.Module):
         self.args = args
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
+        self.convm1 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=len(self.args.inputs_type), kernel_size=1)
+        self.BNm1 = nn.BatchNorm1d(len(self.args.inputs_type), eps=0.01, momentum=0.99)
         self.conv0 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel0, kernel_size=1)
         self.BN0 = nn.BatchNorm1d(args.out_channel0, eps=0.01, momentum=0.99)
         self.layers_conv = nn.ModuleList()
@@ -37,6 +39,7 @@ class ModelPaperBaseline_bin2(nn.Module):
     def forward(self, x):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
         self.x_input = x
+        x = F.relu(self.BNm1(self.convm1(x)))
         x = F.relu(self.BN0(self.conv0(x)))
         x = self.act_q(x)
         shortcut = x.clone()
