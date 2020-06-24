@@ -224,7 +224,7 @@ if flag_test:
             X_transform[:,i] = X_b
         X_f = X_transform.flatten()
         assert np.sum(X_f == X_desir)/(16*args.out_channel0) == 1
-
+"""
 df_matter = pd.read_csv("results/table_of_truth_5round/dictionnaire_perfiler.csv", index_col= 0)
 
 drop_col = []
@@ -257,7 +257,6 @@ for phase in ["train", "val"]:
         X_f = X_desir2[:, int_interest, :]
 
 
-
         if phase == "train":
             X_train_proba_feat[:, index_col, :] = X_f
         if phase == "val":
@@ -265,7 +264,7 @@ for phase in ["train", "val"]:
 
 X_train_proba_feat = X_train_proba_feat.reshape(-1, (len(df_matter.columns))* 16)
 X_eval_proba_feat = X_eval_proba_feat.reshape(-1, (len(df_matter.columns)) * 16)
-
+"""
 """
 for phase in ["train", "val"]:
     for index_sample in tqdm(range(len(nn_model_ref.Y_train_nn_binaire))):
@@ -374,9 +373,9 @@ def train_speck_distinguisher(n_feat, X, Y, X_eval, Y_eval, epoch, bs, name_ici=
 
 #print(ok)
 
-#X_eval_proba_feat = nn_model_ref.all_intermediaire_val
+X_eval_proba_feat = nn_model_ref.all_intermediaire_val
 Y_eval_proba = nn_model_ref.Y_val_nn_binaire
-#X_train_proba_feat = nn_model_ref.all_intermediaire
+X_train_proba_feat = nn_model_ref.all_intermediaire
 Y_train_proba = nn_model_ref.Y_train_nn_binaire
 
 
