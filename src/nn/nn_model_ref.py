@@ -16,6 +16,7 @@ from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
 from src.nn.models.ModelBaseline_binarized import ModelPaperBaseline_bin
 from src.nn.models.ModelBaseline_binarized_v3 import ModelPaperBaseline_bin3
 from src.nn.models.ModelBaseline_binarized_v4 import ModelPaperBaseline_bin4
+from src.nn.models.ModelBaseline_v2 import ModelPaperBaseline_v2
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
 from src.nn.models.Multi_Headed import Multihead
 from src.nn.models.deepset import DTanh
@@ -60,6 +61,8 @@ class NN_Model_Ref:
     def choose_model(self):
         if self.args.type_model=="baseline":
             return ModelPaperBaseline(self.args).to(self.device)
+        if self.args.type_model=="baseline_v2":
+            return ModelPaperBaseline_v2(self.args).to(self.device)
         if self.args.type_model=="baseline_bin":
             return ModelPaperBaseline_bin(self.args).to(self.device)
         if self.args.type_model=="baseline_bin_v2":

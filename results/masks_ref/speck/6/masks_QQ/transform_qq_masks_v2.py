@@ -42,6 +42,7 @@ for line in infile:
 
 infile.close()
 
+print(len(masksc0l))
 
 with open("masks_"+str(len(masksc0l))+".txt","w") as file:
     file.write(str(masksc0l))

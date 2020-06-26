@@ -6,10 +6,10 @@ general:
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 5
-  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  inputs_type: [ctdata0l^ctdata1l, DV, V0, V1]
+  #[ctdata0l^ctdata1l, DV, V0, V1]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l, ctdata0r, ctdata1l, ctdata1r]
-  #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l^ctdata1l, inv(DeltaV), inv(V0)&inv(V1), inv(V0)&V1, inv(DeltaL)] #
   word_size: 16
   alpha: 7
@@ -22,15 +22,15 @@ train_nn:
   finetunning: No
   model_finetunne: baseline
   load_special: No
-  load_nn_path: ./results/0.925608_bestacc.pth # results/0.781974_bestacc.pth #./results/0.925608_bestacc.pth
+  load_nn_path: ./results/0.925608_bestacc.pth #./results/0.993328_bestacc.pth #./results/0.925608_bestacc.pth # results/0.781974_bestacc.pth #
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline_bin_v3        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2
+  type_model: baseline_bin_v2        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2
   a_bit: 1
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 30
+  num_epochs: 100
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
@@ -54,7 +54,7 @@ train_nn:
 
 getting_masks:
   load_masks: Yes
-  file_mask: results/masks_ref/masks_allPOS_485.txt #results/masks_ref/speck/masks_inter_round.txt
+  file_mask: results/masks_ref/speck/6/masks_QQ/masks_61.txt #results/masks_ref/speck/masks_inter_round.txt
   nbre_max_masks_load: -1
   research_new_masks: No
   nbre_generate_data_train_val: 1000000
@@ -82,12 +82,12 @@ getting_masks:
 make_ToT:
   create_new_data_for_ToT: Yes
   create_ToT_with_only_sample_from_cipher: Yes
-  nbre_sample_create_ToT: 10000000
+  nbre_sample_create_ToT: 20000000
 
 make_data_classifier:
   create_new_data_for_classifier: Yes
   nbre_sample_train_classifier: 1000000
-  nbre_sample_val_classifier: 1000000
+  nbre_sample_val_classifier: 100000
 
 compare_classifer:
   eval_nn_ref: No

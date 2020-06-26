@@ -2,17 +2,19 @@ import sys
 import warnings
 import random
 from src.nn.nn_model_ref_v2 import NN_Model_Ref_v2
-
+from alibi.explainers import CEM
+from sympy import *
 warnings.filterwarnings('ignore',category=FutureWarning)
 import torch
 import os
 from src.nn.nn_model_ref import NN_Model_Ref
 from sympy.logic import SOPform, POSform
 from sympy import symbols
-
+from alibi.explainers import AnchorTabular
 from src.data_cipher.create_data import Create_data_binary
 from src.utils.initialisation_run import init_all_for_run, init_cipher
-
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
 import pandas as pd
 import numpy as np
 from src.utils.config import Config
@@ -44,10 +46,10 @@ def make_classifier(input_size=84, d1=512, d2=256, final_activation='sigmoid'):
     inp = Input(shape=(input_size,));
     dense1 = Dense(d1)(inp);
     dense1 = BatchNormalization()(dense1);
-    dense1 = Activation('relu')(dense1);
+    #dense1 = Activation('relu')(dense1);
     dense2 = Dense(d2)(dense1);
     dense2 = BatchNormalization()(dense2);
-    dense2 = Activation('relu')(dense2);
+    #dense2 = Activation('relu')(dense2);
     out = Dense(1, activation=final_activation)(dense2);
     model = Model(inputs=inp, outputs=out);
     return (model);
@@ -344,7 +346,7 @@ nn_model_ref.load_nn()
 
 flag2 = True
 acc_retain=[]
-global_sparsity = 0.85
+global_sparsity = 0.95
 parameters_to_prune = []
 for name, module in nn_model_ref.net.named_modules():
     if len(name):
@@ -578,6 +580,7 @@ for index_f in range(args.out_channel0):
 
 
 
+
         print()
 
 print(cpteur)
@@ -621,7 +624,6 @@ with open(path_save_model + "masks_allPOS.txt", "w") as file:
         file.write(str(all_masksPOS[i]))
         file.write("\n")
 
-print(ok)
 
 row_v2 = []
 for r in row:
@@ -671,11 +673,11 @@ with open(path_save_model + "masks_all.txt", "w") as file:
         file.write(str(all_masks[i]))
         file.write("\n")
 
-print(ok)
+
 
 del nn_model_ref
 
-for round_ici in [5, 6, 7, 8]:
+for round_ici in [5, 6, 7, 8, 4]:
 
     args.nombre_round_eval = round_ici
 
@@ -744,4 +746,32 @@ for round_ici in [5, 6, 7, 8]:
                                                        bs=5000,
                                                        epoch=10, name_ici="test")
 
+
+    """clf = RandomForestClassifier(n_estimators=10)
+    clf.fit(X_train_proba_feat, Y_train_proba)
+    
+    predict_fn = lambda x: clf.predict(x)
+    print('Train accuracy: ', accuracy_score(Y_train_proba, predict_fn(X_train_proba_feat)))
+    print('Test accuracy: ', accuracy_score(Y_eval_proba, predict_fn(X_eval_proba_feat)))
+    
+    #predict_fn = lambda x: net_retrain.predict(x)[0]
+    explainer = AnchorTabular(predict_fn, [i for i in range(X_train_proba_feat.shape[1])], categorical_names={0:"R", 1:"S"}, seed=1)
+    explainer.fit(X_train_proba_feat, disc_perc=[25, 50, 75])
+    idx = 0
+    #X = X_eval_proba_feat[idx].reshape((1,) + X_eval_proba_feat[idx].shape)
+    #print('Prediction: ', explainer.predictor(X)[0])
+    
+    idx = 0
+    print('Prediction: ', explainer.predictor(X_eval_proba_feat[idx].reshape(1, -1))[0])
+    print('Label: ', Y_eval_proba[0])
+    
+    
+    
+    explanation = explainer.explain(X_eval_proba_feat[idx], threshold=0.95)
+    #explanation = explainer.explain(X, threshold=0.95)
+    print('Anchor: %s' % (' AND '.join(explanation.anchor)))
+    print('Precision: %.2f' % explanation.precision)
+    print('Coverage: %.2f' % explanation.coverage)"""
+
+    print()
     del nn_model_ref

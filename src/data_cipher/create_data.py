@@ -82,6 +82,12 @@ class Create_data_binary:
 
     def convert_data_inputs(self, args, ctdata0l, ctdata0r, ctdata1l, ctdata1r):
         inputs_toput = []
+        V0 = self.cipher.ror(ctdata0l ^ ctdata0r, self.cipher.BETA)
+        V1 = self.cipher.ror(ctdata1l ^ ctdata1r, self.cipher.BETA)
+        DV = V0 ^ V1
+        V0Inv = 65535 - V0
+        V1Inv = 65535 - V1
+        inv_DeltaV = 65535 - DV
         for i in range(len(args.inputs_type)):
             if args.inputs_type[i] =="ctdata0l":
                 inputs_toput.append(ctdata0l)
@@ -92,12 +98,8 @@ class Create_data_binary:
             if args.inputs_type[i] =="ctdata1r":
                 inputs_toput.append(ctdata1r)
             if args.inputs_type[i] =="V0&V1":
-                V0 = ctdata0l ^ ctdata0r
-                V1 = ctdata1l ^ ctdata1r
                 inputs_toput.append(V0&V1)
             if args.inputs_type[i] =="V0|V1":
-                V0 = ctdata0l ^ ctdata0r
-                V1 = ctdata1l ^ ctdata1r
                 inputs_toput.append(V0 | V1)
             if args.inputs_type[i] =="ctdata0l^ctdata1l":
                 inputs_toput.append(ctdata0l^ctdata1l)
@@ -116,16 +118,10 @@ class Create_data_binary:
             if args.inputs_type[i] =="ctdata0r^ctdata1r^ctdata0l^ctdata1l":
                 inputs_toput.append(ctdata0r^ctdata1r^ctdata0l^ctdata1l)
             if args.inputs_type[i] =="inv(V0)&V1":
-                V1 = ctdata1l ^ ctdata1r
-                V0Inv = 65535 - ctdata0l^ctdata0r
                 inputs_toput.append(V1&V0Inv)
             if args.inputs_type[i] =="V0&inv(V1)":
-                V0 = ctdata0l ^ ctdata0r
-                V1Inv = 65535 - ctdata1l^ctdata1r
                 inputs_toput.append(V0&V1Inv)
             if args.inputs_type[i] =="inv(V0)&inv(V1)":
-                V1Inv = 65535 - ctdata1l ^ ctdata1r
-                V0Inv = 65535 -ctdata0l ^ ctdata0r
                 inputs_toput.append(V0Inv&V1Inv)
             if args.inputs_type[i] =="inv(DeltaL)":
                 inv_DeltaL = 65535 - ctdata0l ^ ctdata1l
@@ -134,9 +130,8 @@ class Create_data_binary:
                 inv_DeltaV = 65535 - ctdata0l^ctdata1l^ctdata0r^ctdata1r
                 inputs_toput.append(inv_DeltaV)
             if args.inputs_type[i] == "DeltaL&DeltaV":
-                DeltaV = ctdata0l ^ ctdata1l ^ ctdata0r ^ ctdata1r
                 DeltaL = ctdata0l ^ ctdata1l
-                inputs_toput.append(DeltaL&DeltaV)
+                inputs_toput.append(DeltaL&DV)
             if args.inputs_type[i] == "DLi":
                 DeltaL = ctdata0l ^ ctdata1l
                 inputs_toput.append(DeltaL)
@@ -147,31 +142,27 @@ class Create_data_binary:
                 DeltaL = ctdata0l ^ ctdata1l
                 inputs_toput.append(DeltaL<<1)
             if args.inputs_type[i] == "DVi":
-                DeltaV = ctdata0l ^ ctdata1l ^ ctdata0r ^ ctdata1r
-                inputs_toput.append(DeltaV)
+                inputs_toput.append(DV)
             if args.inputs_type[i] == "DVi-1":
-                DeltaV = ctdata0l ^ ctdata1l ^ ctdata0r ^ ctdata1r
-                inputs_toput.append(DeltaV>>1)
+                inputs_toput.append(DV>>1)
             if args.inputs_type[i] == "DVi+1":
-                DeltaV = ctdata0l ^ ctdata1l ^ ctdata0r ^ ctdata1r
-                inputs_toput.append(DeltaV<<1)
+                inputs_toput.append(DV<<1)
             if args.inputs_type[i] == "V0i":
-                V0 = ctdata0l ^ ctdata0r
                 inputs_toput.append(V0)
             if args.inputs_type[i] == "V0i-1":
-                V0 = ctdata0l ^ ctdata0r
+                #V0 = ctdata0l ^ ctdata0r
                 inputs_toput.append(V0>>1)
             if args.inputs_type[i] == "V0i+1":
-                V0 = ctdata0l ^ ctdata0r
+                #V0 = ctdata0l ^ ctdata0r
                 inputs_toput.append(V0<<1)
             if args.inputs_type[i] == "V1i":
-                V1 = ctdata1l ^ ctdata1r
+                #V1 = ctdata1l ^ ctdata1r
                 inputs_toput.append(V1)
             if args.inputs_type[i] == "V1i-1":
-                V1 = ctdata1l ^ ctdata1r
+                #V1 = ctdata1l ^ ctdata1r
                 inputs_toput.append(V1>>1)
             if args.inputs_type[i] == "V1i+1":
-                V1 = ctdata1l ^ ctdata1r
+                #V1 = ctdata1l ^ ctdata1r
                 inputs_toput.append(V1<<1)
             if args.inputs_type[i] == "DL":
                 DeltaL = ctdata0l ^ ctdata1l
@@ -180,17 +171,23 @@ class Create_data_binary:
                 DeltaL = 65535 - (ctdata0l ^ ctdata1l)
                 inputs_toput.append(DeltaL)
             if args.inputs_type[i] == "V0":
-                V0 = ctdata0l ^ ctdata0r
+                #V0 = ctdata0l ^ ctdata0r
                 inputs_toput.append(V0)
             if args.inputs_type[i] == "inv(V0)":
-                V0 = 65535 - (ctdata0l ^ ctdata0r)
-                inputs_toput.append(V0)
+                #V0 = 65535 - (ctdata0l ^ ctdata0r)
+                inputs_toput.append(V0Inv)
             if args.inputs_type[i] == "V1":
-                V1 = ctdata1l ^ ctdata1r
+                #V1 = ctdata1l ^ ctdata1r
                 inputs_toput.append(V1)
             if args.inputs_type[i] == "inv(V1)":
-                V1 = 65535 - (ctdata1l ^ ctdata1r)
-                inputs_toput.append(V1)
+                #V1 = 65535 - (ctdata1l ^ ctdata1r)
+                inputs_toput.append(V1Inv)
+            if args.inputs_type[i] == "DV":
+                #V1 = ctdata1l ^ ctdata1r
+                inputs_toput.append(DV)
+            if args.inputs_type[i] == "inv(DV)":
+                #V1 = 65535 - (ctdata1l ^ ctdata1r)
+                inputs_toput.append(inv_DeltaV)
         return inputs_toput
 
 
