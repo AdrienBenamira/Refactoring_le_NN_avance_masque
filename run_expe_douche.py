@@ -6,8 +6,8 @@ import os
 
 
 
-command = "python3 main.py --nombre_round_eval 5"
-os.system(command)
+#command = "python3 main.py --nombre_round_eval 5"
+#os.system(command)
 
 command = "python3 main.py --nombre_round_eval 6"
 os.system(command)

@@ -1,6 +1,8 @@
 import sys
 import warnings
 import random
+
+from src.nn.models.Linear_binarized import Linear_bin
 from src.nn.nn_model_ref_v2 import NN_Model_Ref_v2
 from alibi.explainers import CEM
 from sympy import *
@@ -31,6 +33,20 @@ from pickle import dump
 
 #NN
 from tqdm import tqdm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def cyclic_lr(num_epochs, high_lr, low_lr):
     res = lambda i: low_lr + ((num_epochs - 1) - i % num_epochs) / (num_epochs - 1) * (high_lr - low_lr);
@@ -529,7 +545,7 @@ expPOS_tot =[]
 
 cpteur = 0
 
-for index_f in range(args.out_channel0):
+for index_f in range(3):
     print("Fliter ", index_f)
     if "F"+str(index_f) in list(dico_important.keys()):
         index_intere = df_m_f.index[df_m_f['Filter_'+str(index_f)] == 1].tolist()
@@ -739,6 +755,15 @@ for round_ici in [5, 6, 7, 8, 4]:
 
     print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1]/16)
 
+
+
+    net = Linear_bin(args, X_train_proba_feat.shape[1]).to(device)
+
+    nn_model_ref.net = net
+    nn_model_ref.X_train_nn_binaire = X_train_proba_feat
+    nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
+
+    nn_model_ref.train_from_scractch("BNN")
 
 
     net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,
