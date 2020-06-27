@@ -545,7 +545,7 @@ expPOS_tot =[]
 
 cpteur = 0
 
-for index_f in range(3):
+for index_f in range(args.out_channel0):
     print("Fliter ", index_f)
     if "F"+str(index_f) in list(dico_important.keys()):
         index_intere = df_m_f.index[df_m_f['Filter_'+str(index_f)] == 1].tolist()
@@ -769,7 +769,7 @@ for round_ici in [5, 6, 7, 8, 4]:
     net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,
                                                        Y_train_proba, X_eval_proba_feat, Y_eval_proba,
                                                        bs=5000,
-                                                       epoch=10, name_ici="test")
+                                                       epoch=20, name_ici="test")
 
 
     """clf = RandomForestClassifier(n_estimators=10)
