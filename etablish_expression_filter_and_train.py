@@ -1,7 +1,8 @@
 import sys
 import warnings
 import random
-
+import sklearn
+import sklearn.neural_network
 from src.nn.models.Linear_binarized import Linear_bin
 from src.nn.nn_model_ref_v2 import NN_Model_Ref_v2
 from alibi.explainers import CEM
@@ -66,12 +67,7 @@ def make_classifier(input_size=84, d1=1024, d2=512, final_activation='sigmoid'):
     dense2 = Dense(d2)(dense1);
     dense2 = BatchNormalization()(dense2);
     dense2 = Activation('relu')(dense2);
-
-    dense3 = Dense(d2)(dense2);
-    dense3 = BatchNormalization()(dense3);
-    dense3 = Activation('relu')(dense3);
-
-    out = Dense(1, activation=final_activation)(dense3);
+    out = Dense(1, activation=final_activation)(dense2);
     model = Model(inputs=inp, outputs=out);
     return (model);
 
@@ -762,7 +758,7 @@ for round_ici in [5, 6, 7, 8, 4]:
 
 
 
-    net = Linear_bin(args, X_train_proba_feat.shape[1]).to(device)
+    """net = Linear_bin(args, X_train_proba_feat.shape[1]).to(device)
 
     nn_model_ref.net = net
     nn_model_ref.X_train_nn_binaire = X_train_proba_feat
@@ -774,10 +770,10 @@ for round_ici in [5, 6, 7, 8, 4]:
     net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,
                                                        Y_train_proba, X_eval_proba_feat, Y_eval_proba,
                                                        bs=5000,
-                                                       epoch=20, name_ici="test")
+                                                       epoch=20, name_ici="test")"""
 
 
-    """clf = RandomForestClassifier(n_estimators=10)
+    clf = sklearn.neural_network.MLPClassifier(hidden_layer_sizes=(1024,512))
     clf.fit(X_train_proba_feat, Y_train_proba)
     
     predict_fn = lambda x: clf.predict(x)
@@ -786,7 +782,7 @@ for round_ici in [5, 6, 7, 8, 4]:
     
     #predict_fn = lambda x: net_retrain.predict(x)[0]
     explainer = AnchorTabular(predict_fn, [i for i in range(X_train_proba_feat.shape[1])], categorical_names={0:"R", 1:"S"}, seed=1)
-    explainer.fit(X_train_proba_feat, disc_perc=[25, 50, 75])
+    explainer.fit(X_train_proba_feat, disc_perc=[75])
     idx = 0
     #X = X_eval_proba_feat[idx].reshape((1,) + X_eval_proba_feat[idx].shape)
     #print('Prediction: ', explainer.predictor(X)[0])
@@ -801,7 +797,7 @@ for round_ici in [5, 6, 7, 8, 4]:
     #explanation = explainer.explain(X, threshold=0.95)
     print('Anchor: %s' % (' AND '.join(explanation.anchor)))
     print('Precision: %.2f' % explanation.precision)
-    print('Coverage: %.2f' % explanation.coverage)"""
+    print('Coverage: %.2f' % explanation.coverage)
 
     print()
     del nn_model_ref
