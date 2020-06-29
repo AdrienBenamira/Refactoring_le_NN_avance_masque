@@ -4,61 +4,51 @@ from torch.nn import functional as F
 import numpy as np
 
 import math
-from src.nn.models.attention_augmented_conv import AugmentedConv
+
 #DoReFaNet
 
-class ModelPaperBaseline_bin4(nn.Module):
+class AE_binarize(nn.Module):
 
-    def __init__(self, args):
-        super(ModelPaperBaseline_bin4, self).__init__()
+    def __init__(self, args, input_sizze, h1 = 1024, h2 = 512, h3 = 256, h4 = 128 ):
+        super(AE_binarize, self).__init__()
         self.args = args
-        self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
-        #self.convm1 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=len(self.args.inputs_type), kernel_size=1)
-        self.convm1 = AugmentedConv(in_channels=len(self.args.inputs_type), out_channels=self.args.out_channel0, dk=40, dv=4, Nh=4, kernel_size=1)
-        self.BNm1 = nn.BatchNorm2d(self.args.out_channel0, eps=0.01, momentum=0.99)
-        self.conv0 = AugmentedConv(in_channels=self.args.out_channel0, out_channels=self.args.out_channel0, dk=40, dv=40, Nh=4, kernel_size=1)
-        #self.conv0 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel0, kernel_size=1)
-        self.BN0 = nn.BatchNorm2d(args.out_channel0, eps=0.01, momentum=0.99)
-        self.layers_conv = nn.ModuleList()
-        self.layers_batch = nn.ModuleList()
-        self.numLayers = args.numLayers
-        for i in range(args.numLayers - 1):
-            if i ==0:
-                self.layers_conv.append(
-                    AugmentedConv(in_channels=self.args.out_channel1, out_channels=self.args.out_channel1,
-                                  kernel_size=3, dk=40, dv=4, Nh=4))
-                self.layers_batch.append(nn.BatchNorm2d(args.out_channel1, eps=0.01, momentum=0.99))
-            else:
-                self.layers_conv.append(
-                nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
-                self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-        self.fc1 = nn.Linear(args.out_channel1 * args.word_size, args.hidden1)  # 6*6 from image dimension
-        self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-        self.fc2 = nn.Linear(args.hidden1, args.hidden1)
-        self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-        self.fc3 = nn.Linear(args.hidden1, 1)
+        self.fc1 = nn.Linear(input_sizze, h1)  # 6*6 from image dimension
+        self.BN5 = nn.BatchNorm1d(h1, eps=0.01, momentum=0.99)
+        self.fc2 = nn.Linear(h1, h2)
+        self.BN6 = nn.BatchNorm1d(h2, eps=0.01, momentum=0.99)
+        self.fc3 = nn.Linear(h2, h3)
+        self.BN7 = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
+        self.fc3b = nn.Linear(h3, h4)
+        self.BN7b = nn.BatchNorm1d(h4, eps=0.01, momentum=0.99)
 
-    def forward(self, x):
-        x = x.view(-1, len(self.args.inputs_type), self.word_size, 1)
-        self.x_input = x
-        x = F.relu(self.BNm1(self.convm1(x)))
-        x = F.relu(self.BN0(self.conv0(x)))
-        x = self.act_q(x)
-        shortcut = x.clone()
-        self.shorcut = shortcut
-        for i in range(len(self.layers_conv)):
-            x = self.layers_conv[i](x)
-            x = self.layers_batch[i](x)
-            x = F.relu(x)
-            x = x + shortcut
-        x = self.act_q(x)
-        self.classify = x
-        x = x.view(x.size(0), -1)
-        self.intermediare = x.clone()
+        self.fc4a = nn.Linear(h4, h3)  # 6*6 from image dimension
+        self.BN8a = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
+        self.fc4 = nn.Linear(h3, h2)  # 6*6 from image dimension
+        self.BN8 = nn.BatchNorm1d(h2, eps=0.01, momentum=0.99)
+        self.fc5 = nn.Linear(h2, h1)
+        self.BN9 = nn.BatchNorm1d(h1, eps=0.01, momentum=0.99)
+        self.fc6 = nn.Linear(h1, input_sizze)
+        self.BN10 = nn.BatchNorm1d(input_sizze, eps=0.01, momentum=0.99)
+
+    def encoder(self, x):
         x = F.relu(self.BN5(self.fc1(x)))
         x = F.relu(self.BN6(self.fc2(x)))
-        x = self.fc3(x)
+        x = F.relu(self.BN7(self.fc3(x)))
+        x = F.relu(self.BN7b(self.fc3b(x)))
+        return x
+
+    def decoder(self, x):
+        x = F.relu(self.BN8a(self.fc4a(x)))
+        x = F.relu(self.BN8(self.fc4(x)))
+        x = F.relu(self.BN9(self.fc5(x)))
+        x = F.relu(self.BN10(self.fc6(x)))
+        return x
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.act_q(x)
+        x = self.decoder(x)
         x = torch.sigmoid(x)
         return x
 

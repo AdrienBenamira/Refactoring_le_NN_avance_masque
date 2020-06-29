@@ -4,6 +4,7 @@ import random
 import sklearn
 import sklearn.neural_network
 from src.nn.models.Linear_binarized import Linear_bin
+from src.nn.models.Model_AE import AE_binarize
 from src.nn.nn_model_ref_v2 import NN_Model_Ref_v2
 from alibi.explainers import CEM
 from sympy import *
@@ -758,14 +759,17 @@ for round_ici in [5, 6, 7, 8, 4]:
 
 
 
-    """net = Linear_bin(args, X_train_proba_feat.shape[1]).to(device)
+    #net = Linear_bin(args, X_train_proba_feat.shape[1]).to(device)
+    net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
 
     nn_model_ref.net = net
     nn_model_ref.X_train_nn_binaire = X_train_proba_feat
     nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
+    nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
+    nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
 
-    nn_model_ref.train_from_scractch("BNN")
-
+    nn_model_ref.train_from_scractch("AE")
+    """
 
     net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,
                                                        Y_train_proba, X_eval_proba_feat, Y_eval_proba,
@@ -773,7 +777,7 @@ for round_ici in [5, 6, 7, 8, 4]:
                                                        epoch=20, name_ici="test")"""
 
 
-    clf = sklearn.neural_network.MLPClassifier(hidden_layer_sizes=(1024,512))
+    """clf = sklearn.neural_network.MLPClassifier(hidden_layer_sizes=(1024,512))
     clf.fit(X_train_proba_feat, Y_train_proba)
     
     predict_fn = lambda x: clf.predict(x)
@@ -800,4 +804,5 @@ for round_ici in [5, 6, 7, 8, 4]:
     print('Coverage: %.2f' % explanation.coverage)
 
     print()
+    """
     del nn_model_ref
