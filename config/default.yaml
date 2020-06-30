@@ -26,7 +26,7 @@ train_nn:
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline_bin_v4        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2
+  type_model: BagNet        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2
   a_bit: 1
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
