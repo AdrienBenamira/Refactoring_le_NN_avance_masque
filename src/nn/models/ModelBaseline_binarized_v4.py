@@ -32,20 +32,26 @@ class ModelPaperBaseline_bin4(nn.Module):
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
         self.fc1 = nn.Linear(args.out_channel1 * args.word_size, args.hidden1* 3)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(args.hidden1 * 3, eps=0.01, momentum=0.99)
-
         self.fc2 = nn.Linear(args.hidden1* 3, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+        self.fc2b = nn.Linear(args.hidden1, 64) #64 works
+        self.BN6b = nn.BatchNorm1d(64, eps=0.01, momentum=0.99) #64 works
 
-        self.fc2b = nn.Linear(args.hidden1, 22) #128 works
-        self.BN6b = nn.BatchNorm1d(22, eps=0.01, momentum=0.99) #128 works
-        self.fc3 = nn.Linear(22, 1) #128 works
+        self.fc4 = nn.Linear(64 , args.hidden1)
+        self.BN8 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+        self.fc5 = nn.Linear(args.hidden1, args.hidden1* 3)  # 128 works
+        self.BN9 = nn.BatchNorm1d(3 * args.hidden1, eps=0.01, momentum=0.99)
+        self.fc6 = nn.Linear(args.hidden1 * 3, args.out_channel1 * args.word_size)  # 128 works
+        self.BN10 = nn.BatchNorm1d(args.out_channel1 * args.word_size, eps=0.01, momentum=0.99)  # 128 works
 
-    def forward(self, x):
-        x = x.view(-1, len(self.args.inputs_type), self.word_size)
-        self.x_input = x
+        self.fc3 = nn.Linear(64, 1) #128 works
+
+    def first_changement_base(self, x):
         x = F.relu(self.BNm1(self.convm1(x)))
         x = F.relu(self.BN0(self.conv0(x)))
-        x = self.act_q(x)
+        return x
+
+    def residual(self, x):
         shortcut = x.clone()
         self.shorcut = shortcut
         for i in range(len(self.layers_conv)):
@@ -53,15 +59,34 @@ class ModelPaperBaseline_bin4(nn.Module):
             x = self.layers_batch[i](x)
             x = F.relu(x)
             x = x + shortcut
+        return x
+
+    def encoder(self, x):
+        x = F.relu(self.BN5(self.fc1(x)))
+        x = F.relu(self.BN6(self.fc2(x)))
+        x = F.relu(self.BN6b(self.fc2b(x)))
+        return x
+
+    def decoder(self, x):
+        x = F.relu(self.BN8(self.fc4(x)))
+        x = F.relu(self.BN9(self.fc5(x)))
+        x = F.relu(self.BN10(self.fc6(x)))
+        x = self.act_q(x)
+        return x
+
+    def forward(self, x):
+        x = x.view(-1, len(self.args.inputs_type), self.word_size)
+        self.x_input = x.clone()
+        x = self.first_changement_base(x)
+        x = self.act_q(x)
+        x = self.residual(x)
         x = self.act_q(x)
         self.classify = x
         x = x.view(x.size(0), -1)
         self.intermediare = x.clone()
-        x = F.relu(self.BN5(self.fc1(x)))
-        #x = self.act_q(x)
-        x = F.relu(self.BN6(self.fc2(x)))
-        x = F.relu(self.BN6b(self.fc2b(x)))
+        x = self.encoder(x)
         x = self.act_q(x)
+        self.intermediare_compress = x.clone()
         x = self.fc3(x)
         x = torch.sigmoid(x)
         return x
