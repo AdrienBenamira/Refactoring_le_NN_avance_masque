@@ -34,10 +34,10 @@ class ModelPaperBaseline_bin4(nn.Module):
         self.BN5 = nn.BatchNorm1d(args.hidden1 * 3, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1* 3, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-        self.fc2b = nn.Linear(args.hidden1, 20) #64 works
-        self.BN6b = nn.BatchNorm1d(20, eps=0.01, momentum=0.99) #64 works
+        self.fc2b = nn.Linear(args.hidden1, 22) #64 works
+        self.BN6b = nn.BatchNorm1d(22, eps=0.01, momentum=0.99) #64 works
 
-        self.fc4 = nn.Linear(20 , args.hidden1)
+        self.fc4 = nn.Linear(22 , args.hidden1)
         self.BN8 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc5 = nn.Linear(args.hidden1, args.hidden1* 3)  # 128 works
         self.BN9 = nn.BatchNorm1d(3 * args.hidden1, eps=0.01, momentum=0.99)
