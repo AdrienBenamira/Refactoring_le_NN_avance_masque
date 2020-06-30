@@ -226,7 +226,10 @@ class NN_Model_Ref:
                         #                                              targets_a, targets_b))
                         outputs = self.net(inputs.to(self.device))
                         outputs2 = self.net.decoder(self.net.intermediare_compress.to(self.device))
-                        loss = self.criterion(outputs.squeeze(1), labels.to(self.device)) + 1*self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
+                        loss1 = self.criterion(outputs.squeeze(1), labels.to(self.device))
+                        loss2 = 0.02*self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
+                        #print(loss1, loss2)
+                        loss = loss1 + loss2
                         #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
@@ -253,7 +256,9 @@ class NN_Model_Ref:
                     phase, epoch_loss))
                 print('{} Acc: {:.4f}'.format(
                     phase, acc))
-                #print(desc)
+                for param_group in self.optimizer.param_groups:
+                    print("LR value:", param_group['lr'])
+                print(loss1, loss2)
                 print()
                 self.writer.add_scalar(phase + ' Loss ' + phrase,
                                   epoch_loss,

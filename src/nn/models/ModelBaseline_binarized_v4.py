@@ -34,17 +34,17 @@ class ModelPaperBaseline_bin4(nn.Module):
         self.BN5 = nn.BatchNorm1d(args.hidden1 * 3, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1* 3, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-        self.fc2b = nn.Linear(args.hidden1, 64) #64 works
-        self.BN6b = nn.BatchNorm1d(64, eps=0.01, momentum=0.99) #64 works
+        self.fc2b = nn.Linear(args.hidden1, 20) #64 works
+        self.BN6b = nn.BatchNorm1d(20, eps=0.01, momentum=0.99) #64 works
 
-        self.fc4 = nn.Linear(64 , args.hidden1)
+        self.fc4 = nn.Linear(20 , args.hidden1)
         self.BN8 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc5 = nn.Linear(args.hidden1, args.hidden1* 3)  # 128 works
         self.BN9 = nn.BatchNorm1d(3 * args.hidden1, eps=0.01, momentum=0.99)
         self.fc6 = nn.Linear(args.hidden1 * 3, args.out_channel1 * args.word_size)  # 128 works
         self.BN10 = nn.BatchNorm1d(args.out_channel1 * args.word_size, eps=0.01, momentum=0.99)  # 128 works
 
-        self.fc3 = nn.Linear(64, 1) #128 works
+        self.fc3 = nn.Linear(18, 1) #128 works
 
     def first_changement_base(self, x):
         x = F.relu(self.BNm1(self.convm1(x)))
