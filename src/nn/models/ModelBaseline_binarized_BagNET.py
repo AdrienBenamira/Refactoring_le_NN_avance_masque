@@ -35,12 +35,12 @@ class ModelPaperBaseline_bin_bagnet(nn.Module):
         self.fc2 = nn.Linear(args.hidden1, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc3 = nn.Linear(args.hidden1, 1)
-        self.fc4 = nn.Linear(14, 1)
+        self.fc4 = nn.Linear(12, 1)
 
     def forward(self, x):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
-        for i in range(14):
-            x2 = x[:,:,i:i+3]
+        for i in range(12):
+            x2 = x[:,:,i:i+5]
             res = self.encode_patch(x2)
             if i ==0:
                 x1 = res

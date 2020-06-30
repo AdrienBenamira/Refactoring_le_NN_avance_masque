@@ -36,10 +36,10 @@ class ModelPaperBaseline_bin4(nn.Module):
         self.fc2 = nn.Linear(args.hidden1* 3, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
 
-        self.fc2b = nn.Linear(args.hidden1, 128)
-        self.BN6b = nn.BatchNorm1d(128, eps=0.01, momentum=0.99)
+        self.fc2b = nn.Linear(args.hidden1, 64)
+        self.BN6b = nn.BatchNorm1d(64, eps=0.01, momentum=0.99)
 
-        self.fc3 = nn.Linear(128, 1)
+        self.fc3 = nn.Linear(64, 1)
 
     def forward(self, x):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
