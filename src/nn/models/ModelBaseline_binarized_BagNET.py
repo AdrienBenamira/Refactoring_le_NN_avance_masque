@@ -30,7 +30,7 @@ class ModelPaperBaseline_bin_bagnet(nn.Module):
                 self.layers_conv.append(
                 nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-        self.fc1 = nn.Linear(args.out_channel1 * 3, args.hidden1)  # 6*6 from image dimension
+        self.fc1 = nn.Linear(args.out_channel1 * 5, args.hidden1)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
