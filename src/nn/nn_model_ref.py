@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
 
-
+from src.nn.models.ModelBaseline_binarized_BagNET import ModelPaperBaseline_bin_bagnet
 from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
 from src.nn.models.ModelBaseline_binarized import ModelPaperBaseline_bin
 from src.nn.models.ModelBaseline_binarized_v3 import ModelPaperBaseline_bin3
@@ -77,6 +77,8 @@ class NN_Model_Ref:
             return Multihead(self.args).to(self.device)
         if self.args.type_model=="deepset":
             model =DTanh(self.args)
+        if self.args.type_model == "BagNet":
+            model = ModelPaperBaseline_bin_bagnet(self.args)
             return model.to(self.device)
 
     def create_data(self):

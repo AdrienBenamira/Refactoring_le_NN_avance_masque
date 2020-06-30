@@ -7,10 +7,10 @@ import math
 
 #DoReFaNet
 
-class ModelPaperBaseline_bin4(nn.Module):
+class ModelPaperBaseline_bin_bagnet(nn.Module):
 
     def __init__(self, args):
-        super(ModelPaperBaseline_bin4, self).__init__()
+        super(ModelPaperBaseline_bin_bagnet, self).__init__()
         self.args = args
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
@@ -30,20 +30,28 @@ class ModelPaperBaseline_bin4(nn.Module):
                 self.layers_conv.append(
                 nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-        self.fc1 = nn.Linear(args.out_channel1 * args.word_size, args.hidden1* 3)  # 6*6 from image dimension
-        self.BN5 = nn.BatchNorm1d(args.hidden1 * 3, eps=0.01, momentum=0.99)
-
-        self.fc2 = nn.Linear(args.hidden1* 3, args.hidden1)
+        self.fc1 = nn.Linear(args.out_channel1 * 3, args.hidden1)  # 6*6 from image dimension
+        self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+        self.fc2 = nn.Linear(args.hidden1, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-
-        self.fc2b = nn.Linear(args.hidden1, 128)
-        self.BN6b = nn.BatchNorm1d(128, eps=0.01, momentum=0.99)
-
-        self.fc3 = nn.Linear(128, 1)
+        self.fc3 = nn.Linear(args.hidden1, 1)
+        self.fc4 = nn.Linear(14, 1)
 
     def forward(self, x):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
-        self.x_input = x
+        for i in range(14):
+            x2 = x[:,:,i:i+3]
+            res = self.encode_patch(x2)
+            if i ==0:
+                x1 = res
+            else:
+                x1 = torch.cat((x1, res), dim=1)
+        x = self.fc4(x1)
+        x = torch.sigmoid(x)
+        return x
+
+    def encode_patch(self, x):
+
         x = F.relu(self.BNm1(self.convm1(x)))
         x = F.relu(self.BN0(self.conv0(x)))
         x = self.act_q(x)
@@ -59,10 +67,7 @@ class ModelPaperBaseline_bin4(nn.Module):
         x = x.view(x.size(0), -1)
         self.intermediare = x.clone()
         x = F.relu(self.BN5(self.fc1(x)))
-        #x = self.act_q(x)
         x = F.relu(self.BN6(self.fc2(x)))
-        x = F.relu(self.BN6b(self.fc2b(x)))
-        x = self.act_q(x)
         x = self.fc3(x)
         x = torch.sigmoid(x)
         return x
