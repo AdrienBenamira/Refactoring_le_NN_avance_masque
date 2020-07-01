@@ -27,7 +27,6 @@ class NN_Model_Ref:
 
     def __init__(self, args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train):
         """
-
         :param args:
         :param writer:
         :param device:
@@ -226,19 +225,10 @@ class NN_Model_Ref:
                         #                                              targets_a, targets_b))
                         outputs = self.net(inputs.to(self.device))
                         outputs2 = self.net.decoder(self.net.intermediare_compress.to(self.device))
-
-                        x = self.net.encoder(outputs2.to(self.device))
-                        x = self.net.act_q(x)
-                        x = self.net.fc3(x)
-                        outputs3 = torch.sigmoid(x)
-
-
                         loss1 = self.criterion(outputs.squeeze(1), labels.to(self.device))
-                        #loss2 = self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
-                        #loss3 = self.criterion(outputs3.squeeze(1),outputs.to(self.device).squeeze(1))
-
-                        #print(loss1, loss2, loss3)
-                        loss = loss1 #+ 0.05 * loss2 + 0. * loss3
+                        loss2 = 0.02*self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
+                        #print(loss1, loss2)
+                        loss = loss1 + loss2
                         #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
@@ -267,7 +257,7 @@ class NN_Model_Ref:
                     phase, acc))
                 for param_group in self.optimizer.param_groups:
                     print("LR value:", param_group['lr'])
-                #print(loss1, loss2, loss3)
+                print(loss1, loss2)
                 print()
                 self.writer.add_scalar(phase + ' Loss ' + phrase,
                                   epoch_loss,
