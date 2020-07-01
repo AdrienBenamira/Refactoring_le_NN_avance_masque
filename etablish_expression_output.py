@@ -639,7 +639,7 @@ for u_e in uniaue_ele:
         df_final= df_final.replace(u_e, dictionnaire_feature_name[u_e])
     else:
         print(u_e)
-        df_final = df_final.replace(str(u_e), "1")
+        df_final = df_final.replace(u_e, "1")
 
 print(df_final)
 
