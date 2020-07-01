@@ -523,8 +523,8 @@ cpteur = 0
 dictionnaire_feature_name = {}
 
 
-#for index_f in range(args.out_channel0):
-for index_f in range(3):
+for index_f in range(args.out_channel0):
+#for index_f in range(3):
     offset_feat = 15*index_f
     print(output_name[index_f])
     #if "F"+str(index_f) in list(dico_important.keys()):
@@ -553,10 +553,11 @@ for index_f in range(3):
         w1, x1, y1, w2, x2, y2, w3, x3, y3 = symbols(symbols_str[:-2])
         minterms = condtion_filter3
         exp =SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
+        expPOS = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
         if exp in doublon:
             print(exp, "DOUBLON")
             for time in range(16):
-                dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = str(exp).replace("i", str(time))
+                dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = str(expPOS).replace("i", str(time))
         elif str(exp) == 'True':
             print(exp, "True")
             for time in range(16):
@@ -564,13 +565,13 @@ for index_f in range(3):
         else:
             print(exp)
             for time in range(16):
-                dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = str(exp).replace("i", str(time))
+                dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = str(expPOS).replace("i", str(time))
             doublon.append(exp)
             dictionnaire_res_fin_expression[output_name[index_f]].append(exp)
             expV2 = str(exp).split(" | ")
             dictionnaire_perfiler[output_name[index_f]] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
             print()
-            expPOS = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
+
             print(expPOS)
             expPOS_tot.append(str(expPOS))
             dictionnaire_res_fin_expression_POS[output_name[index_f]].append(expPOS)
@@ -612,26 +613,71 @@ df2.columns = output_name
 df3 = pd.DataFrame.from_dict(dico_tt_embeding_feature, orient='index')
 df3_name = pd.DataFrame.from_dict(dico_tt_embeding_feature_name, orient='index')
 
-print(df2)
-print(df3)
+nfeat = df3.shape[1]-1
 
-print(df3[df3[0].isnull()].index.tolist())
 
 index_to_del = df3[df3[0].isnull()].index.tolist()
 
 df_final = pd.concat([df2, df3], join="inner", axis = 1)
 
-print(df_final)
 
 df_final = df_final.drop(index_to_del)
 
+
+df_final = df_final.drop_duplicates(subset=[i for i in range(nfeat)], keep= False)
+df_final = df_final.reset_index()
+df_final.to_csv(path_save_model + "final.csv")
+
+
+uniaue_ele = pd.unique(df_final[[i for i in range(nfeat)]].values.ravel('K'))
+
 print(df_final)
 
 
+for u_e in uniaue_ele:
+    if u_e is not None:
+        df_final= df_final.replace(u_e, dictionnaire_feature_name[u_e])
+    else:
+        print(u_e)
+        df_final = df_final.replace(str(u_e), "1")
 
-df_final.to_csv(path_save_model + "final.csv")
+print(df_final)
+
+df_final.to_csv(path_save_model + "final_with_mask.csv")
+
+print(df_final)
+df_final['final_expression'] = df_final[[i for i in range(nfeat)]].agg(' & '.join([None]), axis=1)
+print(df_final)
+df_final = df_final.drop([i for i in range(nfeat)])
+print(df_final)
+
+df_final.to_csv(path_save_model + "final_with_mask.csv")
+
+df_final_1 = df_final[df_final['Output'] == 1]['final_expression'].values
+str_1 = ""
+for el1 in df_final_1:
+    mylist = el1.split(" & ")
+    mylist = list(dict.fromkeys(mylist))
+    el1_v2 =  " & ".join(mylist)
+    str_1 += el1_v2 + " | "
+
+df_final_0 = df_final[df_final['Output'] == 0]['final_expression'].values
+str_0 = ""
+for el0 in df_final_0:
+    mylist = el0.split(" & ")
+    mylist = list(dict.fromkeys(mylist))
+    el0_v2 = " & ".join(mylist)
+    str_0 += el0_v2 + " | "
+
+classification_final = {1:str_1[:-2], 0:str_0[:-2]}
+
+print(classification_final)
 
 print(ok)
+
+
+
+
 
 #-----------------------------------------------------------------------------------------------------------------------------
 

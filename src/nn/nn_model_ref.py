@@ -234,11 +234,11 @@ class NN_Model_Ref:
 
 
                         loss1 = self.criterion(outputs.squeeze(1), labels.to(self.device))
-                        loss2 = 0.2 * self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
-                        loss3 = 0.2 * self.criterion(outputs3.squeeze(1),labels.to(self.device))
+                        loss2 = self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
+                        loss3 = self.criterion(outputs3.squeeze(1),outputs.to(self.device))
 
                         print(loss1, loss2, loss3)
-                        loss = loss1 + loss2 + loss3
+                        loss = loss1 + 0.05 * loss2 + 0.2 * loss3
                         #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
