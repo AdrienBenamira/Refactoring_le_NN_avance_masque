@@ -12,8 +12,8 @@ class ModelPaperBaseline_bin4(nn.Module):
     def __init__(self, args):
         super(ModelPaperBaseline_bin4, self).__init__()
         
-        self.embedding_size = 14
-        
+        self.embedding_size = 16
+
         self.args = args
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
@@ -37,17 +37,17 @@ class ModelPaperBaseline_bin4(nn.Module):
         self.BN5 = nn.BatchNorm1d(args.hidden1 * 3, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1* 3, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-        self.fc2b = nn.Linear(args.hidden1, 14) #64 works
-        self.BN6b = nn.BatchNorm1d(14, eps=0.01, momentum=0.99) #64 works
+        self.fc2b = nn.Linear(args.hidden1, self.embedding_size) #64 works
+        self.BN6b = nn.BatchNorm1d(self.embedding_size, eps=0.01, momentum=0.99) #64 works
 
-        self.fc4 = nn.Linear(14 , args.hidden1)
+        self.fc4 = nn.Linear(self.embedding_size , args.hidden1)
         self.BN8 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc5 = nn.Linear(args.hidden1, args.hidden1)  # 128 works
         self.BN9 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc6 = nn.Linear(args.hidden1, args.out_channel1 * args.word_size)  # 128 works
         self.BN10 = nn.BatchNorm1d(args.out_channel1 * args.word_size, eps=0.01, momentum=0.99)  # 128 works
 
-        self.fc3 = nn.Linear(14, 1) #128 works
+        self.fc3 = nn.Linear(self.embedding_size, 1) #128 works
 
     def first_changement_base(self, x):
         x = F.relu(self.BNm1(self.convm1(x)))

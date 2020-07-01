@@ -59,12 +59,18 @@ def get_truth_table_embedding(nn_model_ref, dimension_embedding = 16, bz = 500):
         outputs_feature = nn_model_ref.net.decoder(x_input_f2.to(device))
         preds_feat = (outputs_feature.squeeze(1) > nn_model_ref.t.to(device)).int().cpu().detach().numpy() * 1
 
+
+
         for index_input in range(len(input_array_embedding)):
             input_name2 = input_array_embedding[index_input]
             input_name3 = '_'.join(map(str, input_name2))
             dico_tt_embeding_output[input_name3] = preds[index_input]
             dico_tt_embeding_output_name[input_name3] = input_name2
-            dico_tt_embeding_feature[input_name3] = preds_feat[index_input]
+            preds_feat_str = []
+            for index_feat, value_feat in enumerate(preds_feat[index_input]):
+                if value_feat:
+                    preds_feat_str.append("Feature_"+str(index_feat))
+            dico_tt_embeding_feature[input_name3] = preds_feat_str
             dico_tt_embeding_feature_name[input_name3] = input_name2
     return dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name
 
@@ -517,8 +523,8 @@ cpteur = 0
 dictionnaire_feature_name = {}
 
 
-for index_f in range(args.out_channel0):
-#for index_f in range(3):
+#for index_f in range(args.out_channel0):
+for index_f in range(3):
     offset_feat = 15*index_f
     print(output_name[index_f])
     #if "F"+str(index_f) in list(dico_important.keys()):
@@ -595,7 +601,37 @@ df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS.cs
 df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
 df_expression_bool.to_csv(path_save_model + "time_important_per_filter.csv")
 
+#-----------------------------------------------------------------------------------------------------------------------------
 
+df2 = pd.DataFrame.from_dict(dico_tt_embeding_output, orient='index')
+df2_name = pd.DataFrame.from_dict(dico_tt_embeding_output_name, orient='index')
+output_name = ["Output"]
+df2.columns = output_name
+
+
+df3 = pd.DataFrame.from_dict(dico_tt_embeding_feature, orient='index')
+df3_name = pd.DataFrame.from_dict(dico_tt_embeding_feature_name, orient='index')
+
+print(df2)
+print(df3)
+
+print(df3[df3[0].isnull()].index.tolist())
+
+index_to_del = df3[df3[0].isnull()].index.tolist()
+
+df_final = pd.concat([df2, df3], join="inner", axis = 1)
+
+print(df_final)
+
+df_final = df_final.drop(index_to_del)
+
+print(df_final)
+
+
+
+df_final.to_csv(path_save_model + "final.csv")
+
+print(ok)
 
 #-----------------------------------------------------------------------------------------------------------------------------
 
