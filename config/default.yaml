@@ -32,7 +32,7 @@ train_nn:
   nbre_sample_eval: 1000000
   num_epochs: 20
   batch_size: 5000
-  loss_type: BCE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
+  loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
   weight_decay_nn: 0.00001
   momentum_nn: 0.9 #only for SGD
@@ -42,13 +42,13 @@ train_nn:
   max_lr: 0.001       #Only if CyclicLR
   demicycle_1: 5  #Only if CyclicLR
   numLayers: 2
-  out_channel0: 64
-  out_channel1: 64
+  out_channel0: 40
+  out_channel1: 40
   hidden1: 256
   kernel_size0: 1
   kernel_size1: 3
   num_workers: 2
-  clip_grad_norm: 0.6
+  clip_grad_norm: 0.5
   end_after_training: Yes
 
 

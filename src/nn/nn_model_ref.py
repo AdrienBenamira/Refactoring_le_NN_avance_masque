@@ -238,7 +238,7 @@ class NN_Model_Ref:
                         loss3 = self.criterion(outputs3.squeeze(1),outputs.to(self.device).squeeze(1))
 
                         #print(loss1, loss2, loss3)
-                        loss = loss1 + 0.05 * loss2 + 0.2 * loss3
+                        loss = loss1 + 0.02 * loss2 + 0.2 * loss3
                         #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
@@ -267,7 +267,7 @@ class NN_Model_Ref:
                     phase, acc))
                 for param_group in self.optimizer.param_groups:
                     print("LR value:", param_group['lr'])
-                print(loss1, loss2)
+                print(loss1, loss2, loss3)
                 print()
                 self.writer.add_scalar(phase + ' Loss ' + phrase,
                                   epoch_loss,
