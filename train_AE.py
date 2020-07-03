@@ -359,7 +359,7 @@ print("---" * 100)
 print("TABLE OF TRUTH")
 
 global_sparsity = 0.95
-df_expression_bool_m = pd.read_csv("./results/table_of_truth_v2/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_07_02_17_05_25_829508/expression_bool_per_filter.csv")
+df_expression_bool_m = pd.read_csv("./results/expression_bool_per_filter.csv")
 for round_ici in [5, 6, 7, 8, 4]:
 
     args.nombre_round_eval = round_ici
