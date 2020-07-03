@@ -9,27 +9,13 @@ import math
 
 class NN_linear(nn.Module):
 
-    def __init__(self, args):
+    def __init__(self, args, input_shape):
         super(NN_linear, self).__init__()
-        self.embedding = 16
+        self.embedding = 512
         self.args = args
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
-        self.conv0 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel0, kernel_size=1)
-        self.BN0 = nn.BatchNorm1d(args.out_channel0, eps=0.01, momentum=0.99)
-        self.layers_conv = nn.ModuleList()
-        self.layers_batch = nn.ModuleList()
-        self.numLayers = args.numLayers
-        for i in range(args.numLayers - 1):
-            if i ==0:
-                self.layers_conv.append(
-                    nn.Conv1d(in_channels=args.out_channel0, out_channels=args.out_channel1, kernel_size=3, padding =1))
-                self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-            else:
-                self.layers_conv.append(
-                nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
-                self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-        self.fc1 = nn.Linear(args.out_channel1 * args.word_size, self.embedding)  # 6*6 from image dimension
+        self.fc1 = nn.Linear(input_shape, self.embedding)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(self.embedding, eps=0.01, momentum=0.99)
         #self.fc2 = nn.Linear(args.hidden1, args.hidden1)
         #self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
@@ -42,13 +28,6 @@ class NN_linear(nn.Module):
         x = self.fc3(x)
         x = torch.sigmoid(x)
         return x
-
-    def freeze(self):
-        self.conv0.weight.requires_grad = False
-        self.BN0.bias.requires_grad = False
-        for i in range(self.numLayers - 1):
-            self.layers_conv[i].weight.requires_grad = False
-            self.layers_batch[i].weight.requires_grad = False
 
 
 
