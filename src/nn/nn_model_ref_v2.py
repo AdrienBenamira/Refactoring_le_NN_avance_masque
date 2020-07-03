@@ -97,6 +97,17 @@ class NN_Model_Ref_v2:
         self.load_general_train()
         self.train(name_input)
 
+    def train_from_scractch_2(self, name_input):
+        data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device)
+        dataloader_train = DataLoader(data_train, batch_size=self.batch_size,
+                                      shuffle=True, num_workers=self.args.num_workers)
+        data_val = DataLoader_cipher_binary(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device)
+        dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
+                                      shuffle=False, num_workers=self.args.num_workers)
+        self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
+        self.load_general_train()
+        self.train_2(name_input)
+
     def train_from_curriculum(self, name_input):
         net_old = self.choose_model()
         net_old = self.load_nn_round(net_old, self.args.nombre_round_eval)
@@ -299,6 +310,125 @@ class NN_Model_Ref_v2:
         # load best model weights
         self.net.load_state_dict(best_model_wts)
 
+    def train_2(self, name_input):
+        since = time.time()
+        phrase = self.args.cipher + " round " +str(self.args.nombre_round_eval) +" inputs " + name_input +" size dataset "+ str(self.args.nbre_sample_train)
+        best_model_wts = copy.deepcopy(self.net.state_dict())
+        best_loss = 100
+        best_acc = 0.0
+        n_batches = self.batch_size
+        for epoch in range(self.epochs):
+            pourcentage = epoch // self.args.nbre_epoch_per_stage + 1
+            if pourcentage > 3:
+                pourcentage = 3
+            print('-' * 10)
+            print('==> %d/%d epoch, previous best: %.3f' % (epoch + 1, self.epochs, best_acc))
+            print('-' * 10)
+            # Each epoch has a training and validation phase
+            for phase in ['train', 'val']:
+                if phase == 'train':
+                    self.net.train()
+                if phase == 'val':
+                    self.net.eval()
+                if self.args.curriculum_learning:
+                    self.dataloaders[phase].catgeorie = pourcentage
+                running_loss = 0.0
+                running_loss1 = 0.0
+                running_loss2 = 0.0
+                nbre_sample = 0
+                TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
+                    1).long()
+                TP2, TN2, FN2, FP2 = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
+                    1).long()
+                tk0 = tqdm(self.dataloaders[phase], total=int(len(self.dataloaders[phase])))
+                for i, data in enumerate(tk0):
+                    inputs, labels = data
+                    self.optimizer.zero_grad()
+                    # forward + backward + optimize
+                    with torch.set_grad_enabled(phase == 'train'):
+                        #inputs, targets_a, targets_b, lam = self.mixup_data(inputs, labels)
+                        #inputs, targets_a, targets_b = map(Variable, (inputs,
+                        #                                              targets_a, targets_b))
+                        outputs = self.net(inputs.to(self.device))
+                        outputs2 = self.net.classify()
+                        loss1 = self.criterion(outputs.squeeze(1), inputs.to(self.device))
+                        loss2 = self.criterion(outputs2.squeeze(1), labels.to(self.device))
+                        #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
+                        loss = loss1 + loss2
+                        desc = 'loss: %.4f; ' % (loss.item())
+                        if phase == 'train':
+                            loss.backward()
+                            torch.nn.utils.clip_grad_norm_(self.net.parameters(), self.args.clip_grad_norm)
+                            self.optimizer.step()
+                            if self.scheduler is not None:
+                                self.scheduler.step()
+                        preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
+
+                        preds2 = (outputs2.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
+
+                        TP2 += (preds2.eq(1) & labels.eq(1)).cpu().sum()
+                        TN2 += (preds2.eq(0) & labels.eq(0)).cpu().sum()
+                        FN2 += (preds2.eq(0) & labels.eq(1)).cpu().sum()
+                        FP2 += (preds2.eq(1) & labels.eq(0)).cpu().sum()
+                        TOT2 = TP2 + TN2 + FN2 + FP2
+
+                        TP += (preds.eq(1) & inputs.eq(1)).cpu().sum()
+                        TN += (preds.eq(0) & inputs.eq(0)).cpu().sum()
+                        FN += (preds.eq(0) & inputs.eq(1)).cpu().sum()
+                        FP += (preds.eq(1) & inputs.eq(0)).cpu().sum()
+                        TOT = TP + TN + FN + FP
+                        desc += 'acc: %.3f, TP: %.3f, TN: %.3f, FN: %.3f, FP: %.3f' % (
+                            (TP.item() + TN.item()) * 1.0 / TOT.item(), TP.item() * 1.0 / TOT.item(),
+                            TN.item() * 1.0 / TOT.item(), FN.item() * 1.0 / TOT.item(),
+                            FP.item() * 1.0 / TOT.item())
+                        running_loss += loss.item() * n_batches
+                        running_loss1 += loss1.item() * n_batches
+                        running_loss2 += loss2.item() * n_batches
+                        nbre_sample += n_batches
+                epoch_loss = running_loss / nbre_sample
+                epoch_loss1 = running_loss1 / nbre_sample
+                epoch_loss2 = running_loss2 / nbre_sample
+                acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
+                acc2 = (TP2.item() + TN2.item()) * 1.0 / TOT2.item()
+                print('{} Loss: {:.4f}'.format(
+                    phase, epoch_loss))
+                print('{} Loss1: {:.4f}'.format(
+                    phase, epoch_loss1))
+                print('{} Loss2: {:.4f}'.format(
+                    phase, epoch_loss2))
+                print('{} Acc: {:.4f}'.format(
+                    phase, acc))
+                print('{} Acc: {:.4f}'.format(
+                    phase, acc2))
+                #print(np.sum(preds[0].detach().cpu().int().numpy() == labels[0].detach().cpu().int().numpy()))
+                print()
+                self.writer.add_scalar(phase + ' Loss ' + phrase,
+                                  epoch_loss,
+                                  epoch)
+                self.writer.add_scalar(phase + ' Acc ' + phrase,
+                                  acc,
+                                  epoch)
+                # deep copy the model
+                if phase == 'val' and epoch_loss < best_loss:
+                    best_loss = epoch_loss
+                    best_model_wts = copy.deepcopy(self.net.state_dict())
+                    torch.save({'epoch': epoch + 1, 'acc': best_loss, 'state_dict': self.net.state_dict()},
+                               os.path.join(self.path_save_model, str(best_loss) + '_bestloss.pth'))
+                if phase == 'val' and acc >= best_acc:
+                    best_acc = acc
+                    torch.save({'epoch': epoch + 1, 'acc': best_acc, 'state_dict': self.net.state_dict()},
+                               os.path.join(self.path_save_model, str(best_acc) + '_bestacc.pth'))
+            print()
+        torch.save({'epoch': epoch + 1, 'acc': acc, 'state_dict': self.net.state_dict()},
+                   os.path.join(self.path_save_model_train, 'Gohr_'+self.args.type_model+'_best_nbre_sampletrain_' + str(self.args.nbre_sample_train)+ '.pth'))
+        time_elapsed = time.time() - since
+        print('Training complete in {:.0f}m {:.0f}s'.format(
+            time_elapsed // 60, time_elapsed % 60))
+        print('Best val Loss: {:4f}'.format(best_loss))
+        print('Best val Acc: {:4f}'.format(best_acc))
+        print()
+        # load best model weights
+        self.net.load_state_dict(best_model_wts)
 
 
     def eval(self, df_matter, val_phase = ['train', 'val']):
