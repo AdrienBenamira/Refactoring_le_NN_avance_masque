@@ -11,14 +11,14 @@ class NN_linear(nn.Module):
 
     def __init__(self, args, input_shape):
         super(NN_linear, self).__init__()
-        self.embedding = 512
+        self.embedding = 1024
         self.args = args
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
-        self.fc1 = nn.Linear(input_shape, self.embedding)  # 6*6 from image dimension
+        self.fc1 = nn.Linear(input_shape,  self.embedding)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(self.embedding, eps=0.01, momentum=0.99)
-        #self.fc2 = nn.Linear(args.hidden1, args.hidden1)
-        #self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+        #self.fc2 = nn.Linear(args.hidden1,self.embedding)
+        #self.BN6 = nn.BatchNorm1d(self.embedding, eps=0.01, momentum=0.99)
         self.fc3 = nn.Linear(self.embedding, 1)
 
     def forward(self, x):
