@@ -424,9 +424,7 @@ for round_ici in [5, 6, 7, 8, 4]:
 
     print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1]/16)
 
-
-
-
+    """
     net = NN_linear(args, X_train_proba_feat.shape[1]).to(device)
     nn_model_ref.net = net
 
@@ -437,15 +435,15 @@ for round_ici in [5, 6, 7, 8, 4]:
 
     """
     net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
-
+    nn_model_ref.net = net
     
     nn_model_ref.X_train_nn_binaire = X_train_proba_feat
     nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
     nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
     nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
-    """
 
-    nn_model_ref.train_from_scractch("linear")
+
+    nn_model_ref.train_from_scractch("AE")
 
 
 
