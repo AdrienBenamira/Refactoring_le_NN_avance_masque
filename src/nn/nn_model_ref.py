@@ -16,6 +16,7 @@ from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
 from src.nn.models.ModelBaseline_binarized import ModelPaperBaseline_bin
 from src.nn.models.ModelBaseline_binarized_v3 import ModelPaperBaseline_bin3
 from src.nn.models.ModelBaseline_binarized_v4 import ModelPaperBaseline_bin4
+from src.nn.models.ModelBaseline_binarized_v5 import ModelPaperBaseline_bin5
 from src.nn.models.ModelBaseline_v2 import ModelPaperBaseline_v2
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
 from src.nn.models.Multi_Headed import Multihead
@@ -70,6 +71,8 @@ class NN_Model_Ref:
             return ModelPaperBaseline_bin3(self.args).to(self.device)
         if self.args.type_model=="baseline_bin_v4":
             return ModelPaperBaseline_bin4(self.args).to(self.device)
+        if self.args.type_model=="baseline_bin_v5":
+            return ModelPaperBaseline_bin5(self.args).to(self.device)
         if self.args.type_model=="cnn_attention":
             return Modelbaseline_CNN_ATTENTION(self.args).to(self.device)
         if self.args.type_model=="multihead":
@@ -224,11 +227,11 @@ class NN_Model_Ref:
                         #inputs, targets_a, targets_b = map(Variable, (inputs,
                         #                                              targets_a, targets_b))
                         outputs = self.net(inputs.to(self.device))
-                        outputs2 = self.net.decoder(self.net.intermediare_compress.to(self.device))
-                        loss1 = self.criterion(outputs.squeeze(1), labels.to(self.device))
-                        loss2 = 0.02*self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
+                        #outputs2 = self.net.decoder(self.net.intermediare_compress.to(self.device))
+                        loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
+                        #loss2 = 0.02*self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
                         #print(loss1, loss2)
-                        loss = loss1 + loss2
+                        #loss = loss1 + loss2
                         #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
@@ -257,7 +260,6 @@ class NN_Model_Ref:
                     phase, acc))
                 for param_group in self.optimizer.param_groups:
                     print("LR value:", param_group['lr'])
-                print(loss1, loss2)
                 print()
                 self.writer.add_scalar(phase + ' Loss ' + phrase,
                                   epoch_loss,

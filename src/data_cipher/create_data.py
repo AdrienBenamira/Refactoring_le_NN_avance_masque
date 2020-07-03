@@ -85,7 +85,7 @@ class Create_data_binary:
         V0 = self.cipher.ror(ctdata0l ^ ctdata0r, self.cipher.BETA)
         V1 = self.cipher.ror(ctdata1l ^ ctdata1r, self.cipher.BETA)
         DV = V0 ^ V1
-        V0Inv = 65535 - V0
+        V0Inv = 65535 - V0 #(V0 ^ 0xffff)
         V1Inv = 65535 - V1
         inv_DeltaV = 65535 - DV
         for i in range(len(args.inputs_type)):

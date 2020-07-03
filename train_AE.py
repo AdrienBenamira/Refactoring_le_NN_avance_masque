@@ -340,7 +340,7 @@ args = parser.parse_args()
 
 args.load_special = True
 args.finetunning = False
-args.logs_tensorboard = args.logs_tensorboard.replace("test", "table_of_truth")
+args.logs_tensorboard = args.logs_tensorboard.replace("test", "train_AE")
 args.inputs_type = args.inputs_type_prunning
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -358,343 +358,8 @@ creator_data_binary = Create_data_binary(args, cipher, rng)
 print("---" * 100)
 print("TABLE OF TRUTH")
 
-nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-nn_model_ref.load_nn()
-
-
-flag2 = True
-acc_retain=[]
 global_sparsity = 0.95
-parameters_to_prune = []
-for name, module in nn_model_ref.net.named_modules():
-    if len(name):
-        if name not in ["layers_batch", "layers_conv"]:
-            flag = True
-            for layer_forbidden in args.layers_NOT_to_prune:
-                if layer_forbidden in name:
-                    flag = False
-            if flag:
-                parameters_to_prune.append((module, 'weight'))
-prune.global_unstructured(
-    parameters_to_prune,
-    pruning_method=prune.L1Unstructured,
-    amount=global_sparsity,
-)
-tot_sparsity = 0
-tot_weight = 0
-for name, module in nn_model_ref.net.named_modules():
-    if len(name):
-        if name not in ["layers_batch", "layers_conv"]:
-            flag = True
-            for layer_forbidden in args.layers_NOT_to_prune:
-                if layer_forbidden in name:
-                    flag = False
-            if flag:
-                tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
-                tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
-
-                if args.logs_layers:
-                    print(
-                    "Sparsity in {}.weight: {:.2f}%".format(str(name),
-                        100. * float(torch.sum(module.weight == 0))
-                        / float(module.weight.nelement())
-                        )
-                    )
-if flag2:
-    nn_model_ref.eval_all(["val"])
-
-
-t = nn_model_ref.net.fc1.weight_mask.sum(0).detach().cpu().numpy().tolist()
-index_filter_time_keep = [i for i, x in enumerate(t) if x!=0.0]
-
-liste_feature = []
-for j in range(args.out_channel0):
-    liste_feature += ["F"+str(j)+"_" + str(i) for i in range(16)]
-
-liste_feature_importance = [liste_feature[q] for q in index_filter_time_keep]
-
-print("FEATURES IMPORTANTES: ", liste_feature_importance)
-print("NBRE FEATURES IMPORTANTES: ", len(liste_feature_importance))
-
-dico_important = {}
-for filter_ici in liste_feature_importance:
-    filter_ici_key = filter_ici.split("_")[0]
-    time = filter_ici.split("_")[1]
-    if filter_ici_key in list(dico_important.keys()):
-        dico_important[filter_ici_key].append(time)
-    else:
-        dico_important[filter_ici_key] = [time]
-
-
-#nn_model_ref.eval_all(["val"])
-
-x_input = torch.zeros((4,16))
-arr2 = generate_binary(9)
-l = []
-for x in arr2:
-    l += [np.array([int(d) for d in x])]
-l2 = np.array(l)
-print(l2.shape)
-l3 = l2.reshape(-1, 3, 3)
-#print(l3)
-#print(l3.shape)
-l4 = np.transpose(l3, axes=(0,2,1))
-#print(l4)
-#print(l4.shape)
-#print("-"*10)
-
-#print(l5)
-#print(l5.shape)
-
-V0 = l4[:,1,:]
-V1 = l4[:, 2, :]
-Dv = V0^V1
-x_input_f = np.insert(l4, 1, Dv, 1)
-
-l5 = x_input_f[:,:,1:]
-
-#print(x_input_f)
-#print(x_input_f.shape)
-
-rest = np.zeros((512,4,6))
-rest2 = np.zeros((512, 4, 7))
-
-rest = np.zeros((512,4,6))
-rest[:,:,:2] = l5
-
-rest2[:,:,5:] = l5
-
-x_input_f1b = np.append(rest, x_input_f, axis=2)
-x_input_f2 = np.append(x_input_f1b, rest2, axis=2)
-
-
-x_input_f2 = torch.Tensor(x_input_f2)
-df_dico_name_tot = {}
-df_dico_second_tot = {}
-
-nn_model_ref.net(x_input_f2.to(device))
-for index in range(nn_model_ref.net.x_input.shape[0]):
-    res = []
-    for index_x, x in enumerate(nn_model_ref.net.classify[index]):
-        res.append(x.detach().cpu().numpy())
-    res2 = np.array(res).transpose()
-    df_dico_second_tot, df_dico_name_tot = incremente_dico(nn_model_ref, index, df_dico_second_tot, res2, df_dico_name_tot)
-
-
-
-df = pd.DataFrame.from_dict(df_dico_second_tot)
-df_name = pd.DataFrame.from_dict(df_dico_name_tot)
-
-
-
-df2 = df.T
-df2_name = df_name.T
-
-print(df2.head(5))
-print(df2_name.head(5))
-
-
-#df2.to_csv(path_save_model + "table_of_tructh_0922.csv")
-#df2_name.to_csv(path_save_model + "table_of_tructh_0922_name.csv")
-
-
-
-#df3 = pd.read_csv(path_save_model + "table_of_tructh_0922.csv")
-#df_name3 = pd.read_csv(path_save_model + "table_of_tructh_0922.csv")
-
-
-
-
-
-#df3 = df2.rename(columns={"Unnamed: 0": "Key"})
-df2.columns=["Filter_" + str(i) for i in range(args.out_channel0)]
-
-df2_name.columns=["DL[i-1]","DV[i-1]","V0[i-1]","V1[i-1]","DL[i]","DV[i]","V0[i]","V1[i]","DL[i+1]","DV[i+1]","V0[i+1]","V1[i+1]"]
-
-print(df2.head(5))
-print(df2_name.head(5))
-
-df_m = pd.concat([df2_name,df2], axis = 1)
-
-
-print(df_m.head())
-
-
-
-df_m.to_csv(path_save_model + "table_of_truth_0985_final_with_pad.csv")
-
-df_m2=df_m.drop(df_m.index[df_m["DL[i-1]"] == "PAD"])
-df_m_f=df_m2.drop(df_m2.index[df_m2["DL[i+1]"] == "PAD"])
-
-#print (df_m_f)
-df_m_f= df_m_f.reset_index()
-print (df_m_f.head(5))
-
-df_m_f.to_csv(path_save_model + "table_of_truth_0985_final_without_pad.csv")
-
-
-
-
-dictionnaire_res_fin_expression = {}
-dictionnaire_res_fin_expression_POS = {}
-
-dictionnaire_perfiler = {}
-dictionnaire_perfiler_POS = {}
-
-doublon = []
-
-expPOS_tot =[]
-
-cpteur = 0
-
-for index_f in range(args.out_channel0):
-    print("Fliter ", index_f)
-    if "F"+str(index_f) in list(dico_important.keys()):
-        index_intere = df_m_f.index[df_m_f['Filter_'+str(index_f)] == 1].tolist()
-        print()
-        if len(index_intere) ==0:
-            print("Empty")
-        else:
-            dictionnaire_res_fin_expression["Filter "+ str(index_f)] = []
-            dictionnaire_res_fin_expression_POS["Filter " + str(index_f)] = []
-            condtion_filter = []
-            for col in ["DL[i-1]", "V0[i-1]", "V1[i-1]", "DL[i]", "V0[i]", "V1[i]", "DL[i+1]", "V0[i+1]", "V1[i+1]"]:
-                s = df_m_f[col].values
-                my_dict = {"0.0": 0.0, "1.0": 1.0, 0.0: 0.0, 1.0: 1.0}
-                s2 = np.array([my_dict[zi] for zi in s])
-                condtion_filter.append(s2[index_intere])
-
-            condtion_filter2 = np.array(condtion_filter).transpose()
-            condtion_filter3 = [x.tolist() for x in condtion_filter2]
-            assert len(condtion_filter3) == len(index_intere)
-            assert len(condtion_filter3[0]) == 9
-            w1, x1, y1, w2, x2, y2, w3, x3, y3 = symbols('DL[i-1], V0[i-1], V1[i-1], DL[i], V0[i], V1[i], DL[i+1], V0[i+1], V1[i+1]')
-            minterms = condtion_filter3
-            exp =SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-
-            if exp in doublon:
-                print(exp, "DOUBLON")
-            elif str(exp) == 'True':
-                print(exp, "True")
-            else:
-                print(exp)
-                doublon.append(exp)
-                dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-                expV2 = str(exp).split(" | ")
-                dictionnaire_perfiler["Filter " + str(index_f)] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
-                print()
-                expPOS = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-                print(expPOS)
-                expPOS_tot.append(str(expPOS))
-                dictionnaire_res_fin_expression_POS["Filter " + str(index_f)].append(expPOS)
-                expV2POS = str(expPOS).split(" & ")
-                print(len(expV2POS))
-
-                cpteur += 2**len(expV2POS)
-
-                dictionnaire_perfiler_POS["Filter " + str(index_f)] = [str(expV2POS)] + [x.replace("(", "").replace(")", "") for
-                                                                                x in expV2POS]
-                #dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-
-
-
-
-        print()
-
-print(cpteur)
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
-row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler.csv")
-df_row = pd.DataFrame(row)
-df_row.to_csv(path_save_model + "clause_unique.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter.csv")
-
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler_POS, orient='index').T
-row3 = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_POS.csv")
-df_row = pd.DataFrame(row3)
-df_row.to_csv(path_save_model + "clause_unique_POS.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression_POS, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS.csv")
-
-df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
-df_expression_bool.to_csv(path_save_model + "time_important_per_filter.csv")
-
-all_masksPOS = [[], [], [],[], [], []]
-for exp_iter in expPOS_tot:
-    expression = exp_iter.split("&")
-    M = np.zeros((6, 16), dtype=np.uint8)
-    #for iterici in range(2*len(expression)):
-    M2 = DPLL(expression, M)
-    for offset in range(15):
-        for index_m_f, m_f in enumerate(M2):
-            liste_ici = m_f.tolist()
-            result = int("".join(str(i) for i in liste_ici), 2)
-            all_masksPOS[index_m_f].append(result>>offset)
-
-print("NBRE DE MASKS CREE:", len(all_masksPOS[0]))
-
-with open(path_save_model + "masks_allPOS.txt", "w") as file:
-    for i in range(6):
-        file.write(str(all_masksPOS[i]))
-        file.write("\n")
-
-
-row_v2 = []
-for r in row:
-    if r is not None:
-        if "(" not in r:
-            row_v2.append(r)
-
-print("NBRE DE CLAUSE UNIQUE:", len(row_v2))
-all_masks = [[], [], [],[], [], []]
-for clause_ici in row_v2:
-    element_clause = clause_ici.split("&")
-    for index_mask in range(1,15):
-        M = np.zeros((6,16), dtype = np.uint8)
-        for el_c in element_clause:
-            if "V0" in el_c:
-                if "~" in el_c:
-                    F = 4
-                else:
-                    F = 1
-            elif "V1" in el_c:
-                if "~" in el_c:
-                    F = 5
-                else:
-                    F = 2
-            elif "DL" in el_c:
-                if "~" in el_c:
-                    F = 3
-                else:
-                    F = 0
-            if "[i]" in el_c:
-                offset = 0
-            elif "[i+1]" in el_c:
-                offset = 1
-            elif "[i-1]" in el_c:
-                offset = -1
-            M[F][index_mask + offset] = 1
-
-        for index_m_f, m_f in enumerate(M):
-            liste_ici = m_f.tolist()
-            result = int("".join(str(i) for i in liste_ici), 2)
-            all_masks[index_m_f].append(result)
-
-print("NBRE DE MASKS CREE:", len(all_masks[0]))
-
-with open(path_save_model + "masks_all.txt", "w") as file:
-    for i in range(6):
-        file.write(str(all_masks[i]))
-        file.write("\n")
-
-
-
-del nn_model_ref
-
+df_expression_bool_m = pd.read_csv("./results/table_of_truth_v2/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_07_02_17_05_25_829508/expression_bool_per_filter.csv")
 for round_ici in [5, 6, 7, 8, 4]:
 
     args.nombre_round_eval = round_ici
@@ -747,8 +412,9 @@ for round_ici in [5, 6, 7, 8, 4]:
 
     #print(X_eval_proba_feat[0].tolist())
     #print(nn_model_ref.all_intermediaire_val[0].tolist())
-
     #print(ok)
+
+
 
     X_eval_proba_feat = nn_model_ref.all_intermediaire_val
     Y_eval_proba = nn_model_ref.Y_val_nn_binaire
@@ -757,6 +423,7 @@ for round_ici in [5, 6, 7, 8, 4]:
 
     print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1]/16)
 
+    print(ok)
 
 
     #net = Linear_bin(args, X_train_proba_feat.shape[1]).to(device)
@@ -770,14 +437,13 @@ for round_ici in [5, 6, 7, 8, 4]:
 
     nn_model_ref.train_from_scractch("AE")
 
-    print(ok)
 
-    """
+
 
     net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,
                                                        Y_train_proba, X_eval_proba_feat, Y_eval_proba,
                                                        bs=5000,
-                                                       epoch=20, name_ici="test")"""
+                                                       epoch=20, name_ici="test")
 
 
     """clf = sklearn.neural_network.MLPClassifier(hidden_layer_sizes=(1024,512))

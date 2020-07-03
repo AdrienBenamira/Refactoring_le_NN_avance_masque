@@ -11,7 +11,7 @@ class ModelPaperBaseline_bin4(nn.Module):
 
     def __init__(self, args):
         super(ModelPaperBaseline_bin4, self).__init__()
-        self.embedding_size = 16
+        self.embedding_size = 512
         self.args = args
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
@@ -31,21 +31,24 @@ class ModelPaperBaseline_bin4(nn.Module):
                 self.layers_conv.append(
                 nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-        self.fc1 = nn.Linear(args.out_channel1 * args.word_size, args.hidden1* 3)  # 6*6 from image dimension
-        self.BN5 = nn.BatchNorm1d(args.hidden1 * 3, eps=0.01, momentum=0.99)
-        self.fc2 = nn.Linear(args.hidden1* 3, args.hidden1)
-        self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-        self.fc2b = nn.Linear(args.hidden1, self.embedding_size) #64 works
-        self.BN6b = nn.BatchNorm1d(self.embedding_size, eps=0.01, momentum=0.99) #64 works
-
-        self.fc4 = nn.Linear(self.embedding_size , args.hidden1)
-        self.BN8 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-        self.fc5 = nn.Linear(args.hidden1, args.hidden1* 3)  # 128 works
-        self.BN9 = nn.BatchNorm1d(3 * args.hidden1, eps=0.01, momentum=0.99)
-        self.fc6 = nn.Linear(args.hidden1 * 3, args.out_channel1 * args.word_size)  # 128 works
-        self.BN10 = nn.BatchNorm1d(args.out_channel1 * args.word_size, eps=0.01, momentum=0.99)  # 128 works
+        self.fc1 = nn.Linear(args.out_channel1 * args.word_size, self.embedding_size)  # 6*6 from image dimension
+        self.BN5 = nn.BatchNorm1d(self.embedding_size, eps=0.01, momentum=0.99)
+        #self.fc2 = nn.Linear(args.hidden1, args.hidden1)
+        #self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+        #self.fc2b = nn.Linear(args.hidden1, self.embedding_size) #64 works
+        #self.BN6b = nn.BatchNorm1d(self.embedding_size, eps=0.01, momentum=0.99) #64 works
 
         self.fc3 = nn.Linear(self.embedding_size, 1) #128 works
+
+        """
+        self.dp1 = nn.Dropout(0.2)
+        self.dp2 = nn.Dropout(0.2)
+        self.dp2b = nn.Dropout(0.2)
+        self.dp4 = nn.Dropout(0.2)
+        self.dp5 = nn.Dropout(0.2)
+        self.dp6 = nn.Dropout(0.2)
+        """
+
 
     def first_changement_base(self, x):
         x = F.relu(self.BNm1(self.convm1(x)))
@@ -64,16 +67,11 @@ class ModelPaperBaseline_bin4(nn.Module):
 
     def encoder(self, x):
         x = F.relu(self.BN5(self.fc1(x)))
-        x = F.relu(self.BN6(self.fc2(x)))
-        x = F.relu(self.BN6b(self.fc2b(x)))
+        #x = F.relu(self.BN6(self.fc2(x)))
+        #x = F.relu(self.BN6b(self.fc2b(x)))
         return x
 
-    def decoder(self, x):
-        x = F.relu(self.BN8(self.fc4(x)))
-        x = F.relu(self.BN9(self.fc5(x)))
-        x = F.relu(self.BN10(self.fc6(x)))
-        x = self.act_q(x)
-        return x
+
 
     def forward(self, x):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)

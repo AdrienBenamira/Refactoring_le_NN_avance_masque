@@ -36,6 +36,149 @@ from pickle import dump
 #NN
 from tqdm import tqdm
 
+def get_final_expression_0_1(df_final):
+    df_final_1 = df_final[df_final['Output'] == 1].values
+    conditions_or_1 = []
+    for conditions_or in df_final_1:
+        str_1 = ""
+        already_seen = []
+        for el1 in conditions_or[1:]:
+            if el1 is not None:
+                if el1 not in already_seen:
+                    already_seen.append(el1)
+                    str_1 += el1 + " & "
+        element_final_1 = str_1[:-2]
+        if element_final_1 not in conditions_or_1:
+            conditions_or_1.append(element_final_1)
+    df_final_0 = df_final[df_final['Output'] == 0].values
+    conditions_or_0 = []
+    for conditions_or in df_final_0:
+        str_0 = ""
+        already_seen = []
+        for el0 in conditions_or[1:]:
+            if el0 is not None:
+                if el0 not in already_seen:
+                    already_seen.append(el0)
+                    str_0 += el0 + " & "
+        conditions_or_0.append(str_0[:-2])
+        element_final_0 = str_0[:-2]
+        if element_final_0 not in conditions_or_0:
+            conditions_or_0.append(element_final_0)
+    return conditions_or_1, conditions_or_0
+
+
+def get_expression_filter(df2, df2_name):
+    output_name = ["Filter_" + str(i) for i in range(args.out_channel0)]
+    input_name = ["DL[i-1]", "V0[i-1]", "V1[i-1]", "DL[i]", "V0[i]", "V1[i]", "DL[i+1]", "V0[i+1]", "V1[i+1]"]
+    input_name_all = ["DL[i-1]", "DV[i-1]", "V0[i-1]", "V1[i-1]", "DL[i]", "DV[i]", "V0[i]", "V1[i]", "DL[i+1]",
+                      "DV[i+1]", "V0[i+1]", "V1[i+1]"]
+
+    df2.columns = output_name
+    df2_name.columns = input_name_all
+    df_m = pd.concat([df2_name, df2], axis=1)
+    df_m.to_csv(path_save_model + "table_of_truth_final_with_pad.csv")
+    df_m2 = df_m.drop(df_m.index[df_m["DL[i-1]"] == "PAD"])
+    df_m_f = df_m2.drop(df_m2.index[df_m2["DL[i+1]"] == "PAD"])
+    # print (df_m_f)
+    df_m_f = df_m_f.reset_index()
+    print(df_m_f.head(5))
+    df_m_f.to_csv(path_save_model + "table_of_truth_final_without_pad.csv")
+
+    dictionnaire_res_fin_expression = {}
+    dictionnaire_res_fin_expression_POS = {}
+    dictionnaire_perfiler = {}
+    dictionnaire_perfiler_POS = {}
+    doublon = []
+    expPOS_tot = []
+    cpteur = 0
+    dictionnaire_feature_name = {}
+
+    for index_f in range(args.out_channel0):
+        # for index_f in range(3):
+        offset_feat = 15 * index_f
+        print(output_name[index_f])
+        # if "F"+str(index_f) in list(dico_important.keys()):
+        index_intere = df_m_f.index[df_m_f[output_name[index_f]] == 1].tolist()
+        print()
+        if len(index_intere) == 0:
+            print("Empty")
+            for time in range(1, 15):
+                dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = 0
+        else:
+            dictionnaire_res_fin_expression[output_name[index_f]] = []
+            dictionnaire_res_fin_expression_POS[output_name[index_f]] = []
+            condtion_filter = []
+            for col in input_name:
+                s = df_m_f[col].values
+                my_dict = {"0": 0, "1": 1, 0: 0, 1: 1}
+                s2 = np.array([my_dict[zi] for zi in s])
+                condtion_filter.append(s2[index_intere])
+            condtion_filter2 = np.array(condtion_filter).transpose()
+            condtion_filter3 = [x.tolist() for x in condtion_filter2]
+            assert len(condtion_filter3) == len(index_intere)
+            assert len(condtion_filter3[0]) == 9
+            symbols_str = ""
+            for input_name_ici in input_name:
+                symbols_str += input_name_ici + ", "
+            w1, x1, y1, w2, x2, y2, w3, x3, y3 = symbols(symbols_str[:-2])
+            minterms = condtion_filter3
+            exp = SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
+            expPOS = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
+            if exp in doublon:
+                print(exp, "DOUBLON")
+                for time in range(1, 15):
+                    dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = str(expPOS).replace("i",
+                                                                                                                    str(
+                                                                                                                        time))
+            elif str(exp) == 'True':
+                print(exp, "True")
+                for time in range(1, 15):
+                    dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = 1
+            else:
+                print(exp)
+                for time in range(1, 15):
+                    dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = str(expPOS).replace("i",
+                                                                                                                    str(
+                                                                                                                        time))
+                doublon.append(exp)
+                dictionnaire_res_fin_expression[output_name[index_f]].append(exp)
+                expV2 = str(exp).split(" | ")
+                dictionnaire_perfiler[output_name[index_f]] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in
+                                                                            expV2]
+                print()
+
+                print(expPOS)
+                expPOS_tot.append(str(expPOS))
+                dictionnaire_res_fin_expression_POS[output_name[index_f]].append(expPOS)
+                expV2POS = str(expPOS).split(" & ")
+                dictionnaire_perfiler_POS[output_name[index_f]] = [str(expV2POS)] + [x.replace("(", "").replace(")", "")
+                                                                                     for x in expV2POS]
+                # dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
+        print()
+
+    del df_m_f, df_m
+
+    df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
+    row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
+    df_filtre.to_csv(path_save_model + "dictionnaire_perfiler.csv")
+    df_row = pd.DataFrame(row)
+    df_row.to_csv(path_save_model + "clause_unique.csv")
+    df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
+    df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter.csv")
+
+    df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler_POS, orient='index').T
+    row3 = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
+    df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_POS.csv")
+    df_row = pd.DataFrame(row3)
+    df_row.to_csv(path_save_model + "clause_unique_POS.csv")
+    df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression_POS, orient='index').T
+    df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS.csv")
+
+    df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
+    df_expression_bool.to_csv(path_save_model + "time_important_per_filter.csv")
+
+    return dictionnaire_feature_name,
+
 def get_truth_table_embedding(nn_model_ref, dimension_embedding = 16, bz = 500):
     arr2 = generate_binary(dimension_embedding)
     l = []
@@ -52,15 +195,10 @@ def get_truth_table_embedding(nn_model_ref, dimension_embedding = 16, bz = 500):
     for index_end_bz in range(end_ind_bz):
         input_array_embedding = l2[index_end_bz * bz:(index_end_bz + 1) * bz]
         x_input_f2 = torch.Tensor(input_array_embedding)
-
         outputs = torch.sigmoid(nn_model_ref.net.fc3(x_input_f2.to(device)))
         preds = (outputs.squeeze(1) > nn_model_ref.t.to(device)).int().cpu().detach().numpy() * 1
-
         outputs_feature = nn_model_ref.net.decoder(x_input_f2.to(device))
         preds_feat = (outputs_feature.squeeze(1) > nn_model_ref.t.to(device)).int().cpu().detach().numpy() * 1
-
-
-
         for index_input in range(len(input_array_embedding)):
             input_name2 = input_array_embedding[index_input]
             input_name3 = '_'.join(map(str, input_name2))
@@ -72,6 +210,7 @@ def get_truth_table_embedding(nn_model_ref, dimension_embedding = 16, bz = 500):
                     preds_feat_str.append("Feature_"+str(index_feat))
             dico_tt_embeding_feature[input_name3] = preds_feat_str
             dico_tt_embeding_feature_name[input_name3] = input_name2
+    del l2, l, x_input_f2
     return dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name
 
 def get_truth_table_input_feature(nn_model_ref):
@@ -148,6 +287,13 @@ def prunning_model(nn_model_ref, global_sparsity = 0.95, flag2 = True, phases = 
                         )
     if flag2:
         nn_model_ref.eval_all(phases)
+        print(nn_model_ref.net.fc1.weight_mask.detach().cpu().int().numpy()[0].tolist())
+        print(np.sum(nn_model_ref.net.fc1.weight_mask.detach().cpu().int().numpy()[0]))
+
+        print(nn_model_ref.net.fc2.weight_mask.detach().cpu().int().numpy()[0].tolist())
+        print(np.sum(nn_model_ref.net.fc2.weight_mask.detach().cpu().int().numpy()[0]))
+
+    print(ok)
     #return nn_model_ref
 
 
@@ -463,7 +609,8 @@ nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, 
 nn_model_ref.load_nn()
 
 
-prunning_model(nn_model_ref, global_sparsity = 0.85, flag2 = True, phases = ["val"])
+prunning_model(nn_model_ref, global_sparsity = 0.9, flag2 = True, phases = ["val"])
+
 t = nn_model_ref.net.fc1.weight_mask.sum(0).detach().cpu().numpy().tolist()
 index_filter_time_keep = [i for i, x in enumerate(t) if x!=0.0]
 liste_feature = []
@@ -490,188 +637,73 @@ df_name = pd.DataFrame.from_dict(dico_tt_feature_input_name)
 df2 = df.T
 df2_name = df_name.T
 
+#dictionnaire_feature_name = get_expression_filter(df2, df2_name)
+
+#df_conversion_filter_feature = pd.DataFrame.from_dict(dictionnaire_feature_name)
+#df_conversion_filter_feature.to_csv(path_save_model + "df_conversion_filter_feature.csv")
+
+dictionnaire_feature_name = pd.read_csv("/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/output_table_of_truth_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_07_02_12_27_12_528120/df_conversion_filter_feature.csv").to_dict()
+
+print(dictionnaire_feature_name)
+
+del df2_name, df2, df, dico_tt_feature_input, dico_tt_feature_input_name
+
+
+
+#-----------------------------------------------------------------------------------------------------------------------------
+
 print("GET TT EMBEDDING")
 print()
 dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name = get_truth_table_embedding(nn_model_ref)
 
 
-output_name = ["Filter_" + str(i) for i in range(args.out_channel0)]
-input_name = ["DL[i-1]","V0[i-1]","V1[i-1]","DL[i]","V0[i]","V1[i]","DL[i+1]","V0[i+1]","V1[i+1]"]
-input_name_all = ["DL[i-1]","DV[i-1]","V0[i-1]","V1[i-1]","DL[i]","DV[i]","V0[i]","V1[i]","DL[i+1]","DV[i+1]","V0[i+1]","V1[i+1]"]
-
-df2.columns = output_name
-df2_name.columns=input_name_all
-df_m = pd.concat([df2_name,df2], axis = 1)
-df_m.to_csv(path_save_model + "table_of_truth_final_with_pad.csv")
-df_m2=df_m.drop(df_m.index[df_m["DL[i-1]"] == "PAD"])
-df_m_f=df_m2.drop(df_m2.index[df_m2["DL[i+1]"] == "PAD"])
-#print (df_m_f)
-df_m_f= df_m_f.reset_index()
-print (df_m_f.head(5))
-df_m_f.to_csv(path_save_model + "table_of_truth_final_without_pad.csv")
-
-
-
-
-dictionnaire_res_fin_expression = {}
-dictionnaire_res_fin_expression_POS = {}
-dictionnaire_perfiler = {}
-dictionnaire_perfiler_POS = {}
-doublon = []
-expPOS_tot =[]
-cpteur = 0
-dictionnaire_feature_name = {}
-
-
-for index_f in range(args.out_channel0):
-#for index_f in range(3):
-    offset_feat = 15*index_f
-    print(output_name[index_f])
-    #if "F"+str(index_f) in list(dico_important.keys()):
-    index_intere = df_m_f.index[df_m_f[output_name[index_f]] == 1].tolist()
-    print()
-    if len(index_intere) ==0:
-        print("Empty")
-        for time in range(16):
-            dictionnaire_feature_name["Feature_"+str(index_f + time + offset_feat)] = 0
-    else:
-        dictionnaire_res_fin_expression[output_name[index_f]] = []
-        dictionnaire_res_fin_expression_POS[output_name[index_f]] = []
-        condtion_filter = []
-        for col in input_name:
-            s = df_m_f[col].values
-            my_dict = {"0": 0, "1": 1, 0: 0, 1: 1}
-            s2 = np.array([my_dict[zi] for zi in s])
-            condtion_filter.append(s2[index_intere])
-        condtion_filter2 = np.array(condtion_filter).transpose()
-        condtion_filter3 = [x.tolist() for x in condtion_filter2]
-        assert len(condtion_filter3) == len(index_intere)
-        assert len(condtion_filter3[0]) == 9
-        symbols_str = ""
-        for input_name_ici in input_name:
-            symbols_str += input_name_ici + ", "
-        w1, x1, y1, w2, x2, y2, w3, x3, y3 = symbols(symbols_str[:-2])
-        minterms = condtion_filter3
-        exp =SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-        expPOS = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-        if exp in doublon:
-            print(exp, "DOUBLON")
-            for time in range(16):
-                dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = str(expPOS).replace("i", str(time))
-        elif str(exp) == 'True':
-            print(exp, "True")
-            for time in range(16):
-                dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = 1
-        else:
-            print(exp)
-            for time in range(16):
-                dictionnaire_feature_name["Feature_" + str(index_f + time + offset_feat)] = str(expPOS).replace("i", str(time))
-            doublon.append(exp)
-            dictionnaire_res_fin_expression[output_name[index_f]].append(exp)
-            expV2 = str(exp).split(" | ")
-            dictionnaire_perfiler[output_name[index_f]] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
-            print()
-
-            print(expPOS)
-            expPOS_tot.append(str(expPOS))
-            dictionnaire_res_fin_expression_POS[output_name[index_f]].append(expPOS)
-            expV2POS = str(expPOS).split(" & ")
-            dictionnaire_perfiler_POS[output_name[index_f]] = [str(expV2POS)] + [x.replace("(", "").replace(")", "") for x in expV2POS]
-            #dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-    print()
-
-
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
-row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler.csv")
-df_row = pd.DataFrame(row)
-df_row.to_csv(path_save_model + "clause_unique.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter.csv")
-
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler_POS, orient='index').T
-row3 = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_POS.csv")
-df_row = pd.DataFrame(row3)
-df_row.to_csv(path_save_model + "clause_unique_POS.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression_POS, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS.csv")
-
-df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
-df_expression_bool.to_csv(path_save_model + "time_important_per_filter.csv")
-
-#-----------------------------------------------------------------------------------------------------------------------------
-
 df2 = pd.DataFrame.from_dict(dico_tt_embeding_output, orient='index')
 df2_name = pd.DataFrame.from_dict(dico_tt_embeding_output_name, orient='index')
 output_name = ["Output"]
 df2.columns = output_name
-
-
+del dico_tt_embeding_output, dico_tt_embeding_output_name
 df3 = pd.DataFrame.from_dict(dico_tt_embeding_feature, orient='index')
 df3_name = pd.DataFrame.from_dict(dico_tt_embeding_feature_name, orient='index')
-
+del dico_tt_embeding_feature, dico_tt_embeding_feature_name
 nfeat = df3.shape[1]-1
 
 
 index_to_del = df3[df3[0].isnull()].index.tolist()
-
 df_final = pd.concat([df2, df3], join="inner", axis = 1)
-
-
 df_final = df_final.drop(index_to_del)
 
-
-df_final = df_final.drop_duplicates(subset=[i for i in range(nfeat)], keep= False)
-df_final = df_final.reset_index()
-df_final.to_csv(path_save_model + "final.csv")
-
-
 uniaue_ele = pd.unique(df_final[[i for i in range(nfeat)]].values.ravel('K'))
-
-print(df_final)
-
-
+print(uniaue_ele)
 for u_e in uniaue_ele:
     if u_e is not None:
-        df_final= df_final.replace(u_e, dictionnaire_feature_name[u_e])
-    else:
-        print(u_e)
-        df_final = df_final.replace(u_e, "1")
+        df_final= df_final.replace(u_e, dictionnaire_feature_name[str(u_e)][0])
 
-print(df_final)
+print("SAVE ALL")
 
-df_final.to_csv(path_save_model + "final_with_mask.csv")
+df_final.to_csv(path_save_model + "final_all.csv")
+conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
+classification_final = {"SPECK":conditions_or_1, "RANDOM":conditions_or_0}
+df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
+df_classification_final.to_csv(path_save_model + "classification_all.csv")
 
-print(df_final)
-df_final['final_expression'] = df_final[[i for i in range(nfeat)]].agg(' & '.join([None]), axis=1)
-print(df_final)
-df_final = df_final.drop([i for i in range(nfeat)])
-print(df_final)
+print("SAVE DUPPLICATES")
 
-df_final.to_csv(path_save_model + "final_with_mask.csv")
 
-df_final_1 = df_final[df_final['Output'] == 1]['final_expression'].values
-str_1 = ""
-for el1 in df_final_1:
-    mylist = el1.split(" & ")
-    mylist = list(dict.fromkeys(mylist))
-    el1_v2 =  " & ".join(mylist)
-    str_1 += el1_v2 + " | "
+df_final = df_final.drop_duplicates(subset=['Output']+[i for i in range(nfeat)])
+df_final.to_csv(path_save_model + "final_with_duplicates.csv")
+conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
+classification_final = {"SPECK":conditions_or_1, "RANDOM":conditions_or_0}
+df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
+df_classification_final.to_csv(path_save_model + "classification_with_duplicates.csv")
 
-df_final_0 = df_final[df_final['Output'] == 0]['final_expression'].values
-str_0 = ""
-for el0 in df_final_0:
-    mylist = el0.split(" & ")
-    mylist = list(dict.fromkeys(mylist))
-    el0_v2 = " & ".join(mylist)
-    str_0 += el0_v2 + " | "
+print("SAVE FINAL")
 
-classification_final = {1:str_1[:-2], 0:str_0[:-2]}
-
-print(classification_final)
+df_final = df_final.drop_duplicates(subset=[i for i in range(nfeat)], keep= False)
+df_final.to_csv(path_save_model + "final.csv")
+conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
+classification_final = {"SPECK":conditions_or_1, "RANDOM":conditions_or_0}
+df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
+df_classification_final.to_csv(path_save_model + "classification.csv")
 
 print(ok)
 

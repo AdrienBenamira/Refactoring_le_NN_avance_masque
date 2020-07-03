@@ -229,6 +229,9 @@ class NN_Model_Ref_v2:
                             if self.scheduler is not None:
                                 self.scheduler.step()
                         preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
+
+
+
                         TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
                         TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
                         FN += (preds.eq(0) & labels.eq(1)).cpu().sum()
@@ -246,7 +249,7 @@ class NN_Model_Ref_v2:
                     phase, epoch_loss))
                 print('{} Acc: {:.4f}'.format(
                     phase, acc))
-                #print(desc)
+                #print(np.sum(preds[0].detach().cpu().int().numpy() == labels[0].detach().cpu().int().numpy()))
                 print()
                 self.writer.add_scalar(phase + ' Loss ' + phrase,
                                   epoch_loss,

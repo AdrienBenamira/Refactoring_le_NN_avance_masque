@@ -7,48 +7,98 @@ import math
 
 #DoReFaNet
 
-class AE_binarize(nn.Module):
+class ModelPaperBaseline_bin5(nn.Module):
 
-    def __init__(self, args, input_sizze, h1 = 512, h2 = 16, h3 = 64, h4 = 16 ):
-        super(AE_binarize, self).__init__()
+    def __init__(self, args):
+        super(ModelPaperBaseline_bin5, self).__init__()
+        self.embedding_size = 16
         self.args = args
+        self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
-        self.fc1 = nn.Linear(input_sizze, h1)  # 6*6 from image dimension
-        self.BN5 = nn.BatchNorm1d(h1, eps=0.01, momentum=0.99)
-        self.fc2 = nn.Linear(h1, h2)
-        self.BN6 = nn.BatchNorm1d(h2, eps=0.01, momentum=0.99)
-        #self.fc3 = nn.Linear(h2, h3)
-        #self.BN7 = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
-        #self.fc3b = nn.Linear(h3, h4)
-        #self.BN7b = nn.BatchNorm1d(h4, eps=0.01, momentum=0.99)
+        self.convm1 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=len(self.args.inputs_type), kernel_size=1)
+        self.BNm1 = nn.BatchNorm1d(len(self.args.inputs_type), eps=0.01, momentum=0.99)
+        self.conv0 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel0, kernel_size=1)
+        self.BN0 = nn.BatchNorm1d(args.out_channel0, eps=0.01, momentum=0.99)
+        self.layers_conv = nn.ModuleList()
+        self.layers_batch = nn.ModuleList()
+        self.numLayers = args.numLayers
+        for i in range(args.numLayers - 1):
+            if i ==0:
+                self.layers_conv.append(
+                    nn.Conv1d(in_channels=args.out_channel0, out_channels=args.out_channel1, kernel_size=3, padding =1))
+                self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
+            else:
+                self.layers_conv.append(
+                nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
+                self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
+        self.fc1 = nn.Linear(args.out_channel1 * args.word_size, args.hidden1* 3)  # 6*6 from image dimension
+        self.BN5 = nn.BatchNorm1d(args.hidden1 * 3, eps=0.01, momentum=0.99)
+        self.fc2 = nn.Linear(args.hidden1* 3, args.hidden1)
+        self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+        self.fc2b = nn.Linear(args.hidden1, self.embedding_size) #64 works
+        self.BN6b = nn.BatchNorm1d(self.embedding_size, eps=0.01, momentum=0.99) #64 works
 
-        #self.fc4a = nn.Linear(h4, h3)  # 6*6 from image dimension
-        #self.BN8a = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
-        #self.fc4 = nn.Linear(h3, h2)  # 6*6 from image dimension
-        #self.BN8 = nn.BatchNorm1d(h2, eps=0.01, momentum=0.99)
-        self.fc5 = nn.Linear(h2, h1)
-        self.BN9 = nn.BatchNorm1d(h1, eps=0.01, momentum=0.99)
-        self.fc6 = nn.Linear(h1, input_sizze)
-        self.BN10 = nn.BatchNorm1d(input_sizze, eps=0.01, momentum=0.99)
+        self.fc4 = nn.Linear(self.embedding_size , args.hidden1)
+        self.BN8 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+        self.fc5 = nn.Linear(args.hidden1, args.hidden1)  # 128 works
+        self.BN9 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+        self.fc6 = nn.Linear(args.hidden1, args.out_channel1 * args.word_size)  # 128 works
+        self.BN10 = nn.BatchNorm1d(args.out_channel1 * args.word_size, eps=0.01, momentum=0.99)  # 128 works
+
+        self.fc3 = nn.Linear(self.embedding_size, 1) #128 works
+
+        """
+        self.dp1 = nn.Dropout(0.2)
+        self.dp2 = nn.Dropout(0.2)
+        self.dp2b = nn.Dropout(0.2)
+        self.dp4 = nn.Dropout(0.2)
+        self.dp5 = nn.Dropout(0.2)
+        self.dp6 = nn.Dropout(0.2)
+        """
+
+
+    def first_changement_base(self, x):
+        x = F.relu(self.BNm1(self.convm1(x)))
+        x = F.relu(self.BN0(self.conv0(x)))
+        return x
+
+    def residual(self, x):
+        shortcut = x.clone()
+        self.shorcut = shortcut
+        for i in range(len(self.layers_conv)):
+            x = self.layers_conv[i](x)
+            x = self.layers_batch[i](x)
+            x = F.relu(x)
+            x = x + shortcut
+        return x
 
     def encoder(self, x):
         x = F.relu(self.BN5(self.fc1(x)))
         x = F.relu(self.BN6(self.fc2(x)))
-        #x = F.relu(self.BN7(self.fc3(x)))
-        #x = F.relu(self.BN7b(self.fc3b(x)))
+        x = F.relu(self.BN6b(self.fc2b(x)))
         return x
 
     def decoder(self, x):
-        #x = F.relu(self.BN8a(self.fc4a(x)))
-        #x = F.relu(self.BN8(self.fc4(x)))
+        x = F.relu(self.BN8(self.fc4(x)))
         x = F.relu(self.BN9(self.fc5(x)))
         x = F.relu(self.BN10(self.fc6(x)))
+        #x = self.act_q(x)
         return x
 
     def forward(self, x):
+        x = x.view(-1, len(self.args.inputs_type), self.word_size)
+        self.x_input = x.clone()
+        x = self.first_changement_base(x)
+        x = self.act_q(x)
+        x = self.residual(x)
+        x = self.act_q(x)
+        self.classify = x
+        x = x.view(x.size(0), -1)
+        self.intermediare = x.clone()
         x = self.encoder(x)
         x = self.act_q(x)
-        x = self.decoder(x)
+        self.intermediare_compress = x.clone()
+        x = self.fc3(x)
         x = torch.sigmoid(x)
         return x
 
