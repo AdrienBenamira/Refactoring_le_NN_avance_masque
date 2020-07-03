@@ -11,7 +11,7 @@ class ModelPaperBaseline_bin4(nn.Module):
 
     def __init__(self, args):
         super(ModelPaperBaseline_bin4, self).__init__()
-        self.embedding_size = 512
+        self.embedding_size = 16
         self.args = args
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
@@ -31,10 +31,10 @@ class ModelPaperBaseline_bin4(nn.Module):
                 self.layers_conv.append(
                 nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-        self.fc1 = nn.Linear(args.out_channel1 * args.word_size, self.embedding_size)  # 6*6 from image dimension
-        self.BN5 = nn.BatchNorm1d(self.embedding_size, eps=0.01, momentum=0.99)
-        #self.fc2 = nn.Linear(args.hidden1, args.hidden1)
-        #self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+        self.fc1 = nn.Linear(args.out_channel1 * args.word_size,args.hidden1)  # 6*6 from image dimension
+        self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+        self.fc2 = nn.Linear(args.hidden1,  self.embedding_size)
+        self.BN6 = nn.BatchNorm1d(self.embedding_size, eps=0.01, momentum=0.99)
         #self.fc2b = nn.Linear(args.hidden1, self.embedding_size) #64 works
         #self.BN6b = nn.BatchNorm1d(self.embedding_size, eps=0.01, momentum=0.99) #64 works
 
@@ -67,7 +67,7 @@ class ModelPaperBaseline_bin4(nn.Module):
 
     def encoder(self, x):
         x = F.relu(self.BN5(self.fc1(x)))
-        #x = F.relu(self.BN6(self.fc2(x)))
+        x = F.relu(self.BN6(self.fc2(x)))
         #x = F.relu(self.BN6b(self.fc2b(x)))
         return x
 
