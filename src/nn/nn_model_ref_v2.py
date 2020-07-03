@@ -396,9 +396,9 @@ class NN_Model_Ref_v2:
                     phase, epoch_loss1))
                 print('{} Loss2: {:.4f}'.format(
                     phase, epoch_loss2))
-                print('{} Acc: {:.4f}'.format(
+                print('{} Acc AE: {:.4f}'.format(
                     phase, acc))
-                print('{} Acc: {:.4f}'.format(
+                print('{} Acc classification: {:.4f}'.format(
                     phase, acc2))
                 #print(np.sum(preds[0].detach().cpu().int().numpy() == labels[0].detach().cpu().int().numpy()))
                 print()
@@ -410,12 +410,12 @@ class NN_Model_Ref_v2:
                                   epoch)
                 # deep copy the model
                 if phase == 'val' and epoch_loss < best_loss:
-                    best_loss = epoch_loss
+                    best_loss = epoch_loss2
                     best_model_wts = copy.deepcopy(self.net.state_dict())
                     torch.save({'epoch': epoch + 1, 'acc': best_loss, 'state_dict': self.net.state_dict()},
                                os.path.join(self.path_save_model, str(best_loss) + '_bestloss.pth'))
-                if phase == 'val' and acc >= best_acc:
-                    best_acc = acc
+                if phase == 'val' and acc2 >= best_acc:
+                    best_acc = acc2
                     torch.save({'epoch': epoch + 1, 'acc': best_acc, 'state_dict': self.net.state_dict()},
                                os.path.join(self.path_save_model, str(best_acc) + '_bestacc.pth'))
             print()
