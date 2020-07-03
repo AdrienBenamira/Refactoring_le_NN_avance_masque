@@ -354,7 +354,7 @@ class NN_Model_Ref_v2:
                         loss1 = self.criterion(outputs.squeeze(1), inputs.to(self.device))
                         loss2 = self.criterion(outputs2.squeeze(1), labels.to(self.device))
                         #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
-                        loss = loss1 + loss2
+                        loss = loss1 + 2*loss2
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
                             loss.backward()
@@ -544,9 +544,9 @@ class NN_Model_Ref_v2:
         #data_train = np.zeros_like(x, dtype = np.uint8)
         #data_val = np.zeros_like(x, dtype = np.uint8)
         #df_matter = pd.read_csv("results/table_of_truth_v2/speck/4/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_06_24_14_10_19_508216/dictionnaire_perfiler.csv", index_col=0)
-        X_train_proba_feat = np.zeros((len(self.Y_train_nn_binaire), (len(df_matter.columns))*16),
+        X_train_proba_feat = np.zeros((len(self.Y_train_nn_binaire), 16),
                                       dtype=np.bool_)
-        X_eval_proba_feat = np.zeros((len(self.Y_val_nn_binaire), (len(df_matter.columns))*16), dtype=np.bool_)
+        X_eval_proba_feat = np.zeros((len(self.Y_val_nn_binaire), 16), dtype=np.bool_)
 
         self.outputs_proba = {x: [] for x in val_phase}
         self.outputs_pred = {x: [] for x in val_phase}
@@ -562,7 +562,7 @@ class NN_Model_Ref_v2:
             for i, data in enumerate(tk0):
                 inputs, labels = data
                 outputs = self.net(inputs.to(self.device))
-                data_ici =  (outputs.squeeze(1) > self.t.to(self.device)).int().cpu() * 1
+                data_ici =  (self.net.embedding.squeeze(1) > self.t.to(self.device)).int().cpu() * 1
                 if phase == "train":
                     X_train_proba_feat[i*self.batch_size:(i+1)*self.batch_size, :] = data_ici
                 else:

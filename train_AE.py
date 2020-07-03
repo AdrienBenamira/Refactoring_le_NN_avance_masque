@@ -63,13 +63,13 @@ def make_checkpoint(datei):
 def make_classifier(input_size=84, d1=1024, d2=512, final_activation='sigmoid'):
     # Input and preprocessing layers
     inp = Input(shape=(input_size,));
-    dense1 = Dense(d1)(inp);
+    """dense1 = Dense(d1)(inp);
     dense1 = BatchNormalization()(dense1);
     dense1 = Activation('relu')(dense1);
     dense2 = Dense(d2)(dense1);
     dense2 = BatchNormalization()(dense2);
-    dense2 = Activation('relu')(dense2);
-    out = Dense(1, activation=final_activation)(dense2);
+    dense2 = Activation('relu')(dense2);"""
+    out = Dense(1, activation=final_activation)(inp);
     model = Model(inputs=inp, outputs=out);
     return (model);
 
@@ -439,11 +439,11 @@ for round_ici in [5, 6, 7, 8, 4]:
     
     nn_model_ref.X_train_nn_binaire = X_train_proba_feat
     nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
-    #nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
-    #nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
+    nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
+    nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
 
 
-    nn_model_ref.train_from_scractch_2("AE")
+    nn_model_ref.train_from_scractch("AE")
 
     nn_model_ref.eval_all2(df_expression_bool_m, ["train", "val"])
 
