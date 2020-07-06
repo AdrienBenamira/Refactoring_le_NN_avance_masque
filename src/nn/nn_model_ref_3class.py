@@ -247,15 +247,15 @@ class NN_Model_Ref_3class:
 
 
 
-                        correct += (predicted == labels.to(self.device)).sum().item()
+                        correct += (predicted == labels.to(self.device)).cpu().sum().item()
                         TOT2 += labels.size(0)
 
                         predicted[predicted == 2] = 1
                         labels[labels==2] = 1
-                        TP += (predicted.eq(1) & labels.eq(1)).cpu().sum()
-                        TN += (predicted.eq(0) & labels.eq(0)).cpu().sum()
-                        FN += (predicted.eq(0) & labels.eq(1)).cpu().sum()
-                        FP += (predicted.eq(1) & labels.eq(0)).cpu().sum()
+                        TP += (predicted.eq(1) & labels.to(self.device).eq(1)).cpu().sum()
+                        TN += (predicted.eq(0) & labels.to(self.device).eq(0)).cpu().sum()
+                        FN += (predicted.eq(0) & labels.to(self.device).eq(1)).cpu().sum()
+                        FP += (predicted.eq(1) & labels.to(self.device).eq(0)).cpu().sum()
                         TOT = TP + TN + FN + FP
 
 
