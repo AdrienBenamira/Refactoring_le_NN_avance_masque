@@ -487,11 +487,6 @@ for round_ici in [5, 6, 7, 8, 4]:
     net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
     nn_model_ref.net = net
 
-    X_eval_proba_feat = nn_model_ref.all_intermediaire_val
-    Y_eval_proba = nn_model_ref.Y_val_nn_binaire
-    X_train_proba_feat = nn_model_ref.all_intermediaire
-    Y_train_proba = nn_model_ref.Y_train_nn_binaire
-
     print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1] / 16)
 
 

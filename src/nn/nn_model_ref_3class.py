@@ -60,35 +60,13 @@ class NN_Model_Ref_3class:
 
 
     def choose_model(self):
-        if self.args.type_model=="baseline":
-            return ModelPaperBaseline(self.args).to(self.device)
-        if self.args.type_model=="baseline_3class":
-            return ModelPaperBaseline_3class(self.args).to(self.device)
-        if self.args.type_model=="baseline_v2":
-            return ModelPaperBaseline_v2(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin":
-            return ModelPaperBaseline_bin(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v2":
-            return ModelPaperBaseline_bin2(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v3":
-            return ModelPaperBaseline_bin3(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v4":
-            return ModelPaperBaseline_bin4(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v5":
-            return ModelPaperBaseline_bin5(self.args).to(self.device)
-        if self.args.type_model=="cnn_attention":
-            return Modelbaseline_CNN_ATTENTION(self.args).to(self.device)
-        if self.args.type_model=="multihead":
-            return Multihead(self.args).to(self.device)
-        if self.args.type_model=="deepset":
-            model =DTanh(self.args)
-        if self.args.type_model == "BagNet":
-            model = ModelPaperBaseline_bin_bagnet(self.args)
-            return model.to(self.device)
+
+        return ModelPaperBaseline_3class(self.args).to(self.device)
+
 
     def create_data(self):
         self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_train_data_general_3class(self.args.nbre_sample_train);
-        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_train_data_general_3class(
+        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_data(
            self.args.nbre_sample_eval);
 
 
@@ -228,27 +206,24 @@ class NN_Model_Ref_3class:
                         #                                              targets_a, targets_b))
                         outputs = self.net(inputs.to(self.device))
                         #outputs2 = self.net.decoder(self.net.intermediare_compress.to(self.device))
-                        loss = self.criterion(outputs.squeeze(1), labels.to(self.device).long())
+                        _, predicted = torch.max(outputs.data, 1)
                         #loss2 = 0.02*self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
                         #print(loss1, loss2)
                         #loss = loss1 + loss2
                         #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
-                        desc = 'loss: %.4f; ' % (loss.item())
+                        #desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
+                            loss = self.criterion(outputs.squeeze(1), labels.to(self.device).long())
                             loss.backward()
                             torch.nn.utils.clip_grad_norm_(self.net.parameters(), self.args.clip_grad_norm)
                             self.optimizer.step()
                             if self.scheduler is not None:
                                 self.scheduler.step()
-                        #preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
-                        _, predicted = torch.max(outputs.data, 1)
+                            #preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
+                            correct += (predicted == labels.to(self.device)).cpu().sum().item()
+                            TOT2 += labels.size(0)
+                            running_loss += loss.item() * n_batches
 
-
-
-
-
-                        correct += (predicted == labels.to(self.device)).cpu().sum().item()
-                        TOT2 += labels.size(0)
 
                         predicted[predicted == 2] = 1
                         labels[labels==2] = 1
@@ -261,17 +236,18 @@ class NN_Model_Ref_3class:
 
 
 
-                        running_loss += loss.item() * n_batches
+
                         nbre_sample += n_batches
-                epoch_loss = running_loss / nbre_sample
-                acc2 = (correct.item() ) * 1.0 / TOT2.item()
+
+                if phase == 'train':
+                    epoch_loss = running_loss / nbre_sample
+                    acc2 = (correct.item()) * 1.0 / TOT2.item()
+                    print('{} Acc Multiclass: {:.4f}'.format(
+                        phase, acc2))
+                    print('{} Loss: {:.4f}'.format(
+                        phase, epoch_loss))
 
                 acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
-
-                print('{} Loss: {:.4f}'.format(
-                    phase, epoch_loss))
-                print('{} Acc Multiclass: {:.4f}'.format(
-                    phase, acc2))
                 print('{} Acc binary: {:.4f}'.format(
                     phase, acc))
                 for param_group in self.optimizer.param_groups:
