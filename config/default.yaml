@@ -6,7 +6,7 @@ general:
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 5
-  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  inputs_type: [ctdata0l^ctdata1l, DV, V0, V1]
   #[ctdata0l^ctdata1l, DV, V0, V1]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l, ctdata0r, ctdata1l, ctdata1r]
@@ -41,7 +41,7 @@ train_nn:
   base_lr:  0.0001      #Only if CyclicLR
   max_lr: 0.001       #Only if CyclicLR
   demicycle_1: 5  #Only if CyclicLR
-  numLayers: 2
+  numLayers: 10
   out_channel0: 64
   out_channel1: 64
   hidden1: 256
