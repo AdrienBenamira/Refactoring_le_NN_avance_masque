@@ -232,6 +232,45 @@ def nettoyer(exp, var):
     exp2.sort(key=lambda x: len(x.split("|")), reverse=False)
     return exp2
 
+
+def get_truth_table_embedding(nn_model_ref, dimension_embedding = 16, bz = 500):
+    arr2 = generate_binary(dimension_embedding)
+    l = []
+    for x in arr2:
+        l += [np.array([int(d) for d in x])]
+    l2 = np.array(l)
+    # l3 = l2.reshape(-1, nbre_input, nbre_temps_chaque_input)
+    # l4 = np.transpose(l3, axes=(0,2,1))
+    dico_tt_embeding_output = {}
+    dico_tt_embeding_output_name = {}
+    dico_tt_embeding_feature = {}
+    dico_tt_embeding_feature_name = {}
+    end_ind_bz = l2.shape[0] // bz + 1
+    for index_end_bz in range(end_ind_bz):
+        input_array_embedding = l2[index_end_bz * bz:(index_end_bz + 1) * bz]
+        x_input_f2 = torch.Tensor(input_array_embedding)
+
+        print(x_input_f2.shape)
+
+        outputs = torch.sigmoid(nn_model_ref.net.fc_classifiy(x_input_f2.to(device)))
+        preds = (outputs.squeeze(1) > nn_model_ref.t.to(device)).int().cpu().detach().numpy() * 1
+        outputs_feature = nn_model_ref.net.decoder(x_input_f2.to(device))
+        preds_feat = (outputs_feature.squeeze(1) > nn_model_ref.t.to(device)).int().cpu().detach().numpy() * 1
+        for index_input in range(len(input_array_embedding)):
+            input_name2 = input_array_embedding[index_input]
+            input_name3 = '_'.join(map(str, input_name2))
+            dico_tt_embeding_output[input_name3] = preds[index_input]
+            dico_tt_embeding_output_name[input_name3] = input_name2
+            preds_feat_str = []
+            for index_feat, value_feat in enumerate(preds_feat[index_input]):
+                if value_feat:
+                    preds_feat_str.append("Feature_"+str(index_feat))
+            dico_tt_embeding_feature[input_name3] = preds_feat_str
+            dico_tt_embeding_feature_name[input_name3] = input_name2
+    del l2, l, x_input_f2
+    return dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name
+
+
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
 
@@ -411,13 +450,18 @@ for round_ici in [5, 6, 7, 8, 4]:
 
     dictionnaire_feature_name = {}
 
+    X_eval_proba_feat = nn_model_ref.all_intermediaire_val
+    Y_eval_proba = nn_model_ref.Y_val_nn_binaire
+    X_train_proba_feat = nn_model_ref.all_intermediaire
+    Y_train_proba = nn_model_ref.Y_train_nn_binaire
+
+    net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
+    nn_model_ref.net = net
+
 
     offset_feat = 0
     for index_col, col in enumerate(df_expression_bool_m.columns):
         offset_feat = 15*index_col
-        int_interest = int(col.split(" ")[1])
-        expr = df_expression_bool_m
-        print(df_expression_bool_m[col].values)
         expPOS = df_expression_bool_m[col].values[0]
         for time in range(16):
             if time==0:
@@ -434,6 +478,9 @@ for round_ici in [5, 6, 7, 8, 4]:
                                                                                                                         time))
 
     print(dictionnaire_feature_name)
+
+    dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name = get_truth_table_embedding(
+        nn_model_ref)
 
     print(ok)
 
