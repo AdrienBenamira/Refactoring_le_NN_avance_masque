@@ -28,10 +28,10 @@ train_nn:
   nbre_epoch_per_stage: 3
   type_model: baseline_bin_v2        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
   a_bit: 1
-  nbre_sample_train: 100000
-  nbre_sample_eval: 10000
-  num_epochs: 5
-  batch_size: 500
+  nbre_sample_train: 10000000
+  nbre_sample_eval: 1000000
+  num_epochs: 100
+  batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
   weight_decay_nn: 0.00001
@@ -42,9 +42,9 @@ train_nn:
   max_lr: 0.001       #Only if CyclicLR
   demicycle_1: 5  #Only if CyclicLR
   numLayers: 2
-  out_channel0: 128
-  out_channel1: 128
-  hidden1: 512
+  out_channel0: 64
+  out_channel1: 64
+  hidden1: 256
   kernel_size0: 1
   kernel_size1: 3
   num_workers: 2
