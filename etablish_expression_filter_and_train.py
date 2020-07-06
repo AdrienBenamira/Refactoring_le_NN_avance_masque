@@ -548,6 +548,7 @@ expPOS_tot =[]
 cpteur = 0
 
 for index_f in range(args.out_channel0):
+#for index_f in range(1):
     print("Fliter ", index_f)
     if "F"+str(index_f) in list(dico_important.keys()):
         index_intere = df_m_f.index[df_m_f['Filter_'+str(index_f)] == 1].tolist()
@@ -571,10 +572,7 @@ for index_f in range(args.out_channel0):
             w1, x1, y1, w2, x2, y2, w3, x3, y3 = symbols('DL[i-1], V0[i-1], V1[i-1], DL[i], V0[i], V1[i], DL[i+1], V0[i+1], V1[i+1]')
             minterms = condtion_filter3
             exp =SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-
-            if exp in doublon:
-                print(exp, "DOUBLON")
-            elif str(exp) == 'True':
+            if str(exp) == 'True':
                 print(exp, "True")
             else:
                 print(exp)
@@ -622,6 +620,218 @@ df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS.cs
 
 df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
 df_expression_bool.to_csv(path_save_model + "time_important_per_filter.csv")
+
+
+#------------------------------------------------------------------------------------------------------------------------------
+
+df_m3=df_m.drop(df_m.index[df_m["DL[i-1]"] != "PAD"])
+df_m3= df_m3.reset_index()
+print (df_m3.head(5))
+
+df_m3.to_csv(path_save_model + "table_of_truth_0985_final_with_only_pad_begin.csv")
+
+
+
+dictionnaire_res_fin_expression = {}
+dictionnaire_res_fin_expression_POS = {}
+
+dictionnaire_perfiler = {}
+dictionnaire_perfiler_POS = {}
+
+doublon = []
+
+expPOS_tot =[]
+
+cpteur = 0
+
+for index_f in range(args.out_channel0):
+    print("Fliter ", index_f)
+    if "F"+str(index_f) in list(dico_important.keys()):
+        index_intere = df_m3.index[df_m3['Filter_'+str(index_f)] == 1].tolist()
+        print()
+        if len(index_intere) ==0:
+            print("Empty")
+        else:
+            dictionnaire_res_fin_expression["Filter "+ str(index_f)] = []
+            dictionnaire_res_fin_expression_POS["Filter " + str(index_f)] = []
+            condtion_filter = []
+            for col in ["DL[i]", "V0[i]", "V1[i]", "DL[i+1]", "V0[i+1]", "V1[i+1]"]:
+                s = df_m3[col].values
+                my_dict = {"0.0": 0.0, "1.0": 1.0, 0.0: 0.0, 1.0: 1.0}
+                s2 = np.array([my_dict[zi] for zi in s])
+                condtion_filter.append(s2[index_intere])
+
+            condtion_filter2 = np.array(condtion_filter).transpose()
+            condtion_filter3 = [x.tolist() for x in condtion_filter2]
+            assert len(condtion_filter3) == len(index_intere)
+            assert len(condtion_filter3[0]) == 6
+            w2, x2, y2, w3, x3, y3 = symbols('DL[i], V0[i], V1[i], DL[i+1], V0[i+1], V1[i+1]')
+            minterms = condtion_filter3
+            exp =SOPform([w2, x2, y2, w3, x3, y3], minterms)
+
+
+            if str(exp) == 'True':
+                print(exp, "True")
+            else:
+                print(exp)
+                doublon.append(exp)
+                dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
+                expV2 = str(exp).split(" | ")
+                dictionnaire_perfiler["Filter " + str(index_f)] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
+                print()
+                expPOS = POSform([w2, x2, y2, w3, x3, y3], minterms)
+                print(expPOS)
+                expPOS_tot.append(str(expPOS))
+                dictionnaire_res_fin_expression_POS["Filter " + str(index_f)].append(expPOS)
+                expV2POS = str(expPOS).split(" & ")
+                print(len(expV2POS))
+
+                cpteur += 2**len(expV2POS)
+
+                dictionnaire_perfiler_POS["Filter " + str(index_f)] = [str(expV2POS)] + [x.replace("(", "").replace(")", "") for
+                                                                                x in expV2POS]
+                #dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
+
+
+
+
+        print()
+
+print(cpteur)
+
+df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
+row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
+df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_withpadbegin.csv")
+df_row = pd.DataFrame(row)
+df_row.to_csv(path_save_model + "clause_unique_withpadbegin.csv")
+df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
+df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_withpadbegin.csv")
+
+
+df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler_POS, orient='index').T
+row3 = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
+df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_POS_withpadbegin.csv")
+df_row = pd.DataFrame(row3)
+df_row.to_csv(path_save_model + "clause_unique_POS_withpadbegin.csv")
+df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression_POS, orient='index').T
+df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS_withpadbegin.csv")
+
+df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
+df_expression_bool.to_csv(path_save_model + "time_important_per_filter_withpadbegin.csv")
+
+
+
+#------------------------------------------------------------------------------------------------------------------------------
+
+df_m3=df_m.drop(df_m.index[df_m["DL[i+1]"] != "PAD"])
+df_m3= df_m3.reset_index()
+print (df_m3.head(5))
+
+df_m3.to_csv(path_save_model + "table_of_truth_0985_final_with_only_pad_end.csv")
+
+
+
+dictionnaire_res_fin_expression = {}
+dictionnaire_res_fin_expression_POS = {}
+
+dictionnaire_perfiler = {}
+dictionnaire_perfiler_POS = {}
+
+doublon = []
+
+expPOS_tot =[]
+
+cpteur = 0
+
+for index_f in range(args.out_channel0):
+    print("Fliter ", index_f)
+    if "F"+str(index_f) in list(dico_important.keys()):
+        index_intere = df_m3.index[df_m3['Filter_'+str(index_f)] == 1].tolist()
+        print()
+        if len(index_intere) ==0:
+            print("Empty")
+        else:
+            dictionnaire_res_fin_expression["Filter "+ str(index_f)] = []
+            dictionnaire_res_fin_expression_POS["Filter " + str(index_f)] = []
+            condtion_filter = []
+            for col in ["DL[i-1]", "V0[i-1]", "V1[i-1]", "DL[i]", "V0[i]", "V1[i]"]:
+                s = df_m3[col].values
+                my_dict = {"0.0": 0.0, "1.0": 1.0, 0.0: 0.0, 1.0: 1.0}
+                s2 = np.array([my_dict[zi] for zi in s])
+                condtion_filter.append(s2[index_intere])
+
+            condtion_filter2 = np.array(condtion_filter).transpose()
+            condtion_filter3 = [x.tolist() for x in condtion_filter2]
+            assert len(condtion_filter3) == len(index_intere)
+            assert len(condtion_filter3[0]) == 6
+            w2, x2, y2, w3, x3, y3 = symbols('DL[i-1], V0[i-1], V1[i-1], DL[i], V0[i], V1[i]')
+            minterms = condtion_filter3
+            exp =SOPform([w2, x2, y2, w3, x3, y3], minterms)
+
+
+            if str(exp) == 'True':
+                print(exp, "True")
+            else:
+                print(exp)
+                doublon.append(exp)
+                dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
+                expV2 = str(exp).split(" | ")
+                dictionnaire_perfiler["Filter " + str(index_f)] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
+                print()
+                expPOS = POSform([w2, x2, y2, w3, x3, y3], minterms)
+                print(expPOS)
+                expPOS_tot.append(str(expPOS))
+                dictionnaire_res_fin_expression_POS["Filter " + str(index_f)].append(expPOS)
+                expV2POS = str(expPOS).split(" & ")
+                print(len(expV2POS))
+
+                cpteur += 2**len(expV2POS)
+
+                dictionnaire_perfiler_POS["Filter " + str(index_f)] = [str(expV2POS)] + [x.replace("(", "").replace(")", "") for
+                                                                                x in expV2POS]
+                #dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
+
+
+
+
+        print()
+
+print(cpteur)
+
+df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
+row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
+df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_withpadend.csv")
+df_row = pd.DataFrame(row)
+df_row.to_csv(path_save_model + "clause_unique_withpadend.csv")
+df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
+df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_withpadend.csv")
+
+
+df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler_POS, orient='index').T
+row3 = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
+df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_POS_withpadend.csv")
+df_row = pd.DataFrame(row3)
+df_row.to_csv(path_save_model + "clause_unique_POS_withpadend.csv")
+df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression_POS, orient='index').T
+df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS_withpadend.csv")
+
+df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
+df_expression_bool.to_csv(path_save_model + "time_important_per_filter_withpadend.csv")
+
+print(ok)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 all_masksPOS = [[], [], [],[], [], []]
 for exp_iter in expPOS_tot:

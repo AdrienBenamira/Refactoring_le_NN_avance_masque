@@ -427,6 +427,8 @@ print("TABLE OF TRUTH")
 
 global_sparsity = 0.95
 df_expression_bool_m = pd.read_csv("./results/expression_bool_per_filter_POS.csv")
+df_expression_bool_m_begin = pd.read_csv("./results/expression_bool_per_filter_POS_withpadbegin.csv")
+df_expression_bool_m_end = pd.read_csv("./results/expression_bool_per_filter_POS_withpadend.csv")
 #df_expression_bool_m = pd.read_csv("./results/expression_bool_per_filter.csv")
 for round_ici in [5, 6, 7, 8, 4]:
 
@@ -485,23 +487,51 @@ for round_ici in [5, 6, 7, 8, 4]:
     net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
     nn_model_ref.net = net
 
+    X_eval_proba_feat = nn_model_ref.all_intermediaire_val
+    Y_eval_proba = nn_model_ref.Y_val_nn_binaire
+    X_train_proba_feat = nn_model_ref.all_intermediaire
+    Y_train_proba = nn_model_ref.Y_train_nn_binaire
+
+    print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1] / 16)
+
+
+    net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
+    nn_model_ref.net = net
+
+    nn_model_ref.X_train_nn_binaire = X_train_proba_feat
+    nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
+    # nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
+    # nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
+
+    nn_model_ref.train_from_scractch_2("AE")
+
+
     #LOAD NN
+
+    """nn_model_ref.net.load_state_dict(torch.load(
+        os.path.join("results/0.920366_bestacc.pth"),
+        map_location=nn_model_ref.device)['state_dict'], strict=False)"""
+
+
 
 
     offset_feat = 0
     for index_col, col in enumerate(df_expression_bool_m.columns):
         offset_feat = 15*index_col
-        expPOS = df_expression_bool_m[col].values[0]
+
         for time in range(16):
             if time==0:
+                expPOS = df_expression_bool_m_begin[col].values[0]
                 dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
                                                                                                                     str(
                                                                                                                         time)) + " PAD_START"
             elif time==15:
+                expPOS = df_expression_bool_m_end[col].values[0]
                 dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
                                                                                                                     str(
                                                                                                                         time)) + " PAD_END"
             else:
+                expPOS = df_expression_bool_m[col].values[0]
                 dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
                                                                                                                     str(
                                                                                                                         time))
@@ -510,6 +540,9 @@ for round_ici in [5, 6, 7, 8, 4]:
 
     dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name = get_truth_table_embedding(
         nn_model_ref)
+
+
+
 
     df2 = pd.DataFrame.from_dict(dico_tt_embeding_output, orient='index')
     df2_name = pd.DataFrame.from_dict(dico_tt_embeding_output_name, orient='index')
@@ -525,11 +558,15 @@ for round_ici in [5, 6, 7, 8, 4]:
     df_final = pd.concat([df2, df3], join="inner", axis=1)
     df_final = df_final.drop(index_to_del)
 
+
+
+
     uniaue_ele = pd.unique(df_final[[i for i in range(nfeat)]].values.ravel('K'))
-    print(uniaue_ele)
     for u_e in uniaue_ele:
         if u_e is not None:
-            df_final = df_final.replace(u_e, dictionnaire_feature_name[str(u_e)][0])
+            df_final = df_final.replace(u_e, dictionnaire_feature_name[str(u_e)])
+
+
 
     print("SAVE ALL")
 
