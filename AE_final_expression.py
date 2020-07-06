@@ -426,7 +426,7 @@ print("---" * 100)
 print("TABLE OF TRUTH")
 
 global_sparsity = 0.95
-df_expression_bool_m = pd.read_csv("./results/expression_bool_per_filter_POS.csv")
+df_expression_bool_m = pd.read_csv("./results/expression_bool_per_filter_POS_v2.csv")
 df_expression_bool_m_begin = pd.read_csv("./results/expression_bool_per_filter_POS_withpadbegin.csv")
 df_expression_bool_m_end = pd.read_csv("./results/expression_bool_per_filter_POS_withpadend.csv")
 #df_expression_bool_m = pd.read_csv("./results/expression_bool_per_filter.csv")
