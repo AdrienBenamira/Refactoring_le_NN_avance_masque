@@ -12,6 +12,7 @@ from sympy import *
 warnings.filterwarnings('ignore',category=FutureWarning)
 import torch
 import os
+import collections
 from src.nn.nn_model_ref import NN_Model_Ref
 from sympy.logic import SOPform, POSform
 from sympy import symbols
@@ -27,16 +28,17 @@ import argparse
 from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
 import torch.nn.utils.prune as prune
 import math
-
+from sympy.parsing.sympy_parser import parse_expr
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, Input, BatchNormalization, Activation
 import numpy as np
 from pickle import dump
-
+from sympy.logic.boolalg import to_dnf
 #NN
+from sympy.logic import simplify_logic
 from tqdm import tqdm
-
+from sympy import *
 
 
 
@@ -298,6 +300,42 @@ def get_final_expression_0_1(df_final):
     return conditions_or_1, conditions_or_0
 
 
+def get_final_expression_0_1_version1(df_final):
+    df_final_1 = df_final[df_final['Output'] == 1].values
+    conditions_or_1 = []
+    for conditions_or in df_final_1:
+        str_1 = ""
+        already_seen = []
+        for el1 in conditions_or[1:]:
+            if el1 is not None:
+                if el1 not in already_seen:
+                    already_seen.append(el1)
+                    if not "(" in el1:
+                        str_1 += "("+el1 + ") & "
+                    else:
+                        str_1 += el1 + " & "
+        element_final_1 = str_1[:-2]
+        #if element_final_1 not in conditions_or_1:
+        conditions_or_1.append(element_final_1)
+    df_final_0 = df_final[df_final['Output'] == 0].values
+    conditions_or_0 = []
+    for conditions_or in df_final_0:
+        str_0 = ""
+        already_seen = []
+        for el0 in conditions_or[1:]:
+            if el0 is not None:
+                if el0 not in already_seen:
+                    already_seen.append(el0)
+                    if not "(" in el0:
+                        str_0 += "(" + el0 + ") & "
+                    else:
+                        str_0 += el0 + " & "
+        conditions_or_0.append(str_0[:-2])
+        element_final_0 = str_0[:-2]
+        #if element_final_0 not in conditions_or_0:
+        conditions_or_0.append(element_final_0)
+    return conditions_or_1, conditions_or_0
+
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
 
@@ -430,243 +468,229 @@ df_expression_bool_m = pd.read_csv("./results/expression_bool_per_filter_POS_v2.
 df_expression_bool_m_begin = pd.read_csv("./results/expression_bool_per_filter_POS_withpadbegin.csv")
 df_expression_bool_m_end = pd.read_csv("./results/expression_bool_per_filter_POS_withpadend.csv")
 #df_expression_bool_m = pd.read_csv("./results/expression_bool_per_filter.csv")
-for round_ici in [5, 6, 7, 8, 4]:
+#for round_ici in [5, 6, 7, 8, 4]:
 
-    args.nombre_round_eval = round_ici
 
-    nn_model_ref = NN_Model_Ref_v2(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-    nn_model_ref.load_nn()
+nn_model_ref = NN_Model_Ref_v2(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
+nn_model_ref.load_nn()
 
-    parameters_to_prune = []
-    for name, module in nn_model_ref.net.named_modules():
-        if len(name):
-            if name not in ["layers_batch", "layers_conv"]:
-                flag = True
-                for layer_forbidden in args.layers_NOT_to_prune:
-                    if layer_forbidden in name:
-                        flag = False
-                if flag:
-                    parameters_to_prune.append((module, 'weight'))
-    prune.global_unstructured(
-        parameters_to_prune,
-        pruning_method=prune.L1Unstructured,
-        amount=global_sparsity,
-    )
-    tot_sparsity = 0
-    tot_weight = 0
-    for name, module in nn_model_ref.net.named_modules():
-        if len(name):
-            if name not in ["layers_batch", "layers_conv"]:
-                flag = True
-                for layer_forbidden in args.layers_NOT_to_prune:
-                    if layer_forbidden in name:
-                        flag = False
-                if flag:
-                    tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
-                    tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
+parameters_to_prune = []
+for name, module in nn_model_ref.net.named_modules():
+    if len(name):
+        if name not in ["layers_batch", "layers_conv"]:
+            flag = True
+            for layer_forbidden in args.layers_NOT_to_prune:
+                if layer_forbidden in name:
+                    flag = False
+            if flag:
+                parameters_to_prune.append((module, 'weight'))
+prune.global_unstructured(
+    parameters_to_prune,
+    pruning_method=prune.L1Unstructured,
+    amount=global_sparsity,
+)
+tot_sparsity = 0
+tot_weight = 0
+for name, module in nn_model_ref.net.named_modules():
+    if len(name):
+        if name not in ["layers_batch", "layers_conv"]:
+            flag = True
+            for layer_forbidden in args.layers_NOT_to_prune:
+                if layer_forbidden in name:
+                    flag = False
+            if flag:
+                tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
+                tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
 
-                    if args.logs_layers:
-                        print(
-                        "Sparsity in {}.weight: {:.2f}%".format(str(name),
-                            100. * float(torch.sum(module.weight == 0))
-                            / float(module.weight.nelement())
-                            )
+                if args.logs_layers:
+                    print(
+                    "Sparsity in {}.weight: {:.2f}%".format(str(name),
+                        100. * float(torch.sum(module.weight == 0))
+                        / float(module.weight.nelement())
                         )
+                    )
 
-    flag_test = False
-    acc_retain=[]
-    nn_model_ref.eval_all(df_expression_bool_m, ["train", "val"])
+flag_test = False
+acc_retain=[]
+nn_model_ref.eval_all(df_expression_bool_m, ["train", "val"])
 
-    dictionnaire_feature_name = {}
+dictionnaire_feature_name = {}
 
-    X_eval_proba_feat = nn_model_ref.all_intermediaire_val
-    Y_eval_proba = nn_model_ref.Y_val_nn_binaire
-    X_train_proba_feat = nn_model_ref.all_intermediaire
-    Y_train_proba = nn_model_ref.Y_train_nn_binaire
+X_eval_proba_feat = nn_model_ref.all_intermediaire_val
+Y_eval_proba = nn_model_ref.Y_val_nn_binaire
+X_train_proba_feat = nn_model_ref.all_intermediaire
+Y_train_proba = nn_model_ref.Y_train_nn_binaire
 
-    net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
-    nn_model_ref.net = net
+net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
+nn_model_ref.net = net
 
-    print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1] / 16)
-
-
-
-
-    nn_model_ref.X_train_nn_binaire = X_train_proba_feat
-    nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
-    # nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
-    # nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
-    nn_model_ref.train_from_scractch_2("AE")
-
-
-    #LOAD NN
-
-    """nn_model_ref.net.load_state_dict(torch.load(
-        os.path.join("results/0.920035_bestacc.pth"),
-        map_location=nn_model_ref.device)['state_dict'], strict=False)"""
+print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1] / 16)
 
 
 
+"""
+nn_model_ref.X_train_nn_binaire = X_train_proba_feat
+nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
+# nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
+# nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
+nn_model_ref.train_from_scractch_2("AE")"""
 
-    offset_feat = 0
-    for index_col, col in enumerate(df_expression_bool_m.columns):
-        offset_feat = 15*index_col
 
+#LOAD NN
+
+nn_model_ref.net.load_state_dict(torch.load(
+    os.path.join("results/0.921253_bestacc.pth"),
+    map_location=nn_model_ref.device)['state_dict'], strict=False)
+
+
+
+
+offset_feat = 0
+for index_col, col in enumerate(df_expression_bool_m.columns):
+    offset_feat = 15*index_col
+
+    for time in range(16):
+        if time==0:
+            expPOS = df_expression_bool_m_begin[col].values[0]
+            dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
+                                                                                                                str(
+                                                                                                                    time))
+        elif time==15:
+            expPOS = df_expression_bool_m_end[col].values[0]
+            dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
+                                                                                                                str(
+                                                                                                                    time))
+        else:
+            expPOS = df_expression_bool_m[col].values[0]
+            dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
+                                                                                                                str(
+                                                                                                                    time))
+
+print(dictionnaire_feature_name)
+
+dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name = get_truth_table_embedding(
+    nn_model_ref)
+
+
+
+
+df2 = pd.DataFrame.from_dict(dico_tt_embeding_output, orient='index')
+df2_name = pd.DataFrame.from_dict(dico_tt_embeding_output_name, orient='index')
+output_name = ["Output"]
+df2.columns = output_name
+del dico_tt_embeding_output, dico_tt_embeding_output_name
+df3 = pd.DataFrame.from_dict(dico_tt_embeding_feature, orient='index')
+df3_name = pd.DataFrame.from_dict(dico_tt_embeding_feature_name, orient='index')
+del dico_tt_embeding_feature, dico_tt_embeding_feature_name
+nfeat = df3.shape[1] - 1
+
+index_to_del = df3[df3[0].isnull()].index.tolist()
+df_final = pd.concat([df2, df3], join="inner", axis=1)
+df_final = df_final.drop(index_to_del)
+
+
+
+
+uniaue_ele = pd.unique(df_final[[i for i in range(nfeat)]].values.ravel('K'))
+
+print(uniaue_ele)
+
+for u_e in uniaue_ele:
+    if u_e is not None:
+        df_final = df_final.replace(u_e, dictionnaire_feature_name[str(u_e)])
+
+
+
+print("SAVE ALL")
+
+df_final.to_csv(path_save_model + "final_all.csv")
+conditions_or_1, conditions_or_0 = get_final_expression_0_1_version1(df_final)
+
+dico_conditions_or_1 = collections.Counter(conditions_or_1)
+dico_conditions_or_0 = collections.Counter(conditions_or_0)
+intersection_0_1 = list(set(conditions_or_1) & set(conditions_or_0))
+
+dictionnaire_final = {}
+dico_conditions_or_1_list_ici = list(dico_conditions_or_1.keys())
+for _, key_1 in tqdm(enumerate(dico_conditions_or_1_list_ici)):
+    nbre_0 = 0
+    nbre_1 = dico_conditions_or_1[key_1]
+    if key_1 in intersection_0_1:
+        nbre_0 = dico_conditions_or_0[key_1]
+    if nbre_0<nbre_1:
+        key_1_clean = key_1
         for time in range(16):
-            if time==0:
-                expPOS = df_expression_bool_m_begin[col].values[0]
-                dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
-                                                                                                                    str(
-                                                                                                                        time))
-            elif time==15:
-                expPOS = df_expression_bool_m_end[col].values[0]
-                dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
-                                                                                                                    str(
-                                                                                                                        time))
-            else:
-                expPOS = df_expression_bool_m[col].values[0]
-                dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
-                                                                                                                    str(
-                                                                                                                        time))
+            key_1_clean = key_1_clean.replace(" ", "").replace("[" + str(time) + "+1]",
+                                                               "[" + str(time + 1) + "]").replace(
+                "[" + str(time) + "-1]", "[" + str(time - 1) + "]")
+        liste_f = []
+        liste_f2 = []
+        liste_ou = key_1_clean.split("&")
+        for x in liste_ou:
+            x2 = x.replace("(", "").replace(")", "")
+            x3 = x.replace("(", "").replace(")", "").replace("~", "")
+            liste_f += x2.split("|")
+            liste_f2 += x3.split("|")
+        dico_count_var_clause = collections.Counter(liste_f)
+        list_count_var_clause = list(dico_count_var_clause.keys())
+        dico_count_var_clause_2 = collections.Counter(liste_f2)
+        list_count_var_clause_2 = list(dico_count_var_clause_2.keys())
+        exp_ici = key_1_clean.replace("[", "").replace("]", "")
+        # exp_icibis = exp_ici.replace("&", "*").replace("|", "+").replace("~", "N")
+        exp_ici2 = parse_expr(exp_ici, evaluate=False)
+        # exp_ici3 = to_dnf(exp_ici2)
+        dictionnaire_final[key_1_clean] = [nbre_1, nbre_0, nbre_0 / nbre_1, dico_count_var_clause,
+                                           list_count_var_clause,
+                                           len(list_count_var_clause), dico_count_var_clause_2, list_count_var_clause_2,
+                                           len(list_count_var_clause_2), exp_ici2]
 
-    print(dictionnaire_feature_name)
-
-    dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name = get_truth_table_embedding(
-        nn_model_ref)
-
-
-
-
-    df2 = pd.DataFrame.from_dict(dico_tt_embeding_output, orient='index')
-    df2_name = pd.DataFrame.from_dict(dico_tt_embeding_output_name, orient='index')
-    output_name = ["Output"]
-    df2.columns = output_name
-    del dico_tt_embeding_output, dico_tt_embeding_output_name
-    df3 = pd.DataFrame.from_dict(dico_tt_embeding_feature, orient='index')
-    df3_name = pd.DataFrame.from_dict(dico_tt_embeding_feature_name, orient='index')
-    del dico_tt_embeding_feature, dico_tt_embeding_feature_name
-    nfeat = df3.shape[1] - 1
-
-    index_to_del = df3[df3[0].isnull()].index.tolist()
-    df_final = pd.concat([df2, df3], join="inner", axis=1)
-    df_final = df_final.drop(index_to_del)
+df_final = pd.DataFrame.from_dict(dictionnaire_final, orient='index')
+df_final.columns = ["Nbre_1", "Nbre_0", "Nbre_0/Nbre_1 (lower better)", "Expr count", "Expr unique", "Nbre Expr unique", "Var count", "Var unique", "Nbre Var unique", "Jolie EXPRESSION"]
+print(df_final)
+df_final.to_csv(path_save_model + "classification_all.csv")
+print(ok)
 
 
+conditions_or_1_redondance = set([x for x in conditions_or_1 if conditions_or_1.count(x) > 1])
+conditions_or_0_redondance = set([x for x in conditions_or_0 if conditions_or_0.count(x) > 1])
+
+print(liste_re)
+
+#print(list(set(conditions_or_1) & set(conditions_or_0)))
+
+classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
+df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
 
 
-    uniaue_ele = pd.unique(df_final[[i for i in range(nfeat)]].values.ravel('K'))
+print("SAVE DUPPLICATES")
 
-    print(uniaue_ele)
+df_final = df_final.drop_duplicates(subset=['Output'] + [i for i in range(nfeat)])
+df_final.to_csv(path_save_model + "final_with_duplicates.csv")
+conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
 
-    for u_e in uniaue_ele:
-        if u_e is not None:
-            df_final = df_final.replace(u_e, dictionnaire_feature_name[str(u_e)])
+#print(list(set(conditions_or_1) & set(conditions_or_0)))
 
 
+classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
+df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
+df_classification_final.to_csv(path_save_model + "classification_with_duplicates.csv")
 
-    print("SAVE ALL")
+print("SAVE FINAL")
 
-    df_final.to_csv(path_save_model + "final_all.csv")
-    conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
-    classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
-    df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
-    df_classification_final.to_csv(path_save_model + "classification_all.csv")
+df_final = df_final.drop_duplicates(subset=[i for i in range(nfeat)], keep=False)
+df_final.to_csv(path_save_model + "final.csv")
+conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
 
-    print("SAVE DUPPLICATES")
+print()
 
-    df_final = df_final.drop_duplicates(subset=['Output'] + [i for i in range(nfeat)])
-    df_final.to_csv(path_save_model + "final_with_duplicates.csv")
-    conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
-    classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
-    df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
-    df_classification_final.to_csv(path_save_model + "classification_with_duplicates.csv")
 
-    print("SAVE FINAL")
+classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
+df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
+df_classification_final.to_csv(path_save_model + "classification.csv")
 
-    df_final = df_final.drop_duplicates(subset=[i for i in range(nfeat)], keep=False)
-    df_final.to_csv(path_save_model + "final.csv")
-    conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
-    classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
-    df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
-    df_classification_final.to_csv(path_save_model + "classification.csv")
-
-    #print(X_eval_proba_feat[0].tolist())
-    #print(nn_model_ref.all_intermediaire_val[0].tolist())
-    print(ok)
+#print(X_eval_proba_feat[0].tolist())
+#print(nn_model_ref.all_intermediaire_val[0].tolist())
+print(ok)
 
 
 
-    X_eval_proba_feat = nn_model_ref.all_intermediaire_val
-    Y_eval_proba = nn_model_ref.Y_val_nn_binaire
-    X_train_proba_feat = nn_model_ref.all_intermediaire
-    Y_train_proba = nn_model_ref.Y_train_nn_binaire
-
-    print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1]/16)
-
-    """
-    net = NN_linear(args, X_train_proba_feat.shape[1]).to(device)
-    nn_model_ref.net = net
-
-    nn_model_ref.X_train_nn_binaire = X_train_proba_feat
-    nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
-    nn_model_ref.Y_train_nn_binaire = Y_train_proba
-    nn_model_ref.Y_val_nn_binaire = Y_eval_proba
-
-    """
-    net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
-    nn_model_ref.net = net
-    
-    nn_model_ref.X_train_nn_binaire = X_train_proba_feat
-    nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
-    #nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
-    #nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
-
-
-    nn_model_ref.train_from_scractch_2("AE")
-
-    #nn_model_ref.eval_all2(df_expression_bool_m, ["train", "val"])
-
-    """X_eval_proba_feat = nn_model_ref.all_intermediaire_val
-    X_train_proba_feat = nn_model_ref.all_intermediaire
-
-
-    print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1]/16)
-
-
-
-
-    net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,
-                                                       Y_train_proba, X_eval_proba_feat, Y_eval_proba,
-                                                       bs=5000,
-                                                       epoch=20, name_ici="test")"""
-
-
-    """clf = sklearn.neural_network.MLPClassifier(hidden_layer_sizes=(1024,512))
-    clf.fit(X_train_proba_feat, Y_train_proba)
-    
-    predict_fn = lambda x: clf.predict(x)
-    print('Train accuracy: ', accuracy_score(Y_train_proba, predict_fn(X_train_proba_feat)))
-    print('Test accuracy: ', accuracy_score(Y_eval_proba, predict_fn(X_eval_proba_feat)))
-    
-    #predict_fn = lambda x: net_retrain.predict(x)[0]
-    explainer = AnchorTabular(predict_fn, [i for i in range(X_train_proba_feat.shape[1])], categorical_names={0:"R", 1:"S"}, seed=1)
-    explainer.fit(X_train_proba_feat, disc_perc=[75])
-    idx = 0
-    #X = X_eval_proba_feat[idx].reshape((1,) + X_eval_proba_feat[idx].shape)
-    #print('Prediction: ', explainer.predictor(X)[0])
-    
-    idx = 0
-    print('Prediction: ', explainer.predictor(X_eval_proba_feat[idx].reshape(1, -1))[0])
-    print('Label: ', Y_eval_proba[0])
-    
-    
-    
-    explanation = explainer.explain(X_eval_proba_feat[idx], threshold=0.95)
-    #explanation = explainer.explain(X, threshold=0.95)
-    print('Anchor: %s' % (' AND '.join(explanation.anchor)))
-    print('Precision: %.2f' % explanation.precision)
-    print('Coverage: %.2f' % explanation.coverage)
-
-    print()
-    """
-    del nn_model_ref
