@@ -495,21 +495,19 @@ for round_ici in [5, 6, 7, 8, 4]:
     print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1] / 16)
 
 
-    net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
-    nn_model_ref.net = net
+
 
     nn_model_ref.X_train_nn_binaire = X_train_proba_feat
     nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
     # nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
     # nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
-
     nn_model_ref.train_from_scractch_2("AE")
 
 
     #LOAD NN
 
     """nn_model_ref.net.load_state_dict(torch.load(
-        os.path.join("results/0.920366_bestacc.pth"),
+        os.path.join("results/0.920035_bestacc.pth"),
         map_location=nn_model_ref.device)['state_dict'], strict=False)"""
 
 
@@ -524,12 +522,12 @@ for round_ici in [5, 6, 7, 8, 4]:
                 expPOS = df_expression_bool_m_begin[col].values[0]
                 dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
                                                                                                                     str(
-                                                                                                                        time)) + " PAD_START"
+                                                                                                                        time))
             elif time==15:
                 expPOS = df_expression_bool_m_end[col].values[0]
                 dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
                                                                                                                     str(
-                                                                                                                        time)) + " PAD_END"
+                                                                                                                        time))
             else:
                 expPOS = df_expression_bool_m[col].values[0]
                 dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
@@ -562,6 +560,9 @@ for round_ici in [5, 6, 7, 8, 4]:
 
 
     uniaue_ele = pd.unique(df_final[[i for i in range(nfeat)]].values.ravel('K'))
+
+    print(uniaue_ele)
+
     for u_e in uniaue_ele:
         if u_e is not None:
             df_final = df_final.replace(u_e, dictionnaire_feature_name[str(u_e)])
