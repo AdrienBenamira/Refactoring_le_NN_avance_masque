@@ -25,7 +25,7 @@ from src.nn.models.deepset import DTanh
 from src.utils.utils import F1_Loss
 from sklearn.preprocessing import StandardScaler
 
-class NN_Model_Ref:
+class NN_Model_Ref_3class:
 
     def __init__(self, args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train):
         """
@@ -87,9 +87,8 @@ class NN_Model_Ref:
             return model.to(self.device)
 
     def create_data(self):
-        self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_data(
-            self.args.nbre_sample_train);
-        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_data(
+        self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_train_data_general_3class(self.args.nbre_sample_train);
+        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_train_data_general_3class(
            self.args.nbre_sample_eval);
 
 
@@ -103,6 +102,8 @@ class NN_Model_Ref:
         self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
         self.load_general_train()
         self.train(name_input)
+
+
 
     def train_from_curriculum(self, name_input):
         net_old = self.choose_model()
@@ -155,16 +156,10 @@ class NN_Model_Ref:
         if self.args.optimizer_type == "SGD":
             self.optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.args.lr_nn,
                                           momentum=self.args.momentum_nn)
-        if self.args.loss_type == "BCE":
-            self.criterion = nn.BCEWithLogitsLoss().to(self.device)
-        if self.args.loss_type == "MSE":
-            self.criterion = nn.MSELoss().to(self.device)
-        if self.args.loss_type == "SmoothL1Loss":
-            self.criterion = nn.SmoothL1Loss().to(self.device)
-        if self.args.loss_type == "CrossEntropyLoss":
-            self.criterion = nn.CrossEntropyLoss().to(self.device)
-        if self.args.loss_type == "F1":
-            self.criterion = F1_Loss().to(self.device)
+
+
+        self.criterion = nn.CrossEntropyLoss()
+
         #if loss_type == "Mix_loss":
         #    self.criterion = BCE_bit_Loss(arg.lambda_loss_mse,arg.lambda_loss_f1, arg.lambda_loss_bit).to(self.device)
         if self.args.scheduler_type == "None":
@@ -218,6 +213,8 @@ class NN_Model_Ref:
                     self.dataloaders[phase].catgeorie = pourcentage
                 running_loss = 0.0
                 nbre_sample = 0
+                correct = torch.zeros(1).long()
+                TOT2 = torch.zeros(1).long()
                 TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
                     1).long()
                 tk0 = tqdm(self.dataloaders[phase], total=int(len(self.dataloaders[phase])))
@@ -231,7 +228,7 @@ class NN_Model_Ref:
                         #                                              targets_a, targets_b))
                         outputs = self.net(inputs.to(self.device))
                         #outputs2 = self.net.decoder(self.net.intermediare_compress.to(self.device))
-                        loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
+                        loss = self.criterion(outputs.squeeze(1), labels.to(self.device).long())
                         #loss2 = 0.02*self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
                         #print(loss1, loss2)
                         #loss = loss1 + loss2
@@ -243,23 +240,39 @@ class NN_Model_Ref:
                             self.optimizer.step()
                             if self.scheduler is not None:
                                 self.scheduler.step()
-                        preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
-                        TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
-                        TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
-                        FN += (preds.eq(0) & labels.eq(1)).cpu().sum()
-                        FP += (preds.eq(1) & labels.eq(0)).cpu().sum()
+                        #preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
+                        _, predicted = torch.max(outputs.data, 1)
+
+
+
+
+
+                        correct += (predicted == labels).sum().item()
+                        TOT2 += labels.size(0)
+
+                        predicted[predicted == 2] = 1
+                        labels[labels==2] = 1
+                        TP += (predicted.eq(1) & labels.eq(1)).cpu().sum()
+                        TN += (predicted.eq(0) & labels.eq(0)).cpu().sum()
+                        FN += (predicted.eq(0) & labels.eq(1)).cpu().sum()
+                        FP += (predicted.eq(1) & labels.eq(0)).cpu().sum()
                         TOT = TP + TN + FN + FP
-                        desc += 'acc: %.3f, TP: %.3f, TN: %.3f, FN: %.3f, FP: %.3f' % (
-                            (TP.item() + TN.item()) * 1.0 / TOT.item(), TP.item() * 1.0 / TOT.item(),
-                            TN.item() * 1.0 / TOT.item(), FN.item() * 1.0 / TOT.item(),
-                            FP.item() * 1.0 / TOT.item())
+
+
+
+
                         running_loss += loss.item() * n_batches
                         nbre_sample += n_batches
                 epoch_loss = running_loss / nbre_sample
+                acc2 = (correct.item() ) * 1.0 / TOT2.item()
+
                 acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
+
                 print('{} Loss: {:.4f}'.format(
                     phase, epoch_loss))
-                print('{} Acc: {:.4f}'.format(
+                print('{} Acc Multiclass: {:.4f}'.format(
+                    phase, acc2))
+                print('{} Acc binary: {:.4f}'.format(
                     phase, acc))
                 for param_group in self.optimizer.param_groups:
                     print("LR value:", param_group['lr'])

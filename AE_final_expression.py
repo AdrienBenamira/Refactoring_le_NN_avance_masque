@@ -249,9 +249,6 @@ def get_truth_table_embedding(nn_model_ref, dimension_embedding = 16, bz = 500):
     for index_end_bz in range(end_ind_bz):
         input_array_embedding = l2[index_end_bz * bz:(index_end_bz + 1) * bz]
         x_input_f2 = torch.Tensor(input_array_embedding)
-
-        print(x_input_f2.shape)
-
         outputs = torch.sigmoid(nn_model_ref.net.fc_classifiy(x_input_f2.to(device)))
         preds = (outputs.squeeze(1) > nn_model_ref.t.to(device)).int().cpu().detach().numpy() * 1
         outputs_feature = nn_model_ref.net.decoder(x_input_f2.to(device))
@@ -269,6 +266,36 @@ def get_truth_table_embedding(nn_model_ref, dimension_embedding = 16, bz = 500):
             dico_tt_embeding_feature_name[input_name3] = input_name2
     del l2, l, x_input_f2
     return dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name
+
+def get_final_expression_0_1(df_final):
+    df_final_1 = df_final[df_final['Output'] == 1].values
+    conditions_or_1 = []
+    for conditions_or in df_final_1:
+        str_1 = ""
+        already_seen = []
+        for el1 in conditions_or[1:]:
+            if el1 is not None:
+                if el1 not in already_seen:
+                    already_seen.append(el1)
+                    str_1 += el1 + " & "
+        element_final_1 = str_1[:-2]
+        if element_final_1 not in conditions_or_1:
+            conditions_or_1.append(element_final_1)
+    df_final_0 = df_final[df_final['Output'] == 0].values
+    conditions_or_0 = []
+    for conditions_or in df_final_0:
+        str_0 = ""
+        already_seen = []
+        for el0 in conditions_or[1:]:
+            if el0 is not None:
+                if el0 not in already_seen:
+                    already_seen.append(el0)
+                    str_0 += el0 + " & "
+        conditions_or_0.append(str_0[:-2])
+        element_final_0 = str_0[:-2]
+        if element_final_0 not in conditions_or_0:
+            conditions_or_0.append(element_final_0)
+    return conditions_or_1, conditions_or_0
 
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -458,6 +485,8 @@ for round_ici in [5, 6, 7, 8, 4]:
     net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
     nn_model_ref.net = net
 
+    #LOAD NN
+
 
     offset_feat = 0
     for index_col, col in enumerate(df_expression_bool_m.columns):
@@ -482,12 +511,55 @@ for round_ici in [5, 6, 7, 8, 4]:
     dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name = get_truth_table_embedding(
         nn_model_ref)
 
-    print(ok)
+    df2 = pd.DataFrame.from_dict(dico_tt_embeding_output, orient='index')
+    df2_name = pd.DataFrame.from_dict(dico_tt_embeding_output_name, orient='index')
+    output_name = ["Output"]
+    df2.columns = output_name
+    del dico_tt_embeding_output, dico_tt_embeding_output_name
+    df3 = pd.DataFrame.from_dict(dico_tt_embeding_feature, orient='index')
+    df3_name = pd.DataFrame.from_dict(dico_tt_embeding_feature_name, orient='index')
+    del dico_tt_embeding_feature, dico_tt_embeding_feature_name
+    nfeat = df3.shape[1] - 1
 
+    index_to_del = df3[df3[0].isnull()].index.tolist()
+    df_final = pd.concat([df2, df3], join="inner", axis=1)
+    df_final = df_final.drop(index_to_del)
+
+    uniaue_ele = pd.unique(df_final[[i for i in range(nfeat)]].values.ravel('K'))
+    print(uniaue_ele)
+    for u_e in uniaue_ele:
+        if u_e is not None:
+            df_final = df_final.replace(u_e, dictionnaire_feature_name[str(u_e)][0])
+
+    print("SAVE ALL")
+
+    df_final.to_csv(path_save_model + "final_all.csv")
+    conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
+    classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
+    df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
+    df_classification_final.to_csv(path_save_model + "classification_all.csv")
+
+    print("SAVE DUPPLICATES")
+
+    df_final = df_final.drop_duplicates(subset=['Output'] + [i for i in range(nfeat)])
+    df_final.to_csv(path_save_model + "final_with_duplicates.csv")
+    conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
+    classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
+    df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
+    df_classification_final.to_csv(path_save_model + "classification_with_duplicates.csv")
+
+    print("SAVE FINAL")
+
+    df_final = df_final.drop_duplicates(subset=[i for i in range(nfeat)], keep=False)
+    df_final.to_csv(path_save_model + "final.csv")
+    conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
+    classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
+    df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
+    df_classification_final.to_csv(path_save_model + "classification.csv")
 
     #print(X_eval_proba_feat[0].tolist())
     #print(nn_model_ref.all_intermediaire_val[0].tolist())
-    #print(ok)
+    print(ok)
 
 
 

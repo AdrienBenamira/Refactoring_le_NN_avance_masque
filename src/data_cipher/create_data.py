@@ -80,6 +80,67 @@ class Create_data_binary:
         return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
 
 
+
+    def make_train_data_general_3class(self, n):
+
+        keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
+        Y = np.frombuffer(self.urandom_from_random(n), dtype=np.uint8);
+        Y = Y % 3;
+        plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
+        plain0r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
+        plain1l = plain0l ^ self.diff[0];
+        plain1r = plain0r ^ self.diff[1];
+        ind0 = np.where(Y == 0)
+        num0 = np.sum(Y == 0)
+        num1 = np.sum(Y == 1)
+        num2 = np.sum(Y == 2)
+
+        print(num0, num1, num2)
+
+        ks = self.cipher.expand_key(keys, 4);
+        ks2 = self.cipher.expand_key(keys, self.args.nombre_round_eval);
+        ctdata0l, ctdata0r = self.cipher.encrypt((plain0l, plain0r), ks);
+        ctdata1l, ctdata1r = self.cipher.encrypt((plain1l, plain1r), ks);
+        c0l, c0r = self.cipher.encrypt((plain0l, plain0r), ks2);
+        c1l, c1r = self.cipher.encrypt((plain1l, plain1r), ks2);
+        dL = ctdata0l ^ ctdata1l
+        dR = ctdata0r ^ ctdata1r
+        m = 0b1100000111000011
+        valL = 0b1000000100000010
+        valR = 0b1000000100000000
+        ind1 = np.where(np.logical_and((dL & m) == valL, (dR & m) == valR))
+        ind2 = np.where(np.logical_or((dL & m) != valL, (dR & m) != valR))
+
+        Xl01 = c0l[ind1][range(num1)]
+        Xr01 = c0r[ind1][range(num1)]
+        Xl11 = c1l[ind1][range(num1)]
+        Xr11 = c1r[ind1][range(num1)]
+
+        Xl02 = c0l[ind2][range(num2)]
+        Xr02 = c0r[ind2][range(num2)]
+        Xl12 = c1l[ind2][range(num2)]
+        Xr12 = c1r[ind2][range(num2)]
+
+        ctdata0l[Y == 0] = np.frombuffer(self.urandom_from_random(2 * num0), dtype=np.uint16)
+        ctdata0r[Y == 0] = np.frombuffer(self.urandom_from_random(2 * num0), dtype=np.uint16)
+        ctdata1l[Y == 0] = np.frombuffer(self.urandom_from_random(2 * num0), dtype=np.uint16)
+        ctdata1r[Y == 0] = np.frombuffer(self.urandom_from_random(2 * num0), dtype=np.uint16)
+
+        ctdata0l[Y == 1] = Xl01
+        ctdata0r[Y == 1] = Xr01
+        ctdata1l[Y == 1] = Xl11
+        ctdata1r[Y == 1] = Xr11
+
+        ctdata0l[Y == 2] = Xl02
+        ctdata0r[Y == 2] = Xr02
+        ctdata1l[Y == 2] = Xl12
+        ctdata1r[Y == 2] = Xr12
+
+        liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
+        X = self.convert_to_binary(liste_inputs);
+        return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
+
+
     def convert_data_inputs(self, args, ctdata0l, ctdata0r, ctdata1l, ctdata1r):
         inputs_toput = []
         V0 = self.cipher.ror(ctdata0l ^ ctdata0r, self.cipher.BETA)
