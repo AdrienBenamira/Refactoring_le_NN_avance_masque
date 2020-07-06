@@ -247,7 +247,7 @@ class NN_Model_Ref_3class:
 
 
 
-                        correct += (predicted == labels).sum().item()
+                        correct += (predicted == labels.to(self.device)).sum().item()
                         TOT2 += labels.size(0)
 
                         predicted[predicted == 2] = 1
