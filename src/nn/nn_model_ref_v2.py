@@ -349,9 +349,9 @@ class NN_Model_Ref_v2:
                         #inputs, targets_a, targets_b, lam = self.mixup_data(inputs, labels)
                         #inputs, targets_a, targets_b = map(Variable, (inputs,
                         #                                              targets_a, targets_b))
-                        outputs = self.net(inputs.to(self.device))
+                        outputs = self.net(inputs.to(self.device))[labels==1]
                         outputs2 = self.net.classify()
-                        loss1 = self.criterion(outputs.squeeze(1), inputs.to(self.device))
+                        loss1 = self.criterion(outputs.squeeze(1), inputs.to(self.device)[labels==1])
                         loss2 = self.criterion(outputs2.squeeze(1), labels.to(self.device))
                         #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
                         loss = loss1 + 2*loss2
@@ -372,10 +372,10 @@ class NN_Model_Ref_v2:
                         FP2 += (preds2.eq(1) & labels.eq(0)).cpu().sum()
                         TOT2 = TP2 + TN2 + FN2 + FP2
 
-                        TP += (preds.eq(1) & inputs.eq(1)).cpu().sum()
-                        TN += (preds.eq(0) & inputs.eq(0)).cpu().sum()
-                        FN += (preds.eq(0) & inputs.eq(1)).cpu().sum()
-                        FP += (preds.eq(1) & inputs.eq(0)).cpu().sum()
+                        TP += (preds.eq(1) & inputs[labels==1].eq(1)).cpu().sum()
+                        TN += (preds.eq(0) & inputs[labels==1].eq(0)).cpu().sum()
+                        FN += (preds.eq(0) & inputs[labels==1].eq(1)).cpu().sum()
+                        FP += (preds.eq(1) & inputs[labels==1].eq(0)).cpu().sum()
                         TOT = TP + TN + FN + FP
                         desc += 'acc: %.3f, TP: %.3f, TN: %.3f, FN: %.3f, FP: %.3f' % (
                             (TP.item() + TN.item()) * 1.0 / TOT.item(), TP.item() * 1.0 / TOT.item(),
