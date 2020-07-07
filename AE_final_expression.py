@@ -529,18 +529,19 @@ print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1] / 16)
 
 
 
+"""
 nn_model_ref.X_train_nn_binaire = X_train_proba_feat
 nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
 # nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
 # nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
 nn_model_ref.train_from_scractch_2("AE")
-
+"""
 
 #LOAD NN
 
-"""nn_model_ref.net.load_state_dict(torch.load(
+nn_model_ref.net.load_state_dict(torch.load(
     os.path.join("results/0.921253_bestacc.pth"),
-    map_location=nn_model_ref.device)['state_dict'], strict=False)"""
+    map_location=nn_model_ref.device)['state_dict'], strict=False)
 
 
 
