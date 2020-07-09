@@ -9,72 +9,92 @@ import math
 
 class AE_binarize(nn.Module):
 
-    def __init__(self, args, input_sizze, h1 = 1024, h2 = 512, h3 = 256, h4 = 128, h5 = 64, h6 = 32, h7 = 16):
+    # 99.5 %   ->64 float
+    # 95 %   ->32 float
+    # 88.5%     ->64 int
+    # 87%   ->64 ->64 int
+    # 96.6%  ->64 ->32 float
+    # 93 %   ->64 ->18 float
+    # 96.0%  ->64 ->32 ->32 float
+
+    def __init__(self, args, input_sizze, h1 = 64, h2 = 64, h3 = 32, h4 = 128, h5 = 64, h6 = 32, h7 = 16):
         super(AE_binarize, self).__init__()
         self.args = args
         self.act_q = activation_quantize_fn(a_bit=1)
         self.fc1 = nn.Linear(input_sizze, h1)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(h1, eps=0.01, momentum=0.99)
-        self.fc2 = nn.Linear(h1, h2)
-        self.BN6 = nn.BatchNorm1d(h2, eps=0.01, momentum=0.99)
-        self.fc3 = nn.Linear(h2, h3)
-        self.BN7 = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
-        self.fc3b = nn.Linear(h3, h4)
-        self.BN7b = nn.BatchNorm1d(h4, eps=0.01, momentum=0.99)
-        self.fc3c = nn.Linear(h4, h5)
-        self.BN7c = nn.BatchNorm1d(h5, eps=0.01, momentum=0.99)
-        self.fc3d = nn.Linear(h5, h6)
-        self.BN7d = nn.BatchNorm1d(h6, eps=0.01, momentum=0.99)
-        self.fc3e = nn.Linear(h6, h7)
-        self.BN7e = nn.BatchNorm1d(h7, eps=0.01, momentum=0.99)
+        #self.fc2 = nn.Linear(h1, h2)
+        #self.BN6 = nn.BatchNorm1d(h2, eps=0.01, momentum=0.99)
+        #self.fc3 = nn.Linear(h2, h3)
+        #self.BN7 = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
+        #self.fc3b = nn.Linear(h3, h4)
+        #self.BN7b = nn.BatchNorm1d(h4, eps=0.01, momentum=0.99)
+        #self.fc3c = nn.Linear(h4, h5)
+        #self.BN7c = nn.BatchNorm1d(h5, eps=0.01, momentum=0.99)
+        #self.fc3d = nn.Linear(h5, h6)
+        #self.BN7d = nn.BatchNorm1d(h6, eps=0.01, momentum=0.99)
+        #self.fc3e = nn.Linear(h6, h7)
+        #self.BN7e = nn.BatchNorm1d(h7, eps=0.01, momentum=0.99)
 
-        self.fc4a000 = nn.Linear(h7, h6)  # 6*6 from image dimension
-        self.BN8a000 = nn.BatchNorm1d(h6, eps=0.01, momentum=0.99)
-        self.fc4a00 = nn.Linear(h6, h5)  # 6*6 from image dimension
-        self.BN8a00 = nn.BatchNorm1d(h5, eps=0.01, momentum=0.99)
-        self.fc4a0 = nn.Linear(h5, h4)  # 6*6 from image dimension
-        self.BN8a0 = nn.BatchNorm1d(h4, eps=0.01, momentum=0.99)
-        self.fc4a = nn.Linear(h4, h3)  # 6*6 from image dimension
-        self.BN8a = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
-        self.fc4 = nn.Linear(h3, h2)  # 6*6 from image dimension
-        self.BN8 = nn.BatchNorm1d(h2, eps=0.01, momentum=0.99)
-        self.fc5 = nn.Linear(h2, h1)
-        self.BN9 = nn.BatchNorm1d(h1, eps=0.01, momentum=0.99)
+        #self.fc4a000 = nn.Linear(h7, h6)  # 6*6 from image dimension
+        #self.BN8a000 = nn.BatchNorm1d(h6, eps=0.01, momentum=0.99)
+        #self.fc4a00 = nn.Linear(h6, h5)  # 6*6 from image dimension
+        #self.BN8a00 = nn.BatchNorm1d(h5, eps=0.01, momentum=0.99)
+        #self.fc4a0 = nn.Linear(h5, h4)  # 6*6 from image dimension
+        #self.BN8a0 = nn.BatchNorm1d(h4, eps=0.01, momentum=0.99)
+        #self.fc4a = nn.Linear(h4, h3)  # 6*6 from image dimension
+        #self.BN8a = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
+        #self.fc4 = nn.Linear(h3, h2)  # 6*6 from image dimension
+        #self.BN8 = nn.BatchNorm1d(h2, eps=0.01, momentum=0.99)
+        #self.fc5 = nn.Linear(h2, h1)
+        #self.BN9 = nn.BatchNorm1d(h1, eps=0.01, momentum=0.99)
         self.fc6 = nn.Linear(h1, input_sizze)
         self.BN10 = nn.BatchNorm1d(input_sizze, eps=0.01, momentum=0.99)
 
-        self.fc_classifiy = nn.Linear(h7, 1)
+        self.fc_classifiy = nn.Linear(h1, h1)
+        self.BN_classifiy = nn.BatchNorm1d(h1, eps=0.01, momentum=0.99)
+        self.fc_classifiy1 = nn.Linear(h1, h2)
+        self.BN_classifiy1 = nn.BatchNorm1d(h2, eps=0.01, momentum=0.99)
+        self.fc_classifiy2 = nn.Linear(h2, h3)
+        self.BN_classifiy1 = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
+        self.fc_classifiy2 = nn.Linear(h3, 1)
+
+        #self.fc_classifiy2 = nn.Linear(h1, 1)
+
+        #self.fc_classifiy3 = nn.Linear(h1, 1)
 
     def classify(self):
         x = self.embedding
-        x = self.fc_classifiy(x)
+        x = F.relu(self.BN_classifiy(self.fc_classifiy(x)))
+        x = F.relu(self.BN_classifiy1(self.fc_classifiy1(x)))
+        x = self.fc_classifiy2(x)
         x = torch.sigmoid(x)
         return x
 
     def encoder(self, x):
-        x = F.relu(self.BN5(self.fc1(x)))
-        x = F.relu(self.BN6(self.fc2(x)))
-        x = F.relu(self.BN7(self.fc3(x)))
-        x = F.relu(self.BN7b(self.fc3b(x)))
-        x = F.relu(self.BN7c(self.fc3c(x)))
-        x = F.relu(self.BN7d(self.fc3d(x)))
-        x = F.relu(self.BN7e(self.fc3e(x)))
+        x =  self.BN5(self.fc1(x))
+        #x = self.BN6(self.fc2(x))
+        #x = self.BN7(self.fc3(x))
+        #x = F.relu(self.BN7b(self.fc3b(x)))
+        #x = F.relu(self.BN7c(self.fc3c(x)))
+        #x = F.relu(self.BN7d(self.fc3d(x)))
+        #x = F.relu(self.BN7e(self.fc3e(x)))
 
         return x
 
     def decoder(self, x):
-        x = F.relu(self.BN8a000(self.fc4a000(x)))
-        x = F.relu(self.BN8a00(self.fc4a00(x)))
-        x = F.relu(self.BN8a0(self.fc4a0(x)))
-        x = F.relu(self.BN8a(self.fc4a(x)))
-        x = F.relu(self.BN8(self.fc4(x)))
-        x = F.relu(self.BN9(self.fc5(x)))
-        x = F.relu(self.BN10(self.fc6(x)))
+        #x = F.relu(self.BN8a000(self.fc4a000(x)))
+        #x = F.relu(self.BN8a00(self.fc4a00(x)))
+        #x = F.relu(self.BN8a0(self.fc4a0(x)))
+        #x = F.relu(self.BN8a(self.fc4a(x)))
+        #x = F.relu(self.BN8(self.fc4(x)))
+        #x = F.relu(self.BN9(self.fc5(x)))
+        x = self.BN10(self.fc6(x))
         return x
 
     def forward(self, x):
         x = self.encoder(x)
-        x = self.act_q(x)
+        #x = self.act_q(x)
         self.embedding = x
         x = self.decoder(x)
         x = torch.sigmoid(x)

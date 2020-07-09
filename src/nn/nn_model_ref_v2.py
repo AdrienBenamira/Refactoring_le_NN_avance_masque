@@ -159,7 +159,7 @@ class NN_Model_Ref_v2:
         if self.args.optimizer_type == "SGD":
             self.optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, self.net.parameters()), lr=self.args.lr_nn,
                                           momentum=self.args.momentum_nn)
-        if self.args.loss_type == "BCE":
+        """if self.args.loss_type == "BCE":
             self.criterion = nn.BCEWithLogitsLoss().to(self.device)
         if self.args.loss_type == "MSE":
             self.criterion = nn.MSELoss().to(self.device)
@@ -168,7 +168,10 @@ class NN_Model_Ref_v2:
         if self.args.loss_type == "CrossEntropyLoss":
             self.criterion = nn.CrossEntropyLoss().to(self.device)
         if self.args.loss_type == "F1":
-            self.criterion = F1_Loss().to(self.device)
+            self.criterion = F1_Loss().to(self.device)"""
+
+        self.criterion = nn.MSELoss().to(self.device)
+
         #if loss_type == "Mix_loss":
         #    self.criterion = BCE_bit_Loss(arg.lambda_loss_mse,arg.lambda_loss_f1, arg.lambda_loss_bit).to(self.device)
         if self.args.scheduler_type == "None":
@@ -354,7 +357,7 @@ class NN_Model_Ref_v2:
                         loss1 = self.criterion(outputs.squeeze(1), inputs.to(self.device)[labels==1])
                         loss2 = self.criterion(outputs2.squeeze(1), labels.to(self.device))
                         #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
-                        loss = loss1 + 2*loss2
+                        loss = loss1 + loss2
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
                             loss.backward()
@@ -408,14 +411,15 @@ class NN_Model_Ref_v2:
                 self.writer.add_scalar(phase + ' Acc ' + phrase,
                                   acc,
                                   epoch)
+
                 # deep copy the model
                 if phase == 'val' and epoch_loss < best_loss:
-                    best_loss = epoch_loss2
+                    best_loss = epoch_loss
                     best_model_wts = copy.deepcopy(self.net.state_dict())
                     torch.save({'epoch': epoch + 1, 'acc': best_loss, 'state_dict': self.net.state_dict()},
                                os.path.join(self.path_save_model, str(best_loss) + '_bestloss.pth'))
-                if phase == 'val' and acc2 >= best_acc:
-                    best_acc = acc2
+                if phase == 'val' and acc >= best_acc:
+                    best_acc = acc
                     torch.save({'epoch': epoch + 1, 'acc': best_acc, 'state_dict': self.net.state_dict()},
                                os.path.join(self.path_save_model, str(best_acc) + '_bestacc.pth'))
             print()

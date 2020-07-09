@@ -251,9 +251,10 @@ def get_truth_table_embedding(nn_model_ref, dimension_embedding = 16, bz = 500):
     for index_end_bz in range(end_ind_bz):
         input_array_embedding = l2[index_end_bz * bz:(index_end_bz + 1) * bz]
         x_input_f2 = torch.Tensor(input_array_embedding)
-        outputs = torch.sigmoid(nn_model_ref.net.fc_classifiy(x_input_f2.to(device)))
+        outputs_feature = torch.sigmoid(nn_model_ref.net.decoder(x_input_f2.to(device)))
+        nn_model_ref.net.embedding = x_input_f2.to(device)
+        outputs = nn_model_ref.net.classify()
         preds = (outputs.squeeze(1) > nn_model_ref.t.to(device)).int().cpu().detach().numpy() * 1
-        outputs_feature = nn_model_ref.net.decoder(x_input_f2.to(device))
         preds_feat = (outputs_feature.squeeze(1) > nn_model_ref.t.to(device)).int().cpu().detach().numpy() * 1
         for index_input in range(len(input_array_embedding)):
             input_name2 = input_array_embedding[index_input]
@@ -521,29 +522,79 @@ Y_eval_proba = nn_model_ref.Y_val_nn_binaire
 X_train_proba_feat = nn_model_ref.all_intermediaire
 Y_train_proba = nn_model_ref.Y_train_nn_binaire
 
-net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
-nn_model_ref.net = net
+
 
 print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1] / 16)
 
 
 
 
-"""
+
+
+net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
+nn_model_ref.net = net
 nn_model_ref.X_train_nn_binaire = X_train_proba_feat
 nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
-# nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
-# nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
 nn_model_ref.train_from_scractch_2("AE")
-"""
+
 
 #LOAD NN
 
-nn_model_ref.net.load_state_dict(torch.load(
-    os.path.join("results/0.921253_bestacc.pth"),
-    map_location=nn_model_ref.device)['state_dict'], strict=False)
+"""net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
+nn_model_ref.net = net
+nn_model_ref.args.load_nn_path = "results/0.920685_bestacc.pth"
+nn_model_ref.load_nn()"""
 
 
+"""
+from sklearn.decomposition import MiniBatchDictionaryLearning
+
+dico = MiniBatchDictionaryLearning(n_components=64, alpha=0.1,
+                                                  n_iter=50, batch_size=30)
+
+dico.fit(X_train_proba_feat[Y_train_proba==1])
+
+Embedding_train = dico.transform(X_train_proba_feat[Y_train_proba==1])
+print(dico.components_.shape, Embedding_train.shape)
+X_approx =np.around(np.dot(dico.components_.transpose(),  Embedding_train.transpose()))
+mses = ((X_approx.transpose()-X_train_proba_feat[Y_train_proba==1])**2).mean(axis=1) *100
+print(mses.shape)
+print(mses)
+print(np.mean(mses), np.std(mses))
+
+print()
+
+
+Embedding_val = dico.transform(X_eval_proba_feat[Y_eval_proba==1])
+print(dico.components_.shape, Embedding_val.shape)
+X_approx =np.around(np.dot(dico.components_.transpose(),  Embedding_val.transpose()))
+mses = ((X_approx.transpose()-X_eval_proba_feat[Y_eval_proba==1])**2).mean(axis=1) *100
+print(mses.shape)
+print(mses)
+print(np.mean(mses), np.std(mses))
+
+print()
+
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LinearRegression
+
+
+Embedding_train = dico.transform(X_train_proba_feat)
+Embedding_val = dico.transform(X_eval_proba_feat)
+
+clf = LinearRegression()
+clf.fit(Embedding_train, Y_train_proba)
+score = clf.score(Embedding_val, Y_eval_proba)
+
+print(score)
+
+
+clf = RandomForestClassifier(max_depth=2, random_state=0)
+clf.fit(Embedding_train, Y_train_proba)
+score = clf.score(Embedding_val, Y_eval_proba)
+
+print(score)"""
 
 
 offset_feat = 0
@@ -567,7 +618,7 @@ for index_col, col in enumerate(df_expression_bool_m.columns):
                                                                                                                 str(
                                                                                                                     time))
 
-print(dictionnaire_feature_name)
+#print(dictionnaire_feature_name)
 
 dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name = get_truth_table_embedding(
     nn_model_ref)
@@ -594,7 +645,7 @@ df_final = df_final.drop(index_to_del)
 
 uniaue_ele = pd.unique(df_final[[i for i in range(nfeat)]].values.ravel('K'))
 
-print(uniaue_ele)
+print("Uniaue element", uniaue_ele)
 
 for u_e in uniaue_ele:
     if u_e is not None:
@@ -638,60 +689,19 @@ for _, key_1 in tqdm(enumerate(dico_conditions_or_1_list_ici)):
         list_count_var_clause_2 = list(dico_count_var_clause_2.keys())
         exp_ici = key_1_clean.replace("[", "").replace("]", "")
         # exp_icibis = exp_ici.replace("&", "*").replace("|", "+").replace("~", "N")
-        exp_ici2 = parse_expr(exp_ici, evaluate=False)
+        #exp_ici2 = parse_expr(exp_ici, evaluate=False)
         # exp_ici3 = to_dnf(exp_ici2)
         dictionnaire_final[key_1_clean] = [nbre_1, nbre_0, nbre_0 / nbre_1, dico_count_var_clause,
                                            list_count_var_clause,
                                            len(list_count_var_clause), dico_count_var_clause_2, list_count_var_clause_2,
-                                           len(list_count_var_clause_2), exp_ici2]
+                                           len(list_count_var_clause_2)]#, exp_ici2]
 
 df_final = pd.DataFrame.from_dict(dictionnaire_final, orient='index')
-df_final.columns = ["Nbre_1", "Nbre_0", "Nbre_0/Nbre_1 (lower better)", "Expr count", "Expr unique", "Nbre Expr unique", "Var count", "Var unique", "Nbre Var unique", "Jolie EXPRESSION"]
+df_final.columns = ["Nbre_1", "Nbre_0", "Nbre_0/Nbre_1 (lower better)", "Expr count", "Expr unique", "Nbre Expr unique", "Var count", "Var unique", "Nbre Var unique"]#, "Jolie EXPRESSION"]
 print(df_final)
 df_final.to_csv(path_save_model + "classification_all.csv")
-print(ok)
 
 
-conditions_or_1_redondance = set([x for x in conditions_or_1 if conditions_or_1.count(x) > 1])
-conditions_or_0_redondance = set([x for x in conditions_or_0 if conditions_or_0.count(x) > 1])
-
-print(liste_re)
-
-#print(list(set(conditions_or_1) & set(conditions_or_0)))
-
-classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
-df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
-
-
-print("SAVE DUPPLICATES")
-
-df_final = df_final.drop_duplicates(subset=['Output'] + [i for i in range(nfeat)])
-df_final.to_csv(path_save_model + "final_with_duplicates.csv")
-conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
-
-#print(list(set(conditions_or_1) & set(conditions_or_0)))
-
-
-classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
-df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
-df_classification_final.to_csv(path_save_model + "classification_with_duplicates.csv")
-
-print("SAVE FINAL")
-
-df_final = df_final.drop_duplicates(subset=[i for i in range(nfeat)], keep=False)
-df_final.to_csv(path_save_model + "final.csv")
-conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
-
-print()
-
-
-classification_final = {"SPECK": conditions_or_1, "RANDOM": conditions_or_0}
-df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
-df_classification_final.to_csv(path_save_model + "classification.csv")
-
-#print(X_eval_proba_feat[0].tolist())
-#print(nn_model_ref.all_intermediaire_val[0].tolist())
-print(ok)
 
 
 
