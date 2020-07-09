@@ -67,7 +67,7 @@ class AE_binarize(nn.Module):
         x = self.embedding
         x = F.relu(self.BN_classifiy(self.fc_classifiy(x)))
         x = F.relu(self.BN_classifiy1(self.fc_classifiy1(x)))
-        x = F.relu(self.BN_classifiy1(self.fc_classifiy2(x)))
+        x = F.relu(self.BN_classifiy2(self.fc_classifiy2(x)))
         x = self.fc_classifiy3(x)
         x = torch.sigmoid(x)
         return x
