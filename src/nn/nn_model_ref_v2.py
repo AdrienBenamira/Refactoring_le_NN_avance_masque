@@ -352,12 +352,12 @@ class NN_Model_Ref_v2:
                         #inputs, targets_a, targets_b, lam = self.mixup_data(inputs, labels)
                         #inputs, targets_a, targets_b = map(Variable, (inputs,
                         #                                              targets_a, targets_b))
-                        outputs = self.net(inputs.to(self.device))[labels==1]
-                        outputs2 = self.net.classify()
-                        loss1 = self.criterion(outputs.squeeze(1), inputs.to(self.device)[labels==1])
+                        #outputs = self.net(inputs.to(self.device))[labels==1]
+                        outputs2 = self.net.classify(inputs.to(self.device))
+                        #loss1 = self.criterion(outputs.squeeze(1), inputs.to(self.device)[labels==1])
                         loss2 = self.criterion(outputs2.squeeze(1), labels.to(self.device))
                         #loss = self.mixup_criterion(outputs.squeeze(1), targets_a.to(self.device), targets_b.to(self.device), lam)
-                        loss = loss1 + loss2
+                        loss = loss2 #loss1 + loss2
                         desc = 'loss: %.4f; ' % (loss.item())
                         if phase == 'train':
                             loss.backward()
@@ -365,7 +365,7 @@ class NN_Model_Ref_v2:
                             self.optimizer.step()
                             if self.scheduler is not None:
                                 self.scheduler.step()
-                        preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
+                        #preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
 
                         preds2 = (outputs2.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
 
@@ -375,7 +375,7 @@ class NN_Model_Ref_v2:
                         FP2 += (preds2.eq(1) & labels.eq(0)).cpu().sum()
                         TOT2 = TP2 + TN2 + FN2 + FP2
 
-                        TP += (preds.eq(1) & inputs[labels==1].eq(1)).cpu().sum()
+                        """TP += (preds.eq(1) & inputs[labels==1].eq(1)).cpu().sum()
                         TN += (preds.eq(0) & inputs[labels==1].eq(0)).cpu().sum()
                         FN += (preds.eq(0) & inputs[labels==1].eq(1)).cpu().sum()
                         FP += (preds.eq(1) & inputs[labels==1].eq(0)).cpu().sum()
@@ -383,15 +383,15 @@ class NN_Model_Ref_v2:
                         desc += 'acc: %.3f, TP: %.3f, TN: %.3f, FN: %.3f, FP: %.3f' % (
                             (TP.item() + TN.item()) * 1.0 / TOT.item(), TP.item() * 1.0 / TOT.item(),
                             TN.item() * 1.0 / TOT.item(), FN.item() * 1.0 / TOT.item(),
-                            FP.item() * 1.0 / TOT.item())
+                            FP.item() * 1.0 / TOT.item())"""
                         running_loss += loss.item() * n_batches
-                        running_loss1 += loss1.item() * n_batches
+                        #running_loss1 += loss1.item() * n_batches
                         running_loss2 += loss2.item() * n_batches
                         nbre_sample += n_batches
                 epoch_loss = running_loss / nbre_sample
                 epoch_loss1 = running_loss1 / nbre_sample
                 epoch_loss2 = running_loss2 / nbre_sample
-                acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
+                #acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
                 acc2 = (TP2.item() + TN2.item()) * 1.0 / TOT2.item()
                 print('{} Loss: {:.4f}'.format(
                     phase, epoch_loss))
@@ -399,8 +399,8 @@ class NN_Model_Ref_v2:
                     phase, epoch_loss1))
                 print('{} Loss2: {:.4f}'.format(
                     phase, epoch_loss2))
-                print('{} Acc AE: {:.4f}'.format(
-                    phase, acc))
+                #print('{} Acc AE: {:.4f}'.format(
+                #    phase, acc))
                 print('{} Acc classification: {:.4f}'.format(
                     phase, acc2))
                 #print(np.sum(preds[0].detach().cpu().int().numpy() == labels[0].detach().cpu().int().numpy()))
@@ -408,9 +408,9 @@ class NN_Model_Ref_v2:
                 self.writer.add_scalar(phase + ' Loss ' + phrase,
                                   epoch_loss,
                                   epoch)
-                self.writer.add_scalar(phase + ' Acc ' + phrase,
+                """self.writer.add_scalar(phase + ' Acc ' + phrase,
                                   acc,
-                                  epoch)
+                                  epoch)"""
 
                 # deep copy the model
                 if phase == 'val' and epoch_loss < best_loss:
@@ -418,8 +418,8 @@ class NN_Model_Ref_v2:
                     best_model_wts = copy.deepcopy(self.net.state_dict())
                     torch.save({'epoch': epoch + 1, 'acc': best_loss, 'state_dict': self.net.state_dict()},
                                os.path.join(self.path_save_model, str(best_loss) + '_bestloss.pth'))
-                if phase == 'val' and acc >= best_acc:
-                    best_acc = acc
+                if phase == 'val' and acc2 >= best_acc:
+                    best_acc = acc2
                     torch.save({'epoch': epoch + 1, 'acc': best_acc, 'state_dict': self.net.state_dict()},
                                os.path.join(self.path_save_model, str(best_acc) + '_bestacc.pth'))
             print()

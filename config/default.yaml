@@ -30,7 +30,7 @@ train_nn:
   a_bit: 1
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 200
+  num_epochs: 100
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
@@ -110,7 +110,7 @@ prunning:
   inputs_type_prunning: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   model_to_prune: ./results/results_binary_922/0.920842_bestacc.pth
   values_prunning: [0.8]
-  layers_NOT_to_prune: [quantize_fn, act_q, fc4, BN8, fc5, BN9, fc6, BN10]
+  layers_NOT_to_prune: [quantize_fn, act_q, fc4, BN8, fc5, BN9]
   save_model_prune: No
   logs_layers: Yes
   nbre_sample_eval_prunning: 10000

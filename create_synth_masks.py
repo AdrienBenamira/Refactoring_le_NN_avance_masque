@@ -1,3 +1,8 @@
+import pandas as pd
+import numpy as np
+
+
+
 import sys
 import warnings
 import random
@@ -5,6 +10,7 @@ import sklearn
 import sklearn.neural_network
 from src.nn.models.Linear_binarized import Linear_bin
 from src.nn.models.Model_AE import AE_binarize
+from src.nn.models.Model_linear import NN_linear
 from src.nn.nn_model_ref_v2 import NN_Model_Ref_v2
 from alibi.explainers import CEM
 from sympy import *
@@ -65,10 +71,10 @@ def make_classifier(input_size=84, d1=1024, d2=512, final_activation='sigmoid'):
     dense1 = Dense(d1)(inp);
     dense1 = BatchNormalization()(dense1);
     dense1 = Activation('relu')(dense1);
-    dense2 = Dense(d2)(dense1);
-    dense2 = BatchNormalization()(dense2);
-    dense2 = Activation('relu')(dense2);
-    out = Dense(1, activation=final_activation)(dense2);
+    dense2 = Dense(input_size, activation=final_activation)(dense1);
+    out = BatchNormalization()(dense2);
+    #dense2 = Activation('relu')(dense2);
+    #out = Dense(1, activation=final_activation)(dense2);
     model = Model(inputs=inp, outputs=out);
     return (model);
 
@@ -340,7 +346,7 @@ args = parser.parse_args()
 
 args.load_special = True
 args.finetunning = False
-args.logs_tensorboard = args.logs_tensorboard.replace("test", "table_of_truth")
+args.logs_tensorboard = args.logs_tensorboard.replace("test", "create_synth_masks")
 args.inputs_type = args.inputs_type_prunning
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -404,510 +410,200 @@ if flag2:
     nn_model_ref.eval_all(["val"])
 
 
-t = nn_model_ref.net.fc1.weight_mask.sum(0).detach().cpu().numpy().tolist()
-index_filter_time_keep = [i for i, x in enumerate(t) if x!=0.0]
 
-liste_feature = []
-for j in range(args.out_channel0):
-    liste_feature += ["F"+str(j)+"_" + str(i) for i in range(16)]
 
-liste_feature_importance = [liste_feature[q] for q in index_filter_time_keep]
 
-print("FEATURES IMPORTANTES: ", liste_feature_importance)
-print("NBRE FEATURES IMPORTANTES: ", len(liste_feature_importance))
+df_exp_1 = pd.read_csv("results/table_of_truth_v2/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_07_21_13_51_48_837739/expression_bool_per_filter.csv")
+df_exp_2 = pd.read_csv("results/table_of_truth_v2/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_07_21_13_51_48_837739/expression_bool_per_filter_withpadbegin.csv")
+df_exp_3 = pd.read_csv("results/table_of_truth_v2/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_07_21_13_51_48_837739/expression_bool_per_filter_withpadend.csv")
 
-dico_important = {}
-for filter_ici in liste_feature_importance:
-    filter_ici_key = filter_ici.split("_")[0]
-    time = filter_ici.split("_")[1]
-    if filter_ici_key in list(dico_important.keys()):
-        dico_important[filter_ici_key].append(time)
+unique_feature = df_exp_1.columns[1:]
+print("Nbre de features: ", 16*len(unique_feature))
+
+
+X_train = np.zeros((16*len(unique_feature), nn_model_ref.X_train_nn_binaire.shape[0]), dtype = np.bool)
+X_val = np.zeros((16*len(unique_feature), nn_model_ref.X_val_nn_binaire.shape[0]), dtype = np.bool)
+
+#X_train = np.zeros((16*len(unique_feature), nn_model_ref.X_train_nn_binaire[nn_model_ref.Y_train_nn_binaire==1].shape[0]), dtype = np.bool)
+#X_val = np.zeros((16*len(unique_feature), nn_model_ref.X_val_nn_binaire[nn_model_ref.Y_val_nn_binaire==1].shape[0]), dtype = np.bool)
+
+
+offset = 0
+for index in range(16):
+    print(index)
+    if index == 0:
+        df = df_exp_2
+    elif index == 15:
+        df = df_exp_3
     else:
-        dico_important[filter_ici_key] = [time]
-
-
-#nn_model_ref.eval_all(["val"])
-
-x_input = torch.zeros((4,16))
-arr2 = generate_binary(9)
-l = []
-for x in arr2:
-    l += [np.array([int(d) for d in x])]
-l2 = np.array(l)
-print(l2.shape)
-l3 = l2.reshape(-1, 3, 3)
-#print(l3)
-#print(l3.shape)
-l4 = np.transpose(l3, axes=(0,2,1))
-#print(l4)
-#print(l4.shape)
-#print("-"*10)
-
-#print(l5)
-#print(l5.shape)
-
-V0 = l4[:,1,:]
-V1 = l4[:, 2, :]
-Dv = V0^V1
-x_input_f = np.insert(l4, 1, Dv, 1)
-
-l5 = x_input_f[:,:,1:]
-
-#print(x_input_f)
-#print(x_input_f.shape)
-
-rest = np.zeros((512,4,6))
-rest2 = np.zeros((512, 4, 7))
-
-rest = np.zeros((512,4,6))
-rest[:,:,:2] = l5
-
-rest2[:,:,5:] = l5
-
-x_input_f1b = np.append(rest, x_input_f, axis=2)
-x_input_f2 = np.append(x_input_f1b, rest2, axis=2)
-
-
-x_input_f2 = torch.Tensor(x_input_f2)
-df_dico_name_tot = {}
-df_dico_second_tot = {}
-
-nn_model_ref.net(x_input_f2.to(device))
-for index in range(nn_model_ref.net.x_input.shape[0]):
-    res = []
-    for index_x, x in enumerate(nn_model_ref.net.classify[index]):
-        res.append(x.detach().cpu().numpy())
-    res2 = np.array(res).transpose()
-    df_dico_second_tot, df_dico_name_tot = incremente_dico(nn_model_ref, index, df_dico_second_tot, res2, df_dico_name_tot)
-
-
-
-df = pd.DataFrame.from_dict(df_dico_second_tot)
-df_name = pd.DataFrame.from_dict(df_dico_name_tot)
-
-
-
-df2 = df.T
-df2_name = df_name.T
-
-print(df2.head(5))
-print(df2_name.head(5))
-
-
-#df2.to_csv(path_save_model + "table_of_tructh_0922.csv")
-#df2_name.to_csv(path_save_model + "table_of_tructh_0922_name.csv")
-
-
-
-#df3 = pd.read_csv(path_save_model + "table_of_tructh_0922.csv")
-#df_name3 = pd.read_csv(path_save_model + "table_of_tructh_0922.csv")
-
-
-
-
-
-#df3 = df2.rename(columns={"Unnamed: 0": "Key"})
-df2.columns=["Filter_" + str(i) for i in range(args.out_channel0)]
-df2_name.columns=["DL[i-1]","DV[i-1]","V0[i-1]","V1[i-1]","DL[i]","DV[i]","V0[i]","V1[i]","DL[i+1]","DV[i+1]","V0[i+1]","V1[i+1]"]
-print(df2.head(5))
-print(df2_name.head(5))
-df_m = pd.concat([df2_name,df2], axis = 1)
-print(df_m.head())
-
-
-
-
-df_m.to_csv(path_save_model + "table_of_truth_0985_final_with_pad.csv")
-
-df_m2=df_m.drop(df_m.index[df_m["DL[i-1]"] == "PAD"])
-df_m_f=df_m2.drop(df_m2.index[df_m2["DL[i+1]"] == "PAD"])
-
-#print (df_m_f)
-df_m_f= df_m_f.reset_index()
-print (df_m_f.head(5))
-
-df_m_f.to_csv(path_save_model + "table_of_truth_0985_final_without_pad.csv")
-
-
-
-
-dictionnaire_res_fin_expression = {}
-dictionnaire_res_fin_expression_POS = {}
-
-dictionnaire_perfiler = {}
-dictionnaire_perfiler_POS = {}
-
-doublon = []
-
-expPOS_tot =[]
-
-cpteur = 0
-
-for index_f in range(args.out_channel0):
-#for index_f in range(1):
-    print("Fliter ", index_f)
-    if "F"+str(index_f) in list(dico_important.keys()):
-        index_intere = df_m_f.index[df_m_f['Filter_'+str(index_f)] == 1].tolist()
-        print()
-        if len(index_intere) ==0:
-            print("Empty")
-        else:
-            dictionnaire_res_fin_expression["Filter "+ str(index_f)] = []
-            dictionnaire_res_fin_expression_POS["Filter " + str(index_f)] = []
-            condtion_filter = []
-            for col in ["DL[i-1]", "V0[i-1]", "V1[i-1]", "DL[i]", "V0[i]", "V1[i]", "DL[i+1]", "V0[i+1]", "V1[i+1]"]:
-                s = df_m_f[col].values
-                my_dict = {"0.0": 0.0, "1.0": 1.0, 0.0: 0.0, 1.0: 1.0}
-                s2 = np.array([my_dict[zi] for zi in s])
-                condtion_filter.append(s2[index_intere])
-
-            condtion_filter2 = np.array(condtion_filter).transpose()
-            condtion_filter3 = [x.tolist() for x in condtion_filter2]
-            assert len(condtion_filter3) == len(index_intere)
-            assert len(condtion_filter3[0]) == 9
-            w1, x1, y1, w2, x2, y2, w3, x3, y3 = symbols('DL[i-1], V0[i-1], V1[i-1], DL[i], V0[i], V1[i], DL[i+1], V0[i+1], V1[i+1]')
-            minterms = condtion_filter3
-            exp =SOPform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-            if str(exp) == 'True':
-                print(exp, "True")
+        df = df_exp_1
+    unique_feature = df.columns[1:]
+    for index_f, filter in enumerate(unique_feature):
+        exp = df[filter].values[0].split("|")
+        for index_clause, clause in enumerate(exp):
+            clause = clause.replace("(","").replace(")","").replace("i-1", str(index - 1)).replace("i+1", str(index + 1)).replace("i", str(index))
+            masks_ici_1 = np.zeros((4,16), dtype = np.int)
+            masks_ici_2 = np.zeros((4,16), dtype = np.int)
+            elements = clause.split("&")
+            for el in elements:
+                if "DL" in el:
+                    index_row = 0
+                elif "V0" in el:
+                    index_row = 2
+                elif "V1" in el:
+                    index_row = 3
+                index_columns = int(el.split("[")[-1].split("]")[0])
+                masks_ici_1[index_row][index_columns] = 1
+                if "~" not in el:
+                    masks_ici_2[index_row][index_columns] = 1
+            masks_ici_1 = masks_ici_1.reshape(-1,1).squeeze()
+            masks_ici_2 = masks_ici_2.reshape(-1,1).squeeze()
+            X2 = masks_ici_1 & nn_model_ref.X_train_nn_binaire#[nn_model_ref.Y_train_nn_binaire==1]
+            X3 = X2 ^ masks_ici_2
+            X4 = np.sum(X3, axis = 1)
+            X_f = (X4==0)*1
+            if index_clause==0:
+                X_train_ici = X_f
             else:
-                print(exp)
-                doublon.append(exp)
-                dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-                expV2 = str(exp).split(" | ")
-                dictionnaire_perfiler["Filter " + str(index_f)] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
-                print()
-                expPOS = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-                print(expPOS)
-                expPOS_tot.append(str(expPOS))
-                dictionnaire_res_fin_expression_POS["Filter " + str(index_f)].append(expPOS)
-                expV2POS = str(expPOS).split(" & ")
-                print(len(expV2POS))
-
-                cpteur += 2**len(expV2POS)
-
-                dictionnaire_perfiler_POS["Filter " + str(index_f)] = [str(expV2POS)] + [x.replace("(", "").replace(")", "") for
-                                                                                x in expV2POS]
-                #dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-
-
-
-
-        print()
-
-print(cpteur)
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
-row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler.csv")
-df_row = pd.DataFrame(row)
-df_row.to_csv(path_save_model + "clause_unique.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter.csv")
-
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler_POS, orient='index').T
-row3 = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_POS.csv")
-df_row = pd.DataFrame(row3)
-df_row.to_csv(path_save_model + "clause_unique_POS.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression_POS, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS.csv")
-
-df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
-df_expression_bool.to_csv(path_save_model + "time_important_per_filter.csv")
-
-
-#------------------------------------------------------------------------------------------------------------------------------
-
-df_m3=df_m.drop(df_m.index[df_m["DL[i-1]"] != "PAD"])
-df_m3= df_m3.reset_index()
-print (df_m3.head(5))
-
-df_m3.to_csv(path_save_model + "table_of_truth_0985_final_with_only_pad_begin.csv")
-
-
-
-dictionnaire_res_fin_expression = {}
-dictionnaire_res_fin_expression_POS = {}
-
-dictionnaire_perfiler = {}
-dictionnaire_perfiler_POS = {}
-
-doublon = []
-
-expPOS_tot =[]
-
-cpteur = 0
-
-for index_f in range(args.out_channel0):
-    print("Fliter ", index_f)
-    if "F"+str(index_f) in list(dico_important.keys()):
-        index_intere = df_m3.index[df_m3['Filter_'+str(index_f)] == 1].tolist()
-        print()
-        if len(index_intere) ==0:
-            print("Empty")
-        else:
-            dictionnaire_res_fin_expression["Filter "+ str(index_f)] = []
-            dictionnaire_res_fin_expression_POS["Filter " + str(index_f)] = []
-            condtion_filter = []
-            for col in ["DL[i]", "V0[i]", "V1[i]", "DL[i+1]", "V0[i+1]", "V1[i+1]"]:
-                s = df_m3[col].values
-                my_dict = {"0.0": 0.0, "1.0": 1.0, 0.0: 0.0, 1.0: 1.0}
-                s2 = np.array([my_dict[zi] for zi in s])
-                condtion_filter.append(s2[index_intere])
-
-            condtion_filter2 = np.array(condtion_filter).transpose()
-            condtion_filter3 = [x.tolist() for x in condtion_filter2]
-            assert len(condtion_filter3) == len(index_intere)
-            assert len(condtion_filter3[0]) == 6
-            w2, x2, y2, w3, x3, y3 = symbols('DL[0], V0[0], V1[0], DL[1], V0[1], V1[1]')
-            minterms = condtion_filter3
-            exp =SOPform([w2, x2, y2, w3, x3, y3], minterms)
-
-
-            if str(exp) == 'True':
-                print(exp, "True")
+                X_train_ici = X_f | X_train_ici
+            X2 = masks_ici_1 & nn_model_ref.X_val_nn_binaire#[nn_model_ref.Y_val_nn_binaire==1]
+            X3 = X2 ^ masks_ici_2
+            X4 = np.sum(X3, axis=1)
+            X_f = (X4 == 0) * 1
+            if index_clause == 0:
+                X_val_ici = X_f
             else:
-                print(exp)
-                doublon.append(exp)
-                dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-                expV2 = str(exp).split(" | ")
-                dictionnaire_perfiler["Filter " + str(index_f)] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
-                print()
-                expPOS = POSform([w2, x2, y2, w3, x3, y3], minterms)
-                print(expPOS)
-                expPOS_tot.append(str(expPOS))
-                dictionnaire_res_fin_expression_POS["Filter " + str(index_f)].append(expPOS)
-                expV2POS = str(expPOS).split(" & ")
-                print(len(expV2POS))
+                X_val_ici = X_f | X_val_ici
+        X_train[offset] = X_train_ici
+        X_val[offset] = X_val_ici
+        offset+=1
 
-                cpteur += 2**len(expV2POS)
+print(offset)
+"""
+df_clause_unique1 = pd.read_csv("results/table_of_truth_v2/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_07_21_13_51_48_837739/clause_unique.csv")
+df_clause_unique2 = pd.read_csv("results/table_of_truth_v2/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_07_21_13_51_48_837739/clause_unique_withpadbegin.csv")
+df_clause_unique3 = pd.read_csv("results/table_of_truth_v2/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_07_21_13_51_48_837739/clause_unique_withpadend.csv")
 
-                dictionnaire_perfiler_POS["Filter " + str(index_f)] = [str(expV2POS)] + [x.replace("(", "").replace(")", "") for
-                                                                                x in expV2POS]
-                #dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-
-
-
-
-        print()
-
-print(cpteur)
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
-row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_withpadbegin.csv")
-df_row = pd.DataFrame(row)
-df_row.to_csv(path_save_model + "clause_unique_withpadbegin.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_withpadbegin.csv")
-
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler_POS, orient='index').T
-row3 = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_POS_withpadbegin.csv")
-df_row = pd.DataFrame(row3)
-df_row.to_csv(path_save_model + "clause_unique_POS_withpadbegin.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression_POS, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS_withpadbegin.csv")
-
-df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
-df_expression_bool.to_csv(path_save_model + "time_important_per_filter_withpadbegin.csv")
-
-
-
-#------------------------------------------------------------------------------------------------------------------------------
-
-df_m3=df_m.drop(df_m.index[df_m["DL[i+1]"] != "PAD"])
-df_m3= df_m3.reset_index()
-print (df_m3.head(5))
-
-df_m3.to_csv(path_save_model + "table_of_truth_0985_final_with_only_pad_end.csv")
-
-
-
-dictionnaire_res_fin_expression = {}
-dictionnaire_res_fin_expression_POS = {}
-
-dictionnaire_perfiler = {}
-dictionnaire_perfiler_POS = {}
-
-doublon = []
-
-expPOS_tot =[]
-
-cpteur = 0
-
-for index_f in range(args.out_channel0):
-    print("Fliter ", index_f)
-    if "F"+str(index_f) in list(dico_important.keys()):
-        index_intere = df_m3.index[df_m3['Filter_'+str(index_f)] == 1].tolist()
-        print()
-        if len(index_intere) ==0:
-            print("Empty")
-        else:
-            dictionnaire_res_fin_expression["Filter "+ str(index_f)] = []
-            dictionnaire_res_fin_expression_POS["Filter " + str(index_f)] = []
-            condtion_filter = []
-            for col in ["DL[i-1]", "V0[i-1]", "V1[i-1]", "DL[i]", "V0[i]", "V1[i]"]:
-                s = df_m3[col].values
-                my_dict = {"0.0": 0.0, "1.0": 1.0, 0.0: 0.0, 1.0: 1.0}
-                s2 = np.array([my_dict[zi] for zi in s])
-                condtion_filter.append(s2[index_intere])
-
-            condtion_filter2 = np.array(condtion_filter).transpose()
-            condtion_filter3 = [x.tolist() for x in condtion_filter2]
-            assert len(condtion_filter3) == len(index_intere)
-            assert len(condtion_filter3[0]) == 6
-            w2, x2, y2, w3, x3, y3 = symbols('DL[14], V0[14], V1[14], DL[15], V0[15], V1[15]')
-            minterms = condtion_filter3
-            exp =SOPform([w2, x2, y2, w3, x3, y3], minterms)
-
-
-            if str(exp) == 'True':
-                print(exp, "True")
-            else:
-                print(exp)
-                doublon.append(exp)
-                dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-                expV2 = str(exp).split(" | ")
-                dictionnaire_perfiler["Filter " + str(index_f)] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
-                print()
-                expPOS = POSform([w2, x2, y2, w3, x3, y3], minterms)
-                print(expPOS)
-                expPOS_tot.append(str(expPOS))
-                dictionnaire_res_fin_expression_POS["Filter " + str(index_f)].append(expPOS)
-                expV2POS = str(expPOS).split(" & ")
-                print(len(expV2POS))
-
-                cpteur += 2**len(expV2POS)
-
-                dictionnaire_perfiler_POS["Filter " + str(index_f)] = [str(expV2POS)] + [x.replace("(", "").replace(")", "") for
-                                                                                x in expV2POS]
-                #dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-
-
-
-
-        print()
-
-print(cpteur)
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
-row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_withpadend.csv")
-df_row = pd.DataFrame(row)
-df_row.to_csv(path_save_model + "clause_unique_withpadend.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_withpadend.csv")
-
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler_POS, orient='index').T
-row3 = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_POS_withpadend.csv")
-df_row = pd.DataFrame(row3)
-df_row.to_csv(path_save_model + "clause_unique_POS_withpadend.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression_POS, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS_withpadend.csv")
-
-df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
-df_expression_bool.to_csv(path_save_model + "time_important_per_filter_withpadend.csv")
-
-print(ok)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-all_masksPOS = [[], [], [],[], [], []]
-for exp_iter in expPOS_tot:
-    expression = exp_iter.split("&")
-    M = np.zeros((6, 16), dtype=np.uint8)
-    #for iterici in range(2*len(expression)):
-    M2 = DPLL(expression, M)
-    for offset in range(15):
-        for index_m_f, m_f in enumerate(M2):
-            liste_ici = m_f.tolist()
-            result = int("".join(str(i) for i in liste_ici), 2)
-            all_masksPOS[index_m_f].append(result>>offset)
-
-print("NBRE DE MASKS CREE:", len(all_masksPOS[0]))
-
-with open(path_save_model + "masks_allPOS.txt", "w") as file:
-    for i in range(6):
-        file.write(str(all_masksPOS[i]))
-        file.write("\n")
 
 
 row_v2 = []
-for r in row:
+unique_feature = []
+for r in df_clause_unique1["0"]:
     if r is not None:
-        if "(" not in r:
-            row_v2.append(r)
+        if type(r) is not float:
+            if "(" not in r:
+                if r not in row_v2:
+                    row_v2.append(r)
+                    for index in range(1, 15):
+                        unique_feature.append(r.replace("i-1",str(index-1)).replace("i+1",str(index+1)).replace("i",str(index)))
 
-print("NBRE DE CLAUSE UNIQUE:", len(row_v2))
-all_masks = [[], [], [],[], [], []]
-for clause_ici in row_v2:
-    element_clause = clause_ici.split("&")
-    for index_mask in range(1,15):
-        M = np.zeros((6,16), dtype = np.uint8)
-        for el_c in element_clause:
-            if "V0" in el_c:
-                if "~" in el_c:
-                    F = 4
-                else:
-                    F = 1
-            elif "V1" in el_c:
-                if "~" in el_c:
-                    F = 5
-                else:
-                    F = 2
-            elif "DL" in el_c:
-                if "~" in el_c:
-                    F = 3
-                else:
-                    F = 0
-            if "[i]" in el_c:
-                offset = 0
-            elif "[i+1]" in el_c:
-                offset = 1
-            elif "[i-1]" in el_c:
-                offset = -1
-            M[F][index_mask + offset] = 1
+for r in df_clause_unique2["0"]:
+    if r is not None:
+        if type(r) is not float:
+            if "(" not in r:
+                if r not in row_v2:
+                    row_v2.append(r)
+                    unique_feature.append(r)
 
-        for index_m_f, m_f in enumerate(M):
-            liste_ici = m_f.tolist()
-            result = int("".join(str(i) for i in liste_ici), 2)
-            all_masks[index_m_f].append(result)
+for r in df_clause_unique3["0"]:
+    if r is not None:
+        if type(r) is not float:
+            if "(" not in r:
+                if r not in row_v2:
+                    row_v2.append(r)
+                    unique_feature.append(r)
 
-print("NBRE DE MASKS CREE:", len(all_masks[0]))
-
-with open(path_save_model + "masks_all.txt", "w") as file:
-    for i in range(6):
-        file.write(str(all_masks[i]))
-        file.write("\n")
+print("NBRE DE CLAUSE UNIQUE:", len(unique_feature))
 
 
 
-del nn_model_ref
 
-for round_ici in [5, 6, 7, 8, 4]:
 
-    args.nombre_round_eval = round_ici
+feature_masks = {}
 
-    nn_model_ref = NN_Model_Ref_v2(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-    nn_model_ref.load_nn()
+X_train = np.zeros((len(unique_feature), nn_model_ref.X_train_nn_binaire.shape[0]), dtype = np.bool)
+X_val = np.zeros((len(unique_feature), nn_model_ref.X_val_nn_binaire.shape[0]), dtype = np.bool)
 
+
+#X_train = np.zeros((len(unique_feature), nn_model_ref.X_train_nn_binaire[nn_model_ref.Y_train_nn_binaire==1].shape[0]), dtype = np.bool)
+#X_val = np.zeros((len(unique_feature), nn_model_ref.X_val_nn_binaire[nn_model_ref.Y_val_nn_binaire==1].shape[0]), dtype = np.bool)
+
+for index_clause, clause in tqdm(enumerate(unique_feature)):
+    feature_masks[clause] = []
+    masks_ici_1 = np.zeros((4,16), dtype = np.int)
+    masks_ici_2 = np.zeros((4,16), dtype = np.int)
+    elements = clause.split("&")
+    for el in elements:
+        if "DL" in el:
+            index_row = 0
+        elif "V0" in el:
+            index_row = 2
+        elif "V1" in el:
+            index_row = 3
+        index_columns = int(el.split("[")[-1].split("]")[0])
+        masks_ici_1[index_row][index_columns] = 1
+        if "~" not in el:
+            masks_ici_2[index_row][index_columns] = 1
+    masks_ici_1 = masks_ici_1.reshape(-1,1).squeeze()
+    masks_ici_2 = masks_ici_2.reshape(-1,1).squeeze()
+    #for indexm_input_ici, m_input_ici in enumerate(masks_ici_1):
+    #masks_ici_1_int = int("".join(str(i) for i in masks_ici_1), 2)
+    #masks_ici_2_int = int("".join(str(i) for i in masks_ici_2), 2)
+    feature_masks[clause].append(masks_ici_1)
+    feature_masks[clause].append(masks_ici_2)
+    X2 = masks_ici_1 & nn_model_ref.X_train_nn_binaire#[nn_model_ref.Y_train_nn_binaire==1]
+    X3 = X2 ^ masks_ici_2
+    X4 = np.sum(X3, axis = 1)
+    X_f = (X4==0)*1
+    X_train[index_clause] = X_f
+    X2 = masks_ici_1 & nn_model_ref.X_val_nn_binaire#[nn_model_ref.Y_val_nn_binaire==1]
+    X3 = X2 ^ masks_ici_2
+    X4 = np.sum(X3, axis=1)
+    X_f = (X4 == 0) * 1
+    X_val[index_clause] = X_f
+
+
+"""
+
+X_train_f = X_train.transpose()
+X_val_f = X_val.transpose()
+"""
+num_samples = np.sum(nn_model_ref.Y_train_nn_binaire)
+print(X_train_f.shape)
+vals, counts = np.unique(X_train, axis=1, return_counts=True)
+print(vals.shape, counts.shape)
+sv = dict(zip(vals,  counts / num_samples))
+print(sv)
+"""
+
+Y_eval_proba = nn_model_ref.Y_val_nn_binaire
+Y_train_proba = nn_model_ref.Y_train_nn_binaire
+
+
+#net = AE_binarize(args, X_train_f.shape[1], h1= 250).to(device)
+
+net = NN_linear(args, X_train_f.shape[1]).to(device)
+
+nn_model_ref.net = net
+nn_model_ref.X_train_nn_binaire = X_train_f
+nn_model_ref.X_val_nn_binaire = X_val_f
+#nn_model_ref.Y_train_nn_binaire = X_train_f
+#nn_model_ref.Y_val_nn_binaire = X_val_f
+
+"""
+args.load_nn_path = "./results/create_synth_masks_v2/speck/5/ctdata0l^ctdata1l_ctdata0r^ctdata1r^ctdata0l^ctdata1l_ctdata0l^ctdata0r_ctdata1l^ctdata1r/2020_07_21_17_26_59_603174/0.9966710913033485_bestacc.pth"
+nn_model_ref.net.load_state_dict(torch.load(args.load_nn_path,
+                map_location=device)['state_dict'], strict=False)
+nn_model_ref.net.to(device)
+nn_model_ref.net.eval()
+"""
+nn_model_ref.train_from_scractch("AE")
+
+
+for global_sparsity in [0, 0.2, 0.4]:
+    print(global_sparsity)
+    flag2 = True
+    acc_retain=[]
     parameters_to_prune = []
     for name, module in nn_model_ref.net.named_modules():
         if len(name):
@@ -943,75 +639,20 @@ for round_ici in [5, 6, 7, 8, 4]:
                             / float(module.weight.nelement())
                             )
                         )
-
-    flag_test = False
-    acc_retain=[]
-    nn_model_ref.eval_all(df_expression_bool_m, ["train", "val"])
-
-
-
-
-    #print(X_eval_proba_feat[0].tolist())
-    #print(nn_model_ref.all_intermediaire_val[0].tolist())
-
-    #print(ok)
-
-    X_eval_proba_feat = nn_model_ref.all_intermediaire_val
-    Y_eval_proba = nn_model_ref.Y_val_nn_binaire
-    X_train_proba_feat = nn_model_ref.all_intermediaire
-    Y_train_proba = nn_model_ref.Y_train_nn_binaire
-
-    print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1]/16)
+    if flag2:
+        nn_model_ref.eval_all(["val"])
+    print(nn_model_ref.net.fc1.weight)
+    print(nn_model_ref.net.fc1.weight_mask)
+    print(nn_model_ref.net.fc1.weight.shape)
+    masks_imporanta = nn_model_ref.net.fc1.weight_mask.detach().int().numpy()
+    masks_imporanta_coef = nn_model_ref.net.fc1.weight.detach().numpy()
 
 
-
-    #net = Linear_bin(args, X_train_proba_feat.shape[1]).to(device)
-    net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
-
-    nn_model_ref.net = net
-    nn_model_ref.X_train_nn_binaire = X_train_proba_feat
-    nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
-    nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
-    nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
-
-    nn_model_ref.train_from_scractch("AE")
-
-    print(ok)
-
-    """
-
-    net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,
-                                                       Y_train_proba, X_eval_proba_feat, Y_eval_proba,
-                                                       bs=5000,
-                                                       epoch=20, name_ici="test")"""
-
-
-    """clf = sklearn.neural_network.MLPClassifier(hidden_layer_sizes=(1024,512))
-    clf.fit(X_train_proba_feat, Y_train_proba)
-    
-    predict_fn = lambda x: clf.predict(x)
-    print('Train accuracy: ', accuracy_score(Y_train_proba, predict_fn(X_train_proba_feat)))
-    print('Test accuracy: ', accuracy_score(Y_eval_proba, predict_fn(X_eval_proba_feat)))
-    
-    #predict_fn = lambda x: net_retrain.predict(x)[0]
-    explainer = AnchorTabular(predict_fn, [i for i in range(X_train_proba_feat.shape[1])], categorical_names={0:"R", 1:"S"}, seed=1)
-    explainer.fit(X_train_proba_feat, disc_perc=[75])
-    idx = 0
-    #X = X_eval_proba_feat[idx].reshape((1,) + X_eval_proba_feat[idx].shape)
-    #print('Prediction: ', explainer.predictor(X)[0])
-    
-    idx = 0
-    print('Prediction: ', explainer.predictor(X_eval_proba_feat[idx].reshape(1, -1))[0])
-    print('Label: ', Y_eval_proba[0])
-    
-    
-    
-    explanation = explainer.explain(X_eval_proba_feat[idx], threshold=0.95)
-    #explanation = explainer.explain(X, threshold=0.95)
-    print('Anchor: %s' % (' AND '.join(explanation.anchor)))
-    print('Precision: %.2f' % explanation.precision)
-    print('Coverage: %.2f' % explanation.coverage)
-
-    print()
-    """
-    del nn_model_ref
+"""
+all_feat = list(feature_masks.keys())
+for index_masks, masks in enumerate(masks_imporanta):
+    print(np.sum(masks))
+    for index_m_ici, m_ici in enumerate(masks):
+        if m_ici:
+            print(all_feat[index_m_ici], masks_imporanta_coef[index_masks][index_m_ici])
+"""

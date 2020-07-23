@@ -17,7 +17,7 @@ class AE_binarize(nn.Module):
     # 93 %   ->64 ->18 float
     # 96.0%  ->64 ->32 ->32 float
 
-    def __init__(self, args, input_sizze, h1 = 64, h2 = 64, h3 = 32, h4 = 128, h5 = 64, h6 = 32, h7 = 16):
+    def __init__(self, args, input_sizze, h1 = 32, h2 = 64, h3 = 32, h4 = 128, h5 = 64, h6 = 32, h7 = 16):
         super(AE_binarize, self).__init__()
         self.args = args
         self.act_q = activation_quantize_fn(a_bit=1)
@@ -51,23 +51,23 @@ class AE_binarize(nn.Module):
         self.fc6 = nn.Linear(h1, input_sizze)
         self.BN10 = nn.BatchNorm1d(input_sizze, eps=0.01, momentum=0.99)
 
-        self.fc_classifiy = nn.Linear(h1, h1)
-        self.BN_classifiy = nn.BatchNorm1d(h1, eps=0.01, momentum=0.99)
-        self.fc_classifiy1 = nn.Linear(h1, h2)
-        self.BN_classifiy1 = nn.BatchNorm1d(h2, eps=0.01, momentum=0.99)
-        self.fc_classifiy2 = nn.Linear(h2, h3)
-        self.BN_classifiy2 = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
-        self.fc_classifiy3 = nn.Linear(h3, 1)
+        self.fc_classifiy = nn.Linear(input_sizze, 1024)
+        self.BN_classifiy = nn.BatchNorm1d(1024, eps=0.01, momentum=0.99)
+        #self.fc_classifiy1 = nn.Linear(1024, 512)
+        #self.BN_classifiy1 = nn.BatchNorm1d(512, eps=0.01, momentum=0.99)
+        #self.fc_classifiy2 = nn.Linear(h2, h3)
+        #self.BN_classifiy2 = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
+        self.fc_classifiy3 = nn.Linear(1024, 1)
 
         #self.fc_classifiy2 = nn.Linear(h1, 1)
 
         #self.fc_classifiy3 = nn.Linear(h1, 1)
 
-    def classify(self):
-        x = self.embedding
+    def classify(self, x):
+        #x = self.embedding
         x = F.relu(self.BN_classifiy(self.fc_classifiy(x)))
-        x = F.relu(self.BN_classifiy1(self.fc_classifiy1(x)))
-        x = F.relu(self.BN_classifiy2(self.fc_classifiy2(x)))
+        #x = F.relu(self.BN_classifiy1(self.fc_classifiy1(x)))
+        #x = F.relu(self.BN_classifiy2(self.fc_classifiy2(x)))
         x = self.fc_classifiy3(x)
         x = torch.sigmoid(x)
         return x

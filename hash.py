@@ -1,8 +1,23 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.autograd import Function
+import torchvision.datasets as dsets
+from torchvision import transforms
+from torch.autograd import Variable
+import torchvision
+import math
+import numpy as np
+from torch.autograd import Variable
+import numpy as np
+
 import sys
 import warnings
 import random
 import sklearn
 import sklearn.neural_network
+
+from src.nn.DataLoader import DataLoader_cipher_binary
 from src.nn.models.Linear_binarized import Linear_bin
 from src.nn.models.Model_AE import AE_binarize
 from src.nn.models.Model_linear import NN_linear
@@ -461,6 +476,123 @@ cipher = init_cipher(args)
 creator_data_binary = Create_data_binary(args, cipher, rng)
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#LOAD NN
+#------------------------------------------------------------------------------------------------------
+
+def compress(train, test, model, classes=10):
+    retrievalB = list([])
+    retrievalL = list([])
+    for batch_step, (data, target) in enumerate(train):
+        #var_data = Variable(data.cuda())
+        var_data = Variable(data)
+
+        _,_, code = model(var_data)
+        retrievalB.extend(code.cpu().data.numpy())
+        retrievalL.extend(target)
+
+    queryB = list([])
+    queryL = list([])
+    for batch_step, (data, target) in enumerate(test):
+        #var_data = Variable(data.cuda())
+        var_data = Variable(data)
+        _,_, code = model(var_data)
+        queryB.extend(code.cpu().data.numpy())
+        queryL.extend(target)
+
+    retrievalB = np.array(retrievalB)
+    retrievalL = np.eye(classes)[np.array(retrievalL)]
+
+    queryB = np.array(queryB)
+    queryL = np.eye(classes)[np.array(queryL)]
+    return retrievalB, retrievalL, queryB, queryL
+
+
+def calculate_hamming(B1, B2):
+    """
+    :param B1:  vector [n]
+    :param B2:  vector [r*n]
+    :return: hamming distance [r]
+    """
+    q = B2.shape[1] # max inner product value
+    distH = 0.5 * (q - np.dot(B1, B2.transpose()))
+    return distH
+
+
+def calculate_map(qB, rB, queryL, retrievalL):
+    """
+       :param qB: {-1,+1}^{mxq} query bits
+       :param rB: {-1,+1}^{nxq} retrieval bits
+       :param queryL: {0,1}^{mxl} query label
+       :param retrievalL: {0,1}^{nxl} retrieval label
+       :return:
+    """
+    num_query = queryL.shape[0]
+    map = 0
+    for iter in range(num_query):
+        # gnd : check if exists any retrieval items with same label
+        gnd = (np.dot(queryL[iter, :], retrievalL.transpose()) > 0).astype(np.float32)
+        # tsum number of items with same label
+        tsum = np.sum(gnd)
+        if tsum == 0:
+            continue
+        # sort gnd by hamming dist
+        hamm = calculate_hamming(qB[iter, :], rB)
+        ind = np.argsort(hamm)
+        gnd = gnd[ind]
+
+        count = np.linspace(1, tsum, tsum) # [1,2, tsum]
+        tindex = np.asarray(np.where(gnd == 1)) + 1.0
+        map_ = np.mean(count / (tindex))
+        # print(map_)
+        map = map + map_
+    map = map / num_query
+    return map
+
+
+def calculate_top_map(qB, rB, queryL, retrievalL, topk):
+    """
+    :param qB: {-1,+1}^{mxq} query bits
+    :param rB: {-1,+1}^{nxq} retrieval bits
+    :param queryL: {0,1}^{mxl} query label
+    :param retrievalL: {0,1}^{nxl} retrieval label
+    :param topk:
+    :return:
+    """
+    num_query = queryL.shape[0]
+    topkmap = 0
+    for iter in range(num_query):
+        gnd = (np.dot(queryL[iter, :], retrievalL.transpose()) > 0).astype(np.float32)
+        hamm = calculate_hamming(qB[iter, :], rB)
+        ind = np.argsort(hamm)
+        gnd = gnd[ind]
+
+        tgnd = gnd[0:topk]
+        tsum = np.sum(tgnd)
+        if tsum == 0:
+            continue
+        count = np.linspace(1, tsum, tsum)
+
+        tindex = np.asarray(np.where(tgnd == 1)) + 1.0
+        topkmap_ = np.mean(count / (tindex))
+        # print(topkmap_)
+        topkmap = topkmap + topkmap_
+    topkmap = topkmap / num_query
+    return topkmap
+
+
+#------------------------------------------------------------------------------------------------------
+
+# Hyper Parameters
+num_epochs = 40
+batch_size = 16
+epoch_lr_decrease = 20
+learning_rate = 0.001
+encode_length = 16
+num_classes = 1
+
 print("---" * 100)
 print("TABLE OF TRUTH")
 
@@ -515,29 +647,7 @@ flag_test = False
 acc_retain=[]
 nn_model_ref.eval_all(df_expression_bool_m, ["train", "val"])
 
-print(nn_model_ref.net.fc1.weight)
-print(nn_model_ref.net.fc1.weight_mask)
-print(nn_model_ref.net.fc1.weight.shape)
-
-print(nn_model_ref.net.fc2.weight)
-print(nn_model_ref.net.fc2.weight_mask)
-print(nn_model_ref.net.fc2.weight.shape)
-
-masks_imporanta = nn_model_ref.net.fc2.weight_mask.detach().int().numpy()
-masks_imporanta_coef = nn_model_ref.net.fc2.weight.detach().numpy()
-
-
-
-for index_masks, masks in enumerate(masks_imporanta):
-    if np.sum(masks):
-        print(index_masks, np.sum(masks))
-        #for index_m_ici, m_ici in enumerate(masks):
-        #    if m_ici:
-        #        print(index_m_ici, masks_imporanta_coef[index_masks][index_m_ici])
-
 dictionnaire_feature_name = {}
-
-print(ok)
 
 X_eval_proba_feat = nn_model_ref.all_intermediaire_val
 Y_eval_proba = nn_model_ref.Y_val_nn_binaire
@@ -551,179 +661,154 @@ print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1] / 16)
 
 
 
+from torch.utils.data import DataLoader
 
-
-net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
-nn_model_ref.net = net
+#net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
+#nn_model_ref.net = net
 nn_model_ref.X_train_nn_binaire = X_train_proba_feat
 nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
-nn_model_ref.train_from_scractch_2("AE")
+
+data_train = DataLoader_cipher_binary(X_train_proba_feat, nn_model_ref.Y_train_nn_binaire, device)
+dataloader_train = DataLoader(data_train, batch_size=nn_model_ref.batch_size,
+                              shuffle=True, num_workers=args.num_workers)
+data_val = DataLoader_cipher_binary(nn_model_ref.X_val_nn_binaire, nn_model_ref.Y_val_nn_binaire, nn_model_ref.device)
+dataloader_val = DataLoader(data_val, batch_size=nn_model_ref.batch_size,
+                              shuffle=False, num_workers=nn_model_ref.args.num_workers)
+nn_model_ref.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
+
+#nn_model_ref.train_from_scractch_2("AE")
+
+def uniform_quantize():
+  class qfn(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, input):
+      return torch.sign(input)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+      return grad_output
+
+  return qfn().apply
 
 
-#LOAD NN
-
-"""net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
-nn_model_ref.net = net
-nn_model_ref.args.load_nn_path = "results/0.920685_bestacc.pth"
-nn_model_ref.load_nn()"""
+# new layer
 
 
-"""
-from sklearn.decomposition import MiniBatchDictionaryLearning
+class activation_quantize_fn(nn.Module):
+  def __init__(self):
+    super(activation_quantize_fn, self).__init__()
+    self.uniform_q = uniform_quantize()
 
-dico = MiniBatchDictionaryLearning(n_components=64, alpha=0.1,
-                                                  n_iter=50, batch_size=30)
-
-dico.fit(X_train_proba_feat[Y_train_proba==1])
-
-Embedding_train = dico.transform(X_train_proba_feat[Y_train_proba==1])
-print(dico.components_.shape, Embedding_train.shape)
-X_approx =np.around(np.dot(dico.components_.transpose(),  Embedding_train.transpose()))
-mses = ((X_approx.transpose()-X_train_proba_feat[Y_train_proba==1])**2).mean(axis=1) *100
-print(mses.shape)
-print(mses)
-print(np.mean(mses), np.std(mses))
-
-print()
+  def forward(self, x):
+    activation_q = self.uniform_q(x)
+    # print(np.unique(activation_q.detach().numpy()))
+    return activation_q
 
 
-Embedding_val = dico.transform(X_eval_proba_feat[Y_eval_proba==1])
-print(dico.components_.shape, Embedding_val.shape)
-X_approx =np.around(np.dot(dico.components_.transpose(),  Embedding_val.transpose()))
-mses = ((X_approx.transpose()-X_eval_proba_feat[Y_eval_proba==1])**2).mean(axis=1) *100
-print(mses.shape)
-print(mses)
-print(np.mean(mses), np.std(mses))
+class CNN(nn.Module):
+    def __init__(self, inputShape, encode_length, num_classes):
+        super(CNN, self).__init__()
+        self.act_q = activation_quantize_fn()
+        #self.alex = torchvision.models.alexnet(pretrained=True)
+        #self.alex.classifier = nn.Sequential(*list(self.alex.classifier.children())[:6])
+        self.fc_plus = nn.Linear(inputShape, encode_length)
+        self.fc = nn.Linear(encode_length, num_classes, bias=False)
 
-print()
+    def forward(self, x):
+        #x = self.alex.features(x)
+        #x = x.view(x.size(0), 256 * 6 * 6)
+        #x = self.alex.classifier(x)
+        x = self.fc_plus(x)
+        code = self.act_q(x)
+        output = self.fc(code)
 
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LinearRegression
-
-
-Embedding_train = dico.transform(X_train_proba_feat)
-Embedding_val = dico.transform(X_eval_proba_feat)
-
-clf = LinearRegression()
-clf.fit(Embedding_train, Y_train_proba)
-score = clf.score(Embedding_val, Y_eval_proba)
-
-print(score)
+        return output, x, code
 
 
-clf = RandomForestClassifier(max_depth=2, random_state=0)
-clf.fit(Embedding_train, Y_train_proba)
-score = clf.score(Embedding_val, Y_eval_proba)
-
-print(score)"""
+cnn = CNN(X_train_proba_feat.shape[1], encode_length=encode_length, num_classes=num_classes)
+# cnn.load_state_dict(torch.load('temp.pkl'))
 
 
-offset_feat = 0
-for index_col, col in enumerate(df_expression_bool_m.columns):
-    offset_feat = 15*index_col
+# Loss and Optimizer
+#criterion = nn.CrossEntropyLoss().cuda()
+criterion = nn.MSELoss()
 
-    for time in range(16):
-        if time==0:
-            expPOS = df_expression_bool_m_begin[col].values[0]
-            dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
-                                                                                                                str(
-                                                                                                                    time))
-        elif time==15:
-            expPOS = df_expression_bool_m_end[col].values[0]
-            dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
-                                                                                                                str(
-                                                                                                                    time))
-        else:
-            expPOS = df_expression_bool_m[col].values[0]
-            dictionnaire_feature_name["Feature_" + str(index_col + time + offset_feat)] = str(expPOS).replace("i",
-                                                                                                                str(
-                                                                                                                    time))
-
-#print(dictionnaire_feature_name)
-
-dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name = get_truth_table_embedding(
-    nn_model_ref)
+optimizer = torch.optim.SGD(cnn.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
 
 
+def adjust_learning_rate(optimizer, epoch):
+    lr = learning_rate * (0.1 ** (epoch // epoch_lr_decrease))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
 
 
-df2 = pd.DataFrame.from_dict(dico_tt_embeding_output, orient='index')
-df2_name = pd.DataFrame.from_dict(dico_tt_embeding_output_name, orient='index')
-output_name = ["Output"]
-df2.columns = output_name
-del dico_tt_embeding_output, dico_tt_embeding_output_name
-df3 = pd.DataFrame.from_dict(dico_tt_embeding_feature, orient='index')
-df3_name = pd.DataFrame.from_dict(dico_tt_embeding_feature_name, orient='index')
-del dico_tt_embeding_feature, dico_tt_embeding_feature_name
-nfeat = df3.shape[1] - 1
+best = 0.0
 
-index_to_del = df3[df3[0].isnull()].index.tolist()
-df_final = pd.concat([df2, df3], join="inner", axis=1)
-df_final = df_final.drop(index_to_del)
+# Train the Model
+for epoch in range(num_epochs):
+    #cnn.cuda().train()
+    cnn.train()
+    adjust_learning_rate(optimizer, epoch)
+    for i, (images, labels) in enumerate(nn_model_ref.dataloaders["train"]):
+        #images = Variable(images.cuda())
+        #labels = Variable(labels.cuda())
 
 
+        images = Variable(images)
+        labels = Variable(labels)
+
+        # Forward + Backward + Optimize
+        optimizer.zero_grad()
+        outputs, feature, _ = cnn(images)
+        loss1 = criterion(outputs.squeeze(1), labels)
+        # loss2 = F.mse_loss(torch.abs(feature), Variable(torch.ones(feature.size()).cuda()))
+        #loss2 = torch.mean(torch.abs(torch.pow(torch.abs(feature) - Variable(torch.ones(feature.size()).cuda()), 3)))
+        loss2 = torch.mean(torch.abs(torch.pow(torch.abs(feature) - Variable(torch.ones(feature.size())), 3)))
+
+        loss = loss1 + 0.1 * loss2
+        loss.backward()
+        optimizer.step()
 
 
-uniaue_ele = pd.unique(df_final[[i for i in range(nfeat)]].values.ravel('K'))
+        if (i + 1) % (len(dataloader_train) // batch_size / 2) == 0:
+            print('Epoch [%d/%d], Iter [%d/%d] Loss1: %.4f Loss2: %.4f'
+                  % (epoch + 1, num_epochs, i + 1, len(dataloader_train) // batch_size,
+                     loss1.item(), loss2.item()))
 
-print("Uniaue element", uniaue_ele)
+    # Test the Model
+    cnn.eval()  # Change model to 'eval' mode
+    correct = 0
+    total = 0
+    for images, labels in nn_model_ref.dataloaders["val"]:
+        #images = Variable(images.cuda(), volatile=True)
+        images = Variable(images, volatile=True)
+        outputs, _, _ = cnn(images)
+        preds = (outputs.squeeze(1) > nn_model_ref.t.to(nn_model_ref.device)).float().cpu() * 1
+        #_, predicted = torch.max(outputs.cpu().data, 1)
+        total += labels.size(0)
+        correct += (preds == labels).sum()
 
-for u_e in uniaue_ele:
-    if u_e is not None:
-        df_final = df_final.replace(u_e, dictionnaire_feature_name[str(u_e)])
+    print('Test Accuracy of the model: %.2f %%' % (100.0 * correct / total))
 
+    if 1.0 * correct / total > best:
+        best = 1.0 * correct / total
+        torch.save(cnn.state_dict(), 'temp.pkl')
 
+    print('best: %.2f %%' % (best * 100.0))
 
-print("SAVE ALL")
+# Save the Trained Model
+torch.save(cnn.state_dict(), 'cifar2.pkl')
 
-df_final.to_csv(path_save_model + "final_all.csv")
-conditions_or_1, conditions_or_0 = get_final_expression_0_1_version1(df_final)
+# Calculate MAP
+# cnn.load_state_dict(torch.load('temp.pkl'))
+cnn.eval()
+retrievalB, retrievalL, queryB, queryL = compress(nn_model_ref.dataloaders["train"], nn_model_ref.dataloaders["val"], cnn)
+print(np.shape(retrievalB))
+print(np.shape(retrievalL))
+print(np.shape(queryB))
+print(np.shape(queryL))
 
-dico_conditions_or_1 = collections.Counter(conditions_or_1)
-dico_conditions_or_0 = collections.Counter(conditions_or_0)
-intersection_0_1 = list(set(conditions_or_1) & set(conditions_or_0))
-
-dictionnaire_final = {}
-dico_conditions_or_1_list_ici = list(dico_conditions_or_1.keys())
-for _, key_1 in tqdm(enumerate(dico_conditions_or_1_list_ici)):
-    nbre_0 = 0
-    nbre_1 = dico_conditions_or_1[key_1]
-    if key_1 in intersection_0_1:
-        nbre_0 = dico_conditions_or_0[key_1]
-    if nbre_0<nbre_1:
-        key_1_clean = key_1
-        for time in range(16):
-            key_1_clean = key_1_clean.replace(" ", "").replace("[" + str(time) + "+1]",
-                                                               "[" + str(time + 1) + "]").replace(
-                "[" + str(time) + "-1]", "[" + str(time - 1) + "]")
-        liste_f = []
-        liste_f2 = []
-        liste_ou = key_1_clean.split("&")
-        for x in liste_ou:
-            x2 = x.replace("(", "").replace(")", "")
-            x3 = x.replace("(", "").replace(")", "").replace("~", "")
-            liste_f += x2.split("|")
-            liste_f2 += x3.split("|")
-        dico_count_var_clause = collections.Counter(liste_f)
-        list_count_var_clause = list(dico_count_var_clause.keys())
-        dico_count_var_clause_2 = collections.Counter(liste_f2)
-        list_count_var_clause_2 = list(dico_count_var_clause_2.keys())
-        exp_ici = key_1_clean.replace("[", "").replace("]", "")
-        # exp_icibis = exp_ici.replace("&", "*").replace("|", "+").replace("~", "N")
-        #exp_ici2 = parse_expr(exp_ici, evaluate=False)
-        # exp_ici3 = to_dnf(exp_ici2)
-        dictionnaire_final[key_1_clean] = [nbre_1, nbre_0, nbre_0 / nbre_1, dico_count_var_clause,
-                                           list_count_var_clause,
-                                           len(list_count_var_clause), dico_count_var_clause_2, list_count_var_clause_2,
-                                           len(list_count_var_clause_2)]#, exp_ici2]
-
-df_final = pd.DataFrame.from_dict(dictionnaire_final, orient='index')
-df_final.columns = ["Nbre_1", "Nbre_0", "Nbre_0/Nbre_1 (lower better)", "Expr count", "Expr unique", "Nbre Expr unique", "Var count", "Var unique", "Nbre Var unique"]#, "Jolie EXPRESSION"]
-print(df_final)
-df_final.to_csv(path_save_model + "classification_all.csv")
-
-
-
-
-
+print('---calculate map---')
+result = calculate_map(qB=queryB, rB=retrievalB, queryL=queryL, retrievalL=retrievalL)
+print(result)

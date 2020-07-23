@@ -320,12 +320,12 @@ class NN_Model_Ref:
             for i, data in enumerate(tk0):
                 inputs, labels = data
                 outputs = self.net(inputs.to(self.device))
-                data_ici = self.net.intermediare.detach().cpu().numpy().astype(np.uint8)
-                if phase == "train":
-                    data_train[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
-                else:
-                    data_val[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
-                del data_ici
+                #data_ici = self.net.intermediare.detach().cpu().numpy().astype(np.uint8)
+                #if phase == "train":
+                #    data_train[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
+                #else:
+                #    data_val[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
+                #del data_ici
 
                 #self.intermediaires[phase].append(self.net.intermediare.detach().cpu().numpy().astype(np.uint8))
                 #self.outputs_proba[phase].append(outputs.detach().cpu().numpy().astype(np.float16))
