@@ -523,7 +523,7 @@ print(nn_model_ref.net.fc2.weight)
 print(nn_model_ref.net.fc2.weight_mask)
 print(nn_model_ref.net.fc2.weight.shape)
 
-masks_imporanta = nn_model_ref.net.fc2.weight_mask.detach().int().numpy()
+"""masks_imporanta = nn_model_ref.net.fc2.weight_mask.detach().int().numpy()
 masks_imporanta_coef = nn_model_ref.net.fc2.weight.detach().numpy()
 
 
@@ -537,7 +537,7 @@ for index_masks, masks in enumerate(masks_imporanta):
 
 dictionnaire_feature_name = {}
 
-print(ok)
+print(ok)"""
 
 X_eval_proba_feat = nn_model_ref.all_intermediaire_val
 Y_eval_proba = nn_model_ref.Y_val_nn_binaire

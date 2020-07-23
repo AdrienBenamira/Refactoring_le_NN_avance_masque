@@ -53,11 +53,11 @@ class AE_binarize(nn.Module):
 
         self.fc_classifiy = nn.Linear(input_sizze, 1024)
         self.BN_classifiy = nn.BatchNorm1d(1024, eps=0.01, momentum=0.99)
-        #self.fc_classifiy1 = nn.Linear(1024, 512)
-        #self.BN_classifiy1 = nn.BatchNorm1d(512, eps=0.01, momentum=0.99)
+        self.fc_classifiy1 = nn.Linear(1024, 512)
+        self.BN_classifiy1 = nn.BatchNorm1d(512, eps=0.01, momentum=0.99)
         #self.fc_classifiy2 = nn.Linear(h2, h3)
         #self.BN_classifiy2 = nn.BatchNorm1d(h3, eps=0.01, momentum=0.99)
-        self.fc_classifiy3 = nn.Linear(1024, 1)
+        self.fc_classifiy3 = nn.Linear(512, 1)
 
         #self.fc_classifiy2 = nn.Linear(h1, 1)
 
@@ -66,7 +66,9 @@ class AE_binarize(nn.Module):
     def classify(self, x):
         #x = self.embedding
         x = F.relu(self.BN_classifiy(self.fc_classifiy(x)))
-        #x = F.relu(self.BN_classifiy1(self.fc_classifiy1(x)))
+        x = self.act_q(x)
+        x = F.relu(self.BN_classifiy1(self.fc_classifiy1(x)))
+        x = self.act_q(x)
         #x = F.relu(self.BN_classifiy2(self.fc_classifiy2(x)))
         x = self.fc_classifiy3(x)
         x = torch.sigmoid(x)
