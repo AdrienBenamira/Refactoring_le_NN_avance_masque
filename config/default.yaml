@@ -28,8 +28,8 @@ train_nn:
   nbre_epoch_per_stage: 3
   type_model: baseline_bin_v2        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
   a_bit: 1
-  nbre_sample_train: 10000000
-  nbre_sample_eval: 1000000
+  nbre_sample_train: 100000
+  nbre_sample_eval: 100000
   num_epochs: 100
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
