@@ -11,19 +11,19 @@ class ModelPaperBaseline_3class(nn.Module):
         super(ModelPaperBaseline_3class, self).__init__()
         self.args = args
         self.word_size = args.word_size
-        self.conv0 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel0, kernel_size=1)
-        self.BN0 = nn.BatchNorm1d(args.out_channel0, eps=0.01, momentum=0.99)
+        self.conv0 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=16, kernel_size=1)
+        self.BN0 = nn.BatchNorm1d(16, eps=0.01, momentum=0.99)
         self.layers_conv = nn.ModuleList()
         self.layers_batch = nn.ModuleList()
-        self.numLayers = args.numLayers
-        for i in range(args.numLayers - 1):
-            self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
-            self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-        self.fc1 = nn.Linear(args.out_channel1 * args.word_size, args.hidden1)  # 6*6 from image dimension
-        self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-        self.fc2 = nn.Linear(args.hidden1, args.hidden1)
-        self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-        self.fc3 = nn.Linear(args.hidden1, 3)
+        self.numLayers = 10
+        for i in range(10 - 1):
+            self.layers_conv.append(nn.Conv1d(in_channels=16, out_channels=16, kernel_size=3, padding=1))
+            self.layers_batch.append(nn.BatchNorm1d(16, eps=0.01, momentum=0.99))
+        self.fc1 = nn.Linear(16 * args.word_size, 64)  # 6*6 from image dimension
+        self.BN5 = nn.BatchNorm1d(64, eps=0.01, momentum=0.99)
+        self.fc2 = nn.Linear(64, 64)
+        self.BN6 = nn.BatchNorm1d(64, eps=0.01, momentum=0.99)
+        self.fc3 = nn.Linear(64, 3)
 
 
     def forward(self, x):

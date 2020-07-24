@@ -51,6 +51,7 @@ train_nn:
   num_workers: 2
   clip_grad_norm: 0.6
   end_after_training: Yes
+  make_data_equilibre_3class: Yes
 
 
 getting_masks:

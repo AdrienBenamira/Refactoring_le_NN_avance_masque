@@ -140,6 +140,48 @@ class Create_data_binary:
         X = self.convert_to_binary(liste_inputs);
         return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
 
+    def make_train_data_general_3class_v2(self, n, diff=(0x0040, 0)):
+        keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
+        Y = np.frombuffer(self.urandom_from_random(n), dtype=np.uint8);
+        Y = Y & 1;
+        plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
+        plain0r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
+        plain1l = plain0l ^ diff[0];
+        plain1r = plain0r ^ diff[1];
+        ind0 = np.where(Y == 0)
+        num0 = np.sum(Y == 0)
+        plain1l[Y == 0] = np.frombuffer(self.urandom_from_random(2 * num0), dtype=np.uint16);
+        plain1r[Y == 0] = np.frombuffer(self.urandom_from_random(2 * num0), dtype=np.uint16);
+
+        ks = self.cipher.expand_key(keys, 4);
+        ks2 = self.cipher.expand_key(keys, self.args.nombre_round_eval);
+        ctdata0l, ctdata0r = self.cipher.encrypt((plain0l, plain0r), ks);
+        ctdata1l, ctdata1r = self.cipher.encrypt((plain1l, plain1r), ks);
+        c0l, c0r = self.cipher.encrypt((plain0l, plain0r), ks2);
+        c1l, c1r = self.cipher.encrypt((plain1l, plain1r), ks2);
+        dL = ctdata0l ^ ctdata1l
+        dR = ctdata0r ^ ctdata1r
+        m = 0b1100000111000011
+        valL = 0b1000000100000010
+        valR = 0b1000000100000000
+        ind1 = np.where(np.logical_and((dL & m) == valL, (dR & m) == valR, Y > 0))
+        ind2 = np.where(np.logical_and(np.logical_or((dL & m) != valL, (dR & m) != valR), Y > 0))
+
+        Y[ind2] = 2
+        ctdata0l = c0l
+        ctdata0r = c0r
+        ctdata1l = c1l
+        ctdata1r = c1r
+        #  print(collections.Counter((ctdata0l^ctdata1l^ctdata0r^ctdata1r)[Y==0]).most_common(10))
+        #  print(collections.Counter((ctdata0l^ctdata1l^ctdata0r^ctdata1r)[Y==1]).most_common(10))
+        #  print(collections.Counter((ctdata0l^ctdata1l^ctdata0r^ctdata1r)[Y==2]).most_common(10))
+        num1 = np.sum(Y == 1)
+        num2 = np.sum(Y == 2)
+        print(num0, num1, num2)
+        liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
+        X = self.convert_to_binary(liste_inputs);
+        return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
+
 
     def convert_data_inputs(self, args, ctdata0l, ctdata0r, ctdata1l, ctdata1r):
         inputs_toput = []

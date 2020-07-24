@@ -72,6 +72,7 @@ parser.add_argument("--kernel_size1", default=config.train_nn.kernel_size1, type
 parser.add_argument("--num_workers", default=config.train_nn.num_workers, type=two_args_str_int)
 parser.add_argument("--clip_grad_norm", default=config.train_nn.clip_grad_norm, type=two_args_str_float)
 parser.add_argument("--end_after_training", default=config.train_nn.end_after_training, type=str2bool)
+parser.add_argument("--make_data_equilibre_3class", default=config.train_nn.make_data_equilibre_3class, type=str2bool)
 
 
 

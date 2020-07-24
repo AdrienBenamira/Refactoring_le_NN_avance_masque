@@ -65,7 +65,11 @@ class NN_Model_Ref_3class:
 
 
     def create_data(self):
-        self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_train_data_general_3class(self.args.nbre_sample_train);
+        if self.args.make_data_equilibre_3class:
+            self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_train_data_general_3class(self.args.nbre_sample_train);
+        else:
+            self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_train_data_general_3class_v2(self.args.nbre_sample_train);
+
         self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_data(
            self.args.nbre_sample_eval);
 

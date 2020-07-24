@@ -4,7 +4,11 @@ import os
 #["baseline", "deepset", "cnn_attention", "multihead"]
 
 
+command = "python3 main_3class.py --nombre_round_eval 5 --type_model baseline_3class --make_data_equilibre_3class No"
+os.system(command)
 
+command = "python3 main_3class.py --nombre_round_eval 6 --type_model baseline_3class --make_data_equilibre_3class No"
+os.system(command)
 
 command = "python3 main_3class.py --nombre_round_eval 5 --type_model baseline_3class"
 os.system(command)
@@ -12,14 +16,11 @@ os.system(command)
 command = "python3 main_3class.py --nombre_round_eval 6 --type_model baseline_3class"
 os.system(command)
 
-#command = "python3 main_3class.py --nombre_round_eval 7"
-#os.system(command)
+command = "python3 main_3class.py --nombre_round_eval 5 --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]' --type_model baseline_3class --make_data_equilibre_3class No"
+os.system(command)
 
-#command = "python3 main_3class.py --nombre_round_eval 8"
-#os.system(command)
-
-#command = "python3 main_3class.py --nombre_round_eval 4"
-#os.system(command)
+command = "python3 main_3class.py --nombre_round_eval 6 --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]' --type_model baseline_3class --make_data_equilibre_3class No"
+os.system(command)
 
 command = "python3 main_3class.py --nombre_round_eval 5 --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]' --type_model baseline_3class"
 os.system(command)
@@ -27,14 +28,6 @@ os.system(command)
 command = "python3 main_3class.py --nombre_round_eval 6 --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]' --type_model baseline_3class"
 os.system(command)
 
-#command = "python3 main_3class.py --nombre_round_eval 7 --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]'"
-#os.system(command)
-
-#command = "python3 main_3class.py --nombre_round_eval 8 --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]'"
-#os.system(command)
-
-#command = "python3 main_3class.py --nombre_round_eval 4 --inputs_type '[ctdata0l, ctdata0r, ctdata1l, ctdata1r]'"
-#os.system(command)
 
 
 
