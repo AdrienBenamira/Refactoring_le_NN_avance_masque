@@ -464,7 +464,7 @@ creator_data_binary = Create_data_binary(args, cipher, rng)
 print("---" * 100)
 print("TABLE OF TRUTH")
 
-global_sparsity = 0.4
+global_sparsity = 0.6
 df_expression_bool_m = pd.read_csv("./results/expression_bool_per_filter_POS_v2.csv")
 df_expression_bool_m_begin = pd.read_csv("./results/expression_bool_per_filter_POS_withpadbegin.csv")
 df_expression_bool_m_end = pd.read_csv("./results/expression_bool_per_filter_POS_withpadend.csv")
@@ -515,9 +515,6 @@ flag_test = False
 acc_retain=[]
 nn_model_ref.eval_all(df_expression_bool_m, ["train", "val"])
 
-print(nn_model_ref.net.fc1.weight)
-print(nn_model_ref.net.fc1.weight_mask)
-print(nn_model_ref.net.fc1.weight.shape)
 
 
 
@@ -528,13 +525,25 @@ masks_imporanta_coef = nn_model_ref.net.fc1.weight.detach().numpy()
 cpt = 0
 for index_masks, masks in enumerate(masks_imporanta):
     if np.sum(masks):
-        print(index_masks, np.sum(masks))
+        #print(index_masks, np.sum(masks))
         cpt +=1
-        if np.sum(masks)<100:
-            for index_m_ici, m_ici in enumerate(masks):
-                if m_ici:
-                    print(index_m_ici, masks_imporanta_coef[index_masks][index_m_ici])
-print(cpt)
+        #if np.sum(masks)<100:
+        #    for index_m_ici, m_ici in enumerate(masks):
+        #        if m_ici:
+        #            print(index_m_ici, masks_imporanta_coef[index_masks][index_m_ici])
+print(cpt, np.sum(masks_imporanta))
+cpt = 0
+masks_imporanta = nn_model_ref.net.fc2.weight_mask.detach().int().numpy()
+masks_imporanta_coef = nn_model_ref.net.fc2.weight.detach().numpy()
+for index_masks, masks in enumerate(masks_imporanta):
+    if np.sum(masks):
+        #print(index_masks, np.sum(masks))
+        cpt +=1
+        #if np.sum(masks)<100:
+        #    for index_m_ici, m_ici in enumerate(masks):
+        #        if m_ici:
+        #            print(index_m_ici, masks_imporanta_coef[index_masks][index_m_ici])
+print(cpt, np.sum(masks_imporanta))
 dictionnaire_feature_name = {}
 
 print(ok)

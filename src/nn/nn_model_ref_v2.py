@@ -19,6 +19,7 @@ from src.nn.models.ModelBaseline_binarized_v4 import ModelPaperBaseline_bin4
 from src.nn.models.ModelBaseline_binarized_v5 import ModelPaperBaseline_bin5
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
 from src.nn.models.Multi_Headed import Multihead
+from src.nn.models.Perceptron import Perceptron
 from src.nn.models.deepset import DTanh
 from src.utils.utils import F1_Loss
 from sklearn.preprocessing import StandardScaler
@@ -61,6 +62,8 @@ class NN_Model_Ref_v2:
     def choose_model(self):
         if self.args.type_model=="baseline":
             return ModelPaperBaseline(self.args).to(self.device)
+        if self.args.type_model=="perceptron":
+            return Perceptron(self.args).to(self.device)
         if self.args.type_model=="baseline_bin":
             return ModelPaperBaseline_bin(self.args).to(self.device)
         if self.args.type_model=="baseline_bin_v2":
@@ -473,10 +476,10 @@ class NN_Model_Ref_v2:
                     int_interest = int(col.split(" ")[1])
                     X_f = X_desir2[:, int_interest, :]
 
-                    if phase == "train":
-                        X_train_proba_feat[i*self.batch_size:(i+1)*self.batch_size,index_col, :] = X_f
-                    else:
-                        X_eval_proba_feat[i*self.batch_size:(i+1)*self.batch_size,index_col,:] = X_f
+                    #if phase == "train":
+                        #X_train_proba_feat[i*self.batch_size:(i+1)*self.batch_size,index_col, :] = X_f
+                    #else:
+                        #X_eval_proba_feat[i*self.batch_size:(i+1)*self.batch_size,index_col,:] = X_f
                     #del data_ici
 
                 #self.intermediaires[phase].append(self.net.intermediare.detach().cpu().numpy().astype(np.uint8))

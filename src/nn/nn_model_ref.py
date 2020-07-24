@@ -21,6 +21,7 @@ from src.nn.models.ModelBaseline_binarized_v5 import ModelPaperBaseline_bin5
 from src.nn.models.ModelBaseline_v2 import ModelPaperBaseline_v2
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
 from src.nn.models.Multi_Headed import Multihead
+from src.nn.models.Perceptron import Perceptron
 from src.nn.models.deepset import DTanh
 from src.utils.utils import F1_Loss
 from sklearn.preprocessing import StandardScaler
@@ -62,6 +63,8 @@ class NN_Model_Ref:
     def choose_model(self):
         if self.args.type_model=="baseline":
             return ModelPaperBaseline(self.args).to(self.device)
+        if self.args.type_model=="perceptron":
+            return Perceptron(self.args).to(self.device)
         if self.args.type_model=="baseline_3class":
             return ModelPaperBaseline_3class(self.args).to(self.device)
         if self.args.type_model=="baseline_v2":
