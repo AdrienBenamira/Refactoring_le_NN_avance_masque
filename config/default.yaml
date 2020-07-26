@@ -44,8 +44,8 @@ train_nn:
   numLayers: 2
   out_channel0: 32
   out_channel1: 32
-  hidden1: 512
-  hidden2: 512
+  hidden1: 256
+  hidden2: 256
   kernel_size0: 1
   kernel_size1: 3
   num_workers: 2
