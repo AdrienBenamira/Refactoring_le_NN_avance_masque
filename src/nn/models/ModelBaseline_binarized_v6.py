@@ -43,6 +43,9 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.BN_conv_time2 = nn.BatchNorm1d(32, eps=0.01, momentum=0.99)
         self.fc4 = nn.Linear(args.out_channel1 * (args.word_size-kstime+1), 1)
 
+        self.conv_der = nn.Conv1d(in_channels=32, out_channels=32, kernel_size=3, groups=32, padding=1)
+        self.BN_conv_der = nn.BatchNorm1d(32, eps=0.01, momentum=0.99)
+
     def forward(self, x):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
         self.x_input = x
@@ -61,6 +64,7 @@ class ModelPaperBaseline_bin6(nn.Module):
 
         x = F.relu(self.BN_conv_time2(self.conv_time2(x)))
         x = self.act_q(x)
+        x = F.relu(self.BN_conv_der(self.conv_der(x)))
 
 
         #print(x.shape)
