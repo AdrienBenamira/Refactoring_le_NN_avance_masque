@@ -25,13 +25,13 @@ class ModelPaperBaseline_bin6(nn.Module):
         for i in range(args.numLayers - 1):
             if i ==0:
                 self.layers_conv.append(
-                    nn.Conv1d(in_channels=args.out_channel0, out_channels=args.out_channel1, kernel_size=3, padding =1))
+                    nn.Conv1d(in_channels=args.out_channel0, out_channels=args.out_channel1, kernel_size=3))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
             else:
                 self.layers_conv.append(
                 nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-        self.fc1 = nn.Linear(args.out_channel1 * (args.word_size-kstime+1), args.hidden1)  # 6*6 from image dimension
+        self.fc1 = nn.Linear(args.out_channel1 * (args.word_size-kstime-1), args.hidden1)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1, args.hidden2)
         self.BN6 = nn.BatchNorm1d(args.hidden2, eps=0.01, momentum=0.99)
@@ -51,14 +51,14 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.x_input = x
         #x = F.relu(self.BNm1(self.convm1(x)))
         x = F.relu(self.BN0(self.conv0(x)))
-        x = self.act_q(x)
+        #x = self.act_q(x)
         shortcut = x.clone()
         self.shorcut = shortcut
         for i in range(len(self.layers_conv)):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
             x = F.relu(x)
-            x = x + shortcut
+            #x = x + shortcut
         x = self.act_q(x)
 
 
