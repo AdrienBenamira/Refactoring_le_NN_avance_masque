@@ -39,8 +39,8 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.conv_time = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=1)
         self.BN_conv_time = nn.BatchNorm1d(16, eps=0.01, momentum=0.99)
 
-        self.conv_time2 = nn.Conv1d(in_channels=32, out_channels=32, kernel_size=kstime, groups=32)
-        self.BN_conv_time2 = nn.BatchNorm1d(32, eps=0.01, momentum=0.99)
+        self.conv_time2 = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=kstime, groups=args.out_channel1)
+        self.BN_conv_time2 = nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99)
         self.fc4 = nn.Linear(args.out_channel1 * (args.word_size-kstime+1), 1)
 
         self.conv_der = nn.Conv1d(in_channels=32, out_channels=32, kernel_size=3, groups=32, padding=1)
