@@ -31,7 +31,7 @@ class ModelPaperBaseline_bin6(nn.Module):
                 self.layers_conv.append(
                 nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
-        self.fc1 = nn.Linear(args.out_channel1 * (args.word_size-kstime), args.hidden1)  # 6*6 from image dimension
+        self.fc1 = nn.Linear(args.out_channel1 * (args.word_size-kstime+1), args.hidden1)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1, args.hidden2)
         self.BN6 = nn.BatchNorm1d(args.hidden2, eps=0.01, momentum=0.99)
@@ -63,8 +63,8 @@ class ModelPaperBaseline_bin6(nn.Module):
 
 
         x = F.relu(self.BN_conv_time2(self.conv_time2(x)))
-        x = self.act_q(x)
-        x = F.relu(self.BN_conv_der(self.conv_der(x)))
+        #x = self.act_q(x)
+        #x = F.relu(self.BN_conv_der(self.conv_der(x)))
 
 
         #print(x.shape)
@@ -75,10 +75,10 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.classify = x
         x = x.reshape(x.size(0), -1)
         self.intermediare = x.clone()
-        #x = F.relu(self.BN5(self.fc1(x)))
-        #x = F.relu(self.BN6(self.fc2(x)))
-        #x = self.fc3(x)
-        x = self.fc4(x)
+        x = F.relu(self.BN5(self.fc1(x)))
+        x = F.relu(self.BN6(self.fc2(x)))
+        x = self.fc3(x)
+        #x = self.fc4(x)
         x = torch.sigmoid(x)
         return x
 
