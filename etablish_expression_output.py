@@ -1,3 +1,4 @@
+import itertools
 import sys
 import warnings
 import random
@@ -527,6 +528,7 @@ parser.add_argument("--numLayers", default=config.train_nn.numLayers, type=two_a
 parser.add_argument("--out_channel0", default=config.train_nn.out_channel0, type=two_args_str_int)
 parser.add_argument("--out_channel1", default=config.train_nn.out_channel1, type=two_args_str_int)
 parser.add_argument("--hidden1", default=config.train_nn.hidden1, type=two_args_str_int)
+parser.add_argument("--hidden2", default=config.train_nn.hidden1, type=two_args_str_int)
 parser.add_argument("--kernel_size0", default=config.train_nn.kernel_size0, type=two_args_str_int)
 parser.add_argument("--kernel_size1", default=config.train_nn.kernel_size1, type=two_args_str_int)
 parser.add_argument("--num_workers", default=config.train_nn.num_workers, type=two_args_str_int)
@@ -594,8 +596,6 @@ args.logs_tensorboard = args.logs_tensorboard.replace("test", "output_table_of_t
 #
 print("---" * 100)
 writer, device, rng, path_save_model, path_save_model_train, name_input = init_all_for_run(args)
-
-
 print("LOAD CIPHER")
 print()
 cipher = init_cipher(args)
@@ -605,395 +605,106 @@ creator_data_binary = Create_data_binary(args, cipher, rng)
 print("---" * 100)
 print("TABLE OF TRUTH")
 
+
+
+
+
+def get_all_masks_from_1clausefilter_allclauseinput(str_input, str_filter, mask_filtre):
+    all_clause_str_input = str_input.split("|")
+    dico_clause = {}
+    all_element_str_filter = str_filter.split("&")
+    dico_element = {}
+    for index_c, cl in enumerate(all_clause_str_input):
+        cl_clean = cl.replace("(", "").replace(")", "").replace(" ", "").replace("&", " & ")
+        cl_clean_inv = ("~" + cl_clean.replace(" & ", " & ~")).replace("~~", "")
+        dico_clause[index_c] = [cl_clean, cl_clean_inv]
+    for index_f, fl in enumerate(all_element_str_filter):
+        fl_clean = fl.replace("(", "").replace(")", "").replace(" ", "")
+        index_fl_ici = fl_clean.split("[")[-1].split("]")[0]
+        flag_inv = '~' in fl_clean
+        dico_element[index_f] = [fl_clean, index_fl_ici, flag_inv]
+    nbre_clause_input = len(all_clause_str_input)
+    nbre_element_filter = len(all_element_str_filter)
+    lst_all_possible = list(itertools.product(range(nbre_clause_input), repeat=nbre_element_filter))
+    for possible_index, possible in enumerate(lst_all_possible):
+        mask = ""
+        for index_possition, value_position in enumerate(possible):
+            el = dico_element[index_possition]
+            cl = dico_clause[value_position]
+            if el[-1]:
+                mask += cl[1] + " & "
+            else:
+                mask += cl[0] + " & "
+            mask = mask.replace("i", el[1])
+        mask = mask[:-2]
+        for i in range(9):
+            mask = mask.replace(str(i)+"+1", str(i+1)).replace(str(i)+"-1", str(i-1)).replace("+0", "")
+        mask_filtre.append(mask)
+    return mask_filtre
+
+
+exp_filter = pd.read_csv("/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/table_of_truth_v2/speck/5/DL_DV_V0_V1/2020_07_26_16_51_52_257447/expression_bool_per_filter.csv")
+exp_filter_2eme_couche = pd.read_csv("/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/table_of_truth_v2/speck/5/DL_DV_V0_V1/2020_07_26_16_51_52_257447/expression_bool_per_filter_2emecouche.csv")
+
+
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 nn_model_ref.load_nn()
 
 
-prunning_model(nn_model_ref, global_sparsity = 0.9, flag2 = True, phases = ["val"])
+flag2 = True
+acc_retain=[]
+global_sparsity = 0.2
+parameters_to_prune = []
+for name, module in nn_model_ref.net.named_modules():
+    if len(name):
+        if name not in ["layers_batch", "layers_conv"]:
+            flag = True
+            for layer_forbidden in args.layers_NOT_to_prune:
+                if layer_forbidden in name:
+                    flag = False
+            if flag:
+                parameters_to_prune.append((module, 'weight'))
+prune.global_unstructured(
+    parameters_to_prune,
+    pruning_method=prune.L1Unstructured,
+    amount=global_sparsity,
+)
+tot_sparsity = 0
+tot_weight = 0
+for name, module in nn_model_ref.net.named_modules():
+    if len(name):
+        if name not in ["layers_batch", "layers_conv"]:
+            flag = True
+            for layer_forbidden in args.layers_NOT_to_prune:
+                if layer_forbidden in name:
+                    flag = False
+            if flag:
+                tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
+                tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
 
-t = nn_model_ref.net.fc1.weight_mask.sum(0).detach().cpu().numpy().tolist()
-index_filter_time_keep = [i for i, x in enumerate(t) if x!=0.0]
-liste_feature = []
-for j in range(args.out_channel0):
-    liste_feature += ["F"+str(j)+"_" + str(i) for i in range(16)]
-liste_feature_importance = [liste_feature[q] for q in index_filter_time_keep]
-print("FEATURES IMPORTANTES: ", liste_feature_importance)
-print("NBRE FEATURES IMPORTANTES: ", len(liste_feature_importance))
-dico_important = {}
-for filter_ici in liste_feature_importance:
-    filter_ici_key = filter_ici.split("_")[0]
-    time = filter_ici.split("_")[1]
-    if filter_ici_key in list(dico_important.keys()):
-        dico_important[filter_ici_key].append(time)
-    else:
-        dico_important[filter_ici_key] = [time]
-
-print()
-print("GET TT FILTERS")
-print()
-dico_tt_feature_input, dico_tt_feature_input_name = get_truth_table_input_feature(nn_model_ref)
-df = pd.DataFrame.from_dict(dico_tt_feature_input)
-df_name = pd.DataFrame.from_dict(dico_tt_feature_input_name)
-df2 = df.T
-df2_name = df_name.T
-
-#dictionnaire_feature_name = get_expression_filter(df2, df2_name)
-
-#df_conversion_filter_feature = pd.DataFrame.from_dict(dictionnaire_feature_name)
-#df_conversion_filter_feature.to_csv(path_save_model + "df_conversion_filter_feature.csv")
-
-dictionnaire_feature_name = pd.read_csv("/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/output_table_of_truth_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_07_02_12_27_12_528120/df_conversion_filter_feature.csv").to_dict()
-
-print(dictionnaire_feature_name)
-
-del df2_name, df2, df, dico_tt_feature_input, dico_tt_feature_input_name
-
-
-
-#-----------------------------------------------------------------------------------------------------------------------------
-
-print("GET TT EMBEDDING")
-print()
-dico_tt_embeding_output, dico_tt_embeding_output_name, dico_tt_embeding_feature, dico_tt_embeding_feature_name = get_truth_table_embedding(nn_model_ref)
-
-
-df2 = pd.DataFrame.from_dict(dico_tt_embeding_output, orient='index')
-df2_name = pd.DataFrame.from_dict(dico_tt_embeding_output_name, orient='index')
-output_name = ["Output"]
-df2.columns = output_name
-del dico_tt_embeding_output, dico_tt_embeding_output_name
-df3 = pd.DataFrame.from_dict(dico_tt_embeding_feature, orient='index')
-df3_name = pd.DataFrame.from_dict(dico_tt_embeding_feature_name, orient='index')
-del dico_tt_embeding_feature, dico_tt_embeding_feature_name
-nfeat = df3.shape[1]-1
-
-
-index_to_del = df3[df3[0].isnull()].index.tolist()
-df_final = pd.concat([df2, df3], join="inner", axis = 1)
-df_final = df_final.drop(index_to_del)
-
-uniaue_ele = pd.unique(df_final[[i for i in range(nfeat)]].values.ravel('K'))
-print(uniaue_ele)
-for u_e in uniaue_ele:
-    if u_e is not None:
-        df_final= df_final.replace(u_e, dictionnaire_feature_name[str(u_e)][0])
-
-print("SAVE ALL")
-
-df_final.to_csv(path_save_model + "final_all.csv")
-conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
-classification_final = {"SPECK":conditions_or_1, "RANDOM":conditions_or_0}
-df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
-df_classification_final.to_csv(path_save_model + "classification_all.csv")
-
-print("SAVE DUPPLICATES")
-
-
-df_final = df_final.drop_duplicates(subset=['Output']+[i for i in range(nfeat)])
-df_final.to_csv(path_save_model + "final_with_duplicates.csv")
-conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
-classification_final = {"SPECK":conditions_or_1, "RANDOM":conditions_or_0}
-df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
-df_classification_final.to_csv(path_save_model + "classification_with_duplicates.csv")
-
-print("SAVE FINAL")
-
-df_final = df_final.drop_duplicates(subset=[i for i in range(nfeat)], keep= False)
-df_final.to_csv(path_save_model + "final.csv")
-conditions_or_1, conditions_or_0 = get_final_expression_0_1(df_final)
-classification_final = {"SPECK":conditions_or_1, "RANDOM":conditions_or_0}
-df_classification_final = pd.DataFrame.from_dict(classification_final, orient='index').T
-df_classification_final.to_csv(path_save_model + "classification.csv")
-
-print(ok)
-
-
-
-
-
-#-----------------------------------------------------------------------------------------------------------------------------
-
-df2 = pd.DataFrame.from_dict(dico_tt_embeding_output, orient='index')
-df2_name = pd.DataFrame.from_dict(dico_tt_embeding_output_name, orient='index')
-#df2 = df.T
-#df2_name = df_name.T
-
-embedding_size = 16
-output_name = ["Output"]
-input_name = ["E_"  + str(i) for i in range(embedding_size)]
-input_name_all = input_name
-
-
-df2.columns = output_name
-df2_name.columns=input_name_all
-df_m_f = pd.concat([df2_name,df2], axis = 1)
-df_m_f.to_csv(path_save_model + "table_of_truth_embedding_output.csv")
-df_m_f= df_m_f.reset_index()
-print (df_m_f.head(5))
-
-
-
-
-dictionnaire_res_fin_expression = {}
-dictionnaire_res_fin_expression_POS = {}
-dictionnaire_perfiler = {}
-dictionnaire_perfiler_POS = {}
-doublon = []
-expPOS_tot =[]
-cpteur = 0
-dictionnaire_feature_name = {}
-
-
-for index_f in range(len(output_name)):
-    print(output_name[index_f])
-    #if "F"+str(index_f) in list(dico_important.keys()):
-    index_intere = df_m_f.index[df_m_f[output_name[index_f]] == 1].tolist()
-    print()
-    if len(index_intere) ==0:
-        print("Empty")
-    else:
-        dictionnaire_res_fin_expression[output_name[index_f]] = []
-        dictionnaire_res_fin_expression_POS[output_name[index_f]] = []
-        condtion_filter = []
-        for col in input_name:
-            s = df_m_f[col].values
-            my_dict = {"0": 0, "1": 1, 0: 0, 1: 1}
-            s2 = np.array([my_dict[zi] for zi in s])
-            condtion_filter.append(s2[index_intere])
-        condtion_filter2 = np.array(condtion_filter).transpose()
-        condtion_filter3 = [x.tolist() for x in condtion_filter2]
-        assert len(condtion_filter3) == len(index_intere)
-        assert len(condtion_filter3[0]) == len(input_name)
-        symbols_str = ""
-        for input_name_ici in input_name:
-            symbols_str += input_name_ici + ", "
-        a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p = symbols(symbols_str[:-2])
-        minterms = condtion_filter3
-        exp =SOPform([a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p], minterms)
-        if exp in doublon:
-            print(exp, "DOUBLON")
-        elif str(exp) == 'True':
-            print(exp, "True")
-        else:
-            print(exp)
-            doublon.append(exp)
-            dictionnaire_res_fin_expression[output_name[index_f]].append(exp)
-            expV2 = str(exp).split(" | ")
-            dictionnaire_perfiler[output_name[index_f]] = [str(exp)] + [x.replace("(", "").replace(")", "") for x in expV2]
-            print()
-            expPOS = POSform([w1, x1, y1, w2, x2, y2, w3, x3, y3], minterms)
-            print(expPOS)
-            expPOS_tot.append(str(expPOS))
-            dictionnaire_res_fin_expression_POS[output_name[index_f]].append(expPOS)
-            expV2POS = str(expPOS).split(" & ")
-            dictionnaire_perfiler_POS[output_name[index_f]] = [str(expV2POS)] + [x.replace("(", "").replace(")", "") for x in expV2POS]
-            #dictionnaire_res_fin_expression["Filter " + str(index_f)].append(exp)
-    print()
-
-
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler, orient='index').T
-row = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_feature.csv")
-df_row = pd.DataFrame(row)
-df_row.to_csv(path_save_model + "clause_unique_feature.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_feature.csv")
-
-
-df_filtre = pd.DataFrame.from_dict(dictionnaire_perfiler_POS, orient='index').T
-row3 = pd.unique(df_filtre[[index_f for index_f in df_filtre.columns]].values.ravel('K'))
-df_filtre.to_csv(path_save_model + "dictionnaire_perfiler_POS_feature.csv")
-df_row = pd.DataFrame(row3)
-df_row.to_csv(path_save_model + "clause_unique_POS_feature.csv")
-df_expression_bool_m = pd.DataFrame.from_dict(dictionnaire_res_fin_expression_POS, orient='index').T
-df_expression_bool_m.to_csv(path_save_model + "expression_bool_per_filter_POS_feature.csv")
-
-df_expression_bool = pd.DataFrame.from_dict(dico_important, orient='index').T
-df_expression_bool.to_csv(path_save_model + "time_important_per_filter_feature.csv")
-
-print(ok)
-
-all_masksPOS = [[], [], [],[], [], []]
-for exp_iter in expPOS_tot:
-    expression = exp_iter.split("&")
-    M = np.zeros((6, 16), dtype=np.uint8)
-    #for iterici in range(2*len(expression)):
-    M2 = DPLL(expression, M)
-    for offset in range(15):
-        for index_m_f, m_f in enumerate(M2):
-            liste_ici = m_f.tolist()
-            result = int("".join(str(i) for i in liste_ici), 2)
-            all_masksPOS[index_m_f].append(result>>offset)
-
-print("NBRE DE MASKS CREE:", len(all_masksPOS[0]))
-
-with open(path_save_model + "masks_allPOS.txt", "w") as file:
-    for i in range(6):
-        file.write(str(all_masksPOS[i]))
-        file.write("\n")
-
-
-row_v2 = []
-for r in row:
-    if r is not None:
-        if "(" not in r:
-            row_v2.append(r)
-
-print("NBRE DE CLAUSE UNIQUE:", len(row_v2))
-all_masks = [[], [], [],[], [], []]
-for clause_ici in row_v2:
-    element_clause = clause_ici.split("&")
-    for index_mask in range(1,15):
-        M = np.zeros((6,16), dtype = np.uint8)
-        for el_c in element_clause:
-            if "V0" in el_c:
-                if "~" in el_c:
-                    F = 4
-                else:
-                    F = 1
-            elif "V1" in el_c:
-                if "~" in el_c:
-                    F = 5
-                else:
-                    F = 2
-            elif "DL" in el_c:
-                if "~" in el_c:
-                    F = 3
-                else:
-                    F = 0
-            if "[i]" in el_c:
-                offset = 0
-            elif "[i+1]" in el_c:
-                offset = 1
-            elif "[i-1]" in el_c:
-                offset = -1
-            M[F][index_mask + offset] = 1
-
-        for index_m_f, m_f in enumerate(M):
-            liste_ici = m_f.tolist()
-            result = int("".join(str(i) for i in liste_ici), 2)
-            all_masks[index_m_f].append(result)
-
-print("NBRE DE MASKS CREE:", len(all_masks[0]))
-
-with open(path_save_model + "masks_all.txt", "w") as file:
-    for i in range(6):
-        file.write(str(all_masks[i]))
-        file.write("\n")
-
-
-
-del nn_model_ref
-
-for round_ici in [5, 6, 7, 8, 4]:
-
-    args.nombre_round_eval = round_ici
-
-    nn_model_ref = NN_Model_Ref_v2(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-    nn_model_ref.load_nn()
-
-    parameters_to_prune = []
-    for name, module in nn_model_ref.net.named_modules():
-        if len(name):
-            if name not in ["layers_batch", "layers_conv"]:
-                flag = True
-                for layer_forbidden in args.layers_NOT_to_prune:
-                    if layer_forbidden in name:
-                        flag = False
-                if flag:
-                    parameters_to_prune.append((module, 'weight'))
-    prune.global_unstructured(
-        parameters_to_prune,
-        pruning_method=prune.L1Unstructured,
-        amount=global_sparsity,
-    )
-    tot_sparsity = 0
-    tot_weight = 0
-    for name, module in nn_model_ref.net.named_modules():
-        if len(name):
-            if name not in ["layers_batch", "layers_conv"]:
-                flag = True
-                for layer_forbidden in args.layers_NOT_to_prune:
-                    if layer_forbidden in name:
-                        flag = False
-                if flag:
-                    tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
-                    tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
-
-                    if args.logs_layers:
-                        print(
-                        "Sparsity in {}.weight: {:.2f}%".format(str(name),
-                            100. * float(torch.sum(module.weight == 0))
-                            / float(module.weight.nelement())
-                            )
+                if args.logs_layers:
+                    print(
+                    "Sparsity in {}.weight: {:.2f}%".format(str(name),
+                        100. * float(torch.sum(module.weight == 0))
+                        / float(module.weight.nelement())
                         )
+                    )
+if flag2:
+    nn_model_ref.eval_all(["val"])
 
-    flag_test = False
-    acc_retain=[]
-    nn_model_ref.eval_all(df_expression_bool_m, ["train", "val"])
+print(nn_model_ref.net.fc1.weight)
+print(nn_model_ref.net.fc1.weight_mask)
+print(nn_model_ref.net.fc1.weight_mask.shape)
 
+all_masks = {}
+for filter in (exp_filter_2eme_couche.columns):
+    if "Filter" in filter:
+        print()
+        all_masks[filter] = []
+        str_input = exp_filter[filter].values[0]
+        str_filter_all = exp_filter_2eme_couche[filter].values[0]
+        str_filter_all_lst = str_filter_all.split("|")
+        for str_filter in str_filter_all_lst:
+            all_masks[filter] = get_all_masks_from_1clausefilter_allclauseinput(str_input, str_filter, all_masks[filter])
 
-
-
-    #print(X_eval_proba_feat[0].tolist())
-    #print(nn_model_ref.all_intermediaire_val[0].tolist())
-
-    #print(ok)
-
-    X_eval_proba_feat = nn_model_ref.all_intermediaire_val
-    Y_eval_proba = nn_model_ref.Y_val_nn_binaire
-    X_train_proba_feat = nn_model_ref.all_intermediaire
-    Y_train_proba = nn_model_ref.Y_train_nn_binaire
-
-    print(X_train_proba_feat.shape[1], X_train_proba_feat.shape[1]/16)
-
-
-
-    #net = Linear_bin(args, X_train_proba_feat.shape[1]).to(device)
-    net = AE_binarize(args, X_train_proba_feat.shape[1]).to(device)
-
-    nn_model_ref.net = net
-    nn_model_ref.X_train_nn_binaire = X_train_proba_feat
-    nn_model_ref.X_val_nn_binaire = X_eval_proba_feat
-    nn_model_ref.Y_train_nn_binaire = X_train_proba_feat
-    nn_model_ref.Y_val_nn_binaire = X_eval_proba_feat
-
-    nn_model_ref.train_from_scractch("AE")
-    """
-
-    net_retrain, h = train_speck_distinguisher(X_train_proba_feat.shape[1], X_train_proba_feat,
-                                                       Y_train_proba, X_eval_proba_feat, Y_eval_proba,
-                                                       bs=5000,
-                                                       epoch=20, name_ici="test")"""
-
-
-    """clf = sklearn.neural_network.MLPClassifier(hidden_layer_sizes=(1024,512))
-    clf.fit(X_train_proba_feat, Y_train_proba)
-    
-    predict_fn = lambda x: clf.predict(x)
-    print('Train accuracy: ', accuracy_score(Y_train_proba, predict_fn(X_train_proba_feat)))
-    print('Test accuracy: ', accuracy_score(Y_eval_proba, predict_fn(X_eval_proba_feat)))
-    
-    #predict_fn = lambda x: net_retrain.predict(x)[0]
-    explainer = AnchorTabular(predict_fn, [i for i in range(X_train_proba_feat.shape[1])], categorical_names={0:"R", 1:"S"}, seed=1)
-    explainer.fit(X_train_proba_feat, disc_perc=[75])
-    idx = 0
-    #X = X_eval_proba_feat[idx].reshape((1,) + X_eval_proba_feat[idx].shape)
-    #print('Prediction: ', explainer.predictor(X)[0])
-    
-    idx = 0
-    print('Prediction: ', explainer.predictor(X_eval_proba_feat[idx].reshape(1, -1))[0])
-    print('Label: ', Y_eval_proba[0])
-    
-    
-    
-    explanation = explainer.explain(X_eval_proba_feat[idx], threshold=0.95)
-    #explanation = explainer.explain(X, threshold=0.95)
-    print('Anchor: %s' % (' AND '.join(explanation.anchor)))
-    print('Precision: %.2f' % explanation.precision)
-    print('Coverage: %.2f' % explanation.coverage)
-
-    print()
-    """
-    del nn_model_ref
+        print(filter," nbre de masks ", len(all_masks[filter]))
