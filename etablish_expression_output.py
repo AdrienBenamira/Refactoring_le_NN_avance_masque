@@ -37,6 +37,10 @@ from pickle import dump
 #NN
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
+
+from matplotlib import colors
+
 def get_final_expression_0_1(df_final):
     df_final_1 = df_final[df_final['Output'] == 1].values
     conditions_or_1 = []
@@ -609,42 +613,122 @@ print("TABLE OF TRUTH")
 
 
 
-def get_all_masks_from_1clausefilter_allclauseinput(str_input, str_filter, mask_filtre):
-    all_clause_str_input = str_input.split("|")
-    dico_clause = {}
+def get_all_masks_from_1clausefilter_allclauseinput(dico_clause, nbre_clause_input, str_filter, mask_filtre, impossibillty):
     all_element_str_filter = str_filter.split("&")
     dico_element = {}
-    for index_c, cl in enumerate(all_clause_str_input):
-        cl_clean = cl.replace("(", "").replace(")", "").replace(" ", "").replace("&", " & ")
-        cl_clean_inv = ("~" + cl_clean.replace(" & ", " & ~")).replace("~~", "")
-        dico_clause[index_c] = [cl_clean, cl_clean_inv]
     for index_f, fl in enumerate(all_element_str_filter):
         fl_clean = fl.replace("(", "").replace(")", "").replace(" ", "")
         index_fl_ici = fl_clean.split("[")[-1].split("]")[0]
         flag_inv = '~' in fl_clean
         dico_element[index_f] = [fl_clean, index_fl_ici, flag_inv]
-    nbre_clause_input = len(all_clause_str_input)
     nbre_element_filter = len(all_element_str_filter)
+    lst_all_possible0 = list(itertools.combinations(range(len(all_element_str_filter)), 2))
+
+
+    dico_all_possible = {}
+    for (index_el1, index_el2) in lst_all_possible0:
+        flag1 = dico_element[index_el1][2]
+        flag2 = dico_element[index_el2][2]
+        flag3 = False
+        #if flag1 and flag2:
+        #    flag3 = True
+        if (not flag1) and (not flag2):
+            flag3 = True
+        d1 = dico_element[index_el1][1]
+        d2 = dico_element[index_el2][1]
+        if len(d1) == 1:
+            d1_int = 0
+        else:
+            if "-" in d1:
+                d1_int = -1 * int(d1.replace("l-", "").replace(" ", ""))
+            else:
+                d1_int = int(d1.replace("l+", "").replace(" ", ""))
+        if len(d2) == 1:
+            d2_int = 0
+        else:
+            if "-" in d2:
+                d2_int = -1 * int(d2.replace("l-", "").replace(" ", ""))
+            else:
+                d2_int = int(d2.replace("l+", "").replace(" ", ""))
+        delta = max(abs(d2_int) - abs(d1_int), abs(d1_int) - abs(d2_int))
+        if delta>2:
+            flag3=False
+        dico_all_possible[(index_el1, index_el2)] = [delta, flag3]
+
+
+
     lst_all_possible = list(itertools.product(range(nbre_clause_input), repeat=nbre_element_filter))
-    for possible_index, possible in enumerate(lst_all_possible):
-        mask = ""
+
+    lst_all_possible_f = lst_all_possible.copy()
+
+
+
+    #filtre possibilites:
+    #print(dico_all_possible)
+    #print(impossibillty)
+
+
+    #print(len(dico_all_possible))
+
+    for pos in list(dico_all_possible.keys()):
+        if dico_all_possible[pos][1]:
+            delta = dico_all_possible[pos][0]
+            for pos2 in list(impossibillty.keys()):
+                flag_impossible = delta in impossibillty[pos2]['oppose:non']
+                #print("il faut suppremer de possibilites tous les proposetions avec ", pos2, "en posiotion", pos)
+                if flag_impossible:
+                    lst_all_possible_f = [tuplet for tuplet in lst_all_possible_f if ((tuplet[pos[0]] != pos2[0]) and (tuplet[pos[1]] != pos2[1]))]
+
+    #print(len(lst_all_possible_f))
+
+
+    for possible_index, possible in enumerate(lst_all_possible_f):
+        mask = [""]
         for index_possition, value_position in enumerate(possible):
             el = dico_element[index_possition]
             cl = dico_clause[value_position]
+            mask2 = []
             if el[-1]:
-                mask += cl[1] + " & "
+                for m in mask:
+                    for ccc in cl[1].split(" | "):
+                        m2 = m
+                        m2 += ccc + " & "
+                        mask2.append(m2)
+
             else:
-                mask += cl[0] + " & "
-            mask = mask.replace("i", el[1])
-        mask = mask[:-2]
+                for m in mask:
+                    m += cl[0] + " & "
+                mask2.append(m)
+            mask = mask2
+            for m in range(len(mask)):
+                mask[m] = mask[m].replace("i", el[1])
+        for m in range(len(mask)):
+            mask[m] = mask[m][:-3]
         for i in range(9):
-            mask = mask.replace(str(i)+"+1", str(i+1)).replace(str(i)+"-1", str(i-1)).replace("+0", "")
-        mask_filtre.append(mask)
+            for m in range(len(mask)):
+                mask[m] = mask[m].replace(str(i)+"+1", str(i+1)).replace(str(i)+"-1", str(i-1)).replace("+0", "")
+
+
+        #sanity check
+        for m in range(len(mask)):
+            mask_el = np.array(mask[m].split(" & "))
+            mask_unique_el = np.unique(mask_el)
+            mask_unique_el_pos = [el for el in mask_unique_el if "~" not in el]
+            mask_unique_el_neg = [el.replace("~", "") for el in mask_unique_el if "~" in el]
+            intersection = np.intersect1d(mask_unique_el_pos, mask_unique_el_neg)
+            if (len(intersection)==0):
+                mask_filtre.append(mask[m])
+
+
+
+
+
+
     return mask_filtre
 
 
-exp_filter = pd.read_csv("/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/table_of_truth_v2/speck/5/DL_DV_V0_V1/2020_07_26_16_51_52_257447/expression_bool_per_filter.csv")
-exp_filter_2eme_couche = pd.read_csv("/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/table_of_truth_v2/speck/5/DL_DV_V0_V1/2020_07_26_16_51_52_257447/expression_bool_per_filter_2emecouche.csv")
+exp_filter = pd.read_csv("/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/table_of_truth_v2/speck/5/DL_DV_V0_V1/2020_07_27_12_02_34_340448/expression_bool_per_filter.csv")
+exp_filter_2eme_couche = pd.read_csv("/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/table_of_truth_v2/speck/5/DL_DV_V0_V1/2020_07_27_12_02_34_340448/expression_bool_per_filter_2emecouche.csv")
 
 
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
@@ -692,19 +776,207 @@ for name, module in nn_model_ref.net.named_modules():
 if flag2:
     nn_model_ref.eval_all(["val"])
 
-print(nn_model_ref.net.fc1.weight)
-print(nn_model_ref.net.fc1.weight_mask)
-print(nn_model_ref.net.fc1.weight_mask.shape)
+
 
 all_masks = {}
-for filter in (exp_filter_2eme_couche.columns):
+
+
+def get_possible(all_clause_str_input):
+    #print(all_clause_str_input)
+    dico_allclause = {}
+    for c in all_clause_str_input:
+        dico_allclause[c] = {}
+        all_el = c.replace("(","").replace(")","").replace(" ","").split("&")
+        elemen_pos=[]
+        elemen_neg = []
+        position_elemen_pos = {}
+        position_elemen_neg = {}
+        for el in all_el:
+            index_fl_ici = el.split("[")[-1].split("]")[0]
+            value_fl_ici = el.split("[")[0]
+            if '~' in el:
+                elemen_neg.append(value_fl_ici.replace("~", ""))
+                if value_fl_ici.replace("~", "") in list(position_elemen_neg.keys()):
+                    position_elemen_neg[value_fl_ici.replace("~", "")].append(index_fl_ici)
+                else:
+                    position_elemen_neg[value_fl_ici.replace("~", "")] = [index_fl_ici]
+            else:
+                elemen_pos.append(value_fl_ici)
+                if value_fl_ici in list(position_elemen_pos.keys()):
+                    position_elemen_pos[value_fl_ici].append(index_fl_ici)
+                else:
+                    position_elemen_pos[value_fl_ici] = [index_fl_ici]
+        dico_allclause[c]["elemen_pos"] = elemen_pos
+        dico_allclause[c]["elemen_neg"] = elemen_neg
+        dico_allclause[c]["position_elemen_pos"] = position_elemen_pos
+        dico_allclause[c]["position_elemen_neg"] = position_elemen_neg
+
+    impossibility = {}
+    for i_c1, c1 in enumerate(all_clause_str_input):
+        for i_c2, c2 in enumerate(all_clause_str_input):
+            if i_c2> i_c1:
+                impossibility[(i_c1, i_c2)] = {}
+                elemen_pos_c1 = dico_allclause[c1]["elemen_pos"]
+                elemen_neg_c1 = dico_allclause[c1]["elemen_neg"]
+                elemen_pos_c2 = dico_allclause[c2]["elemen_pos"]
+                elemen_neg_c2 = dico_allclause[c2]["elemen_neg"]
+
+                # cas meme signe
+                impossibility[(i_c1, i_c2)]["oppose:non"] = []
+                intersect = np.intersect1d(elemen_pos_c1, elemen_neg_c2)
+                if len(intersect)>0:
+                    for inter_el in intersect:
+                        position_elemen_pos_c1 = dico_allclause[c1]["position_elemen_pos"][inter_el]
+                        position_elemen_neg_c2 = dico_allclause[c2]["position_elemen_neg"][inter_el]
+                        for d1 in position_elemen_pos_c1:
+                            if len(d1)==1:
+                                d1_int = 0
+                            else:
+                                if "-" in d1:
+                                    d1_int = -1*int(d1.replace("i-","").replace(" ",""))
+                                else:
+                                    d1_int =  int(d1.replace("i+", "").replace(" ", ""))
+                            for d2 in position_elemen_neg_c2:
+                                if len(d2) == 1:
+                                    d2_int = 0
+                                else:
+                                    if "-" in d2:
+                                        d2_int = -1 * int(d2.replace("i-", "").replace(" ", ""))
+                                    else:
+                                        d2_int = int(d2.replace("i+", "").replace(" ", ""))
+                                delta = max(abs(d2_int) - abs(d1_int), abs(d1_int) - abs(d2_int))
+                                if delta not in impossibility[(i_c1, i_c2)]["oppose:non"]:
+                                    if delta>0:
+                                        impossibility[(i_c1, i_c2)]["oppose:non"].append(delta)
+
+                """intersect = np.intersect1d(elemen_neg_c1, elemen_pos_c2)
+                if len(intersect) > 0:
+                    for inter_el in intersect:
+                        position_elemen_neg_c1 = dico_allclause[c1]["position_elemen_neg"][inter_el]
+                        position_elemen_pos_c2 = dico_allclause[c2]["position_elemen_pos"][inter_el]
+                        for d1 in position_elemen_neg_c1:
+                            if len(d1) == 1:
+                                d1_int = 0
+                            else:
+                                if "-" in d1:
+                                    d1_int = -1 * int(d1.replace("i-", "").replace(" ", ""))
+                                else:
+                                    d1_int = int(d1.replace("i+", "").replace(" ", ""))
+                            for d2 in position_elemen_pos_c2:
+                                if len(d2) == 1:
+                                    d2_int = 0
+                                else:
+                                    if "-" in d2:
+                                        d2_int = -1 * int(d2.replace("i-", "").replace(" ", ""))
+                                    else:
+                                        d2_int = int(d2.replace("i+", "").replace(" ", ""))
+                                delta = max(abs(d2_int) - abs(d1_int), abs(d1_int) - abs(d2_int))
+
+                                if delta not in impossibility[(i_c1, i_c2)]["oppose:non"]:
+                                    if delta>0:
+                                        impossibility[(i_c1, i_c2)]["oppose:non"].append(delta)"""
+
+
+
+    return impossibility
+
+
+
+
+
+
+
+for num_filter, filter in enumerate(exp_filter_2eme_couche.columns):
     if "Filter" in filter:
+        #if int(filter.split("_")[1]) not in [3,5,6,7]:
         print()
-        all_masks[filter] = []
-        str_input = exp_filter[filter].values[0]
+        #all_masks[filter] = []
+        M = []
+        index_f = filter.split('_')[1]
+        filter2 = "Filter "+str(index_f)
+        str_input = exp_filter[filter2].values[0]
+        all_clause_str_input = str_input.split("|")
+
+
+        impossibillty = get_possible(all_clause_str_input)
+
+        dico_clause = {}
+        for index_c, cl in enumerate(all_clause_str_input):
+            cl_clean = cl.replace("(", "").replace(")", "").replace(" ", "").replace("&", " & ")
+            cl_clean_inv = ("~" + cl_clean.replace(" & ", " & ~")).replace("~~", "").replace(" & ", " | ")
+            dico_clause[index_c] = [cl_clean, cl_clean_inv]
+        nbre_clause_input = len(all_clause_str_input)
         str_filter_all = exp_filter_2eme_couche[filter].values[0]
         str_filter_all_lst = str_filter_all.split("|")
-        for str_filter in str_filter_all_lst:
-            all_masks[filter] = get_all_masks_from_1clausefilter_allclauseinput(str_input, str_filter, all_masks[filter])
+        for str_filter_i, str_filter in enumerate(str_filter_all_lst):
+            print(str_filter_i+1, "/", len(str_filter_all_lst))
+            M = get_all_masks_from_1clausefilter_allclauseinput(dico_clause, nbre_clause_input, str_filter, M, impossibillty)
 
-        print(filter," nbre de masks ", len(all_masks[filter]))
+        for clause_ici_index, clause_ici in enumerate(M):
+            element_clause = clause_ici.split("&")
+            M = 0.5 * np.ones((3, 9), dtype=np.uint8)
+            for el_c in element_clause:
+                if "DL[l]" in el_c:
+                    if "~" in el_c:
+                        M[0][0] = 0
+                    else:
+                        M[0][0] = 1
+                for l_str in range(1,9):
+                    if "DL[l+"+str(l_str)+"]" in el_c:
+                        if "~" in el_c:
+                            M[0][l_str] = 0
+                        else:
+                            M[0][l_str] = 1
+
+                if "V0[l]" in el_c:
+                    if "~" in el_c:
+                        M[1][0] = 0
+                    else:
+                        M[1][0] = 1
+                for l_str in range(1,9):
+                    if "V0[l+"+str(l_str)+"]" in el_c:
+                        if "~" in el_c:
+                            M[1][l_str] = 0
+                        else:
+                            M[1][l_str] = 1
+
+                if "V1[l]" in el_c:
+                    if "~" in el_c:
+                        M[2][0] = 0
+                    else:
+                        M[2][0] = 1
+                for l_str in range(1, 9):
+                    if "V1[l+" + str(l_str) + "]" in el_c:
+                        if "~" in el_c:
+                            M[2][l_str] = 0
+                        else:
+                            M[2][l_str] = 1
+            image = M
+            row_labels = ["DL", "V0", "V1"]
+            col_labels = ["l"] + ["l+"+str(i) for i in range(1,9)]
+
+            cmap = colors.ListedColormap(['black', 'grey', 'white'])
+            bounds = [0, 0.25, 0.75, 1]
+            norm = colors.BoundaryNorm(bounds, cmap.N)
+
+            # tell imshow about color map so that only set colors are used
+            img = plt.imshow(image, interpolation='nearest', origin='lower',
+                             cmap=cmap, norm=norm)
+
+            # make a color bar
+            #plt.colorbar(img, cmap=cmap, norm=norm, boundaries=bounds, ticks=[0, 0.25, 0.75, 1])
+
+            plt.xticks(range(9), col_labels)
+            plt.yticks(range(3), row_labels)
+            plt.title('Mask ' + str(clause_ici) + ' clause Filtre numeros ' + str(filter))
+            path = "./results/imgs/" + str(filter)
+            try:
+                os.mkdir(path)
+            except OSError as exc:  # Python >2.5
+                pass
+            plt.savefig(path + "/mask_"+str(clause_ici)+".png")
+            plt.clf()
+        print("Numeros filtre ", num_filter," nom filtre:", filter," nbre de masks ", len(M))
+        del M
+
+

@@ -40,20 +40,12 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.BN_conv_time = nn.BatchNorm1d(16, eps=0.01, momentum=0.99)
 
         self.conv_time2 = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=kstime, groups=args.out_channel1)
+
         self.BN_conv_time2 = nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99)
-        self.fc4 = nn.Linear(args.out_channel1, 1)
-        self.convv2 = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, groups=args.out_channel1, padding=1)
-        self.BN_convv2 = nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99)
-        self.conv_time3 = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=8,
-                                    groups=args.out_channel1)
-        self.BN_conv_time3 = nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99)
+        self.fc4 = nn.Linear(args.out_channel1 * (args.word_size-kstime+1), 1)
 
-        self.conv_der = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, groups=args.out_channel1, padding=1)
+        self.conv_der = nn.Conv1d(in_channels=32, out_channels=32, kernel_size=3, groups=32, padding=1)
         self.BN_conv_der = nn.BatchNorm1d(32, eps=0.01, momentum=0.99)
-
-        self.fc5 = nn.Linear(args.out_channel1, args.out_channel1)
-        self.BN7 = nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99)
-
 
     def forward(self, x):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
@@ -71,17 +63,10 @@ class ModelPaperBaseline_bin6(nn.Module):
         x = self.act_q(x)
         self.classify = x
         x = F.relu(self.BN_conv_time2(self.conv_time2(x)))
-        x = self.act_q(x)
-        #self.classify = x
-        #x = F.relu(self.BN_convv2(self.convv2(x)))
-        #self.classify = x
-        #x = F.relu(self.BN_conv_time3(self.conv_time3(x)))
-        #self.classify = x
-
+        #self.classify2 = x
         #x = self.act_q(x)
         #x = F.relu(self.BN_conv_der(self.conv_der(x)))
         #print(x.shape)
-        #print(ok)
         #x = x.transpose(1,2)
         #x = F.relu(self.BN_conv_time(self.conv_time(x)))
         #x = self.act_q(x)
@@ -90,7 +75,7 @@ class ModelPaperBaseline_bin6(nn.Module):
         x = x.reshape(x.size(0), -1)
         self.intermediare = x.clone()
         x = F.relu(self.BN5(self.fc1(x)))
-        #x = F.relu(self.BN7(self.fc5(x)))
+        #x = F.relu(self.BN6(self.fc2(x)))
         x = self.fc3(x)
         #x = self.fc4(x)
         x = torch.sigmoid(x)
