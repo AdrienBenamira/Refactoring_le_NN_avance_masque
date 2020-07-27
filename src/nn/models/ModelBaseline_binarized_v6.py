@@ -42,13 +42,13 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.conv_time2 = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=kstime, groups=args.out_channel1)
         self.BN_conv_time2 = nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99)
         self.fc4 = nn.Linear(args.out_channel1, 1)
-        self.convv2 = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, groups=32, padding=1)
+        self.convv2 = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, groups=args.out_channel1, padding=1)
         self.BN_convv2 = nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99)
         self.conv_time3 = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=8,
                                     groups=args.out_channel1)
         self.BN_conv_time3 = nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99)
 
-        self.conv_der = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, groups=32, padding=1)
+        self.conv_der = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, groups=args.out_channel1, padding=1)
         self.BN_conv_der = nn.BatchNorm1d(32, eps=0.01, momentum=0.99)
 
         self.fc5 = nn.Linear(args.out_channel1, args.out_channel1)
@@ -72,7 +72,7 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.classify = x
         x = F.relu(self.BN_conv_time2(self.conv_time2(x)))
         x = self.act_q(x)
-        self.classify = x
+        #self.classify = x
         #x = F.relu(self.BN_convv2(self.convv2(x)))
         #self.classify = x
         #x = F.relu(self.BN_conv_time3(self.conv_time3(x)))
