@@ -12,7 +12,7 @@ class ModelPaperBaseline_bin6(nn.Module):
     def __init__(self, args):
         super(ModelPaperBaseline_bin6, self).__init__()
         self.args = args
-        kstime = 14
+        kstime = 9
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
         self.convm1 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=len(self.args.inputs_type), kernel_size=1)
