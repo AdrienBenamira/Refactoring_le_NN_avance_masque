@@ -29,10 +29,10 @@ class ModelPaperBaseline_bin5(nn.Module):
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
             else:
                 self.layers_conv.append(
-                nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
+                nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
         self.fc1 = nn.Linear(args.out_channel1 * (args.word_size), args.hidden1)  # 6*6 from image dimension
-        self.BN5 = nn.BatchNorm1d(args.out_channel1 * (args.word_size), eps=0.01, momentum=0.99)
+        self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1, args.hidden2)
         self.BN6 = nn.BatchNorm1d(args.hidden2, eps=0.01, momentum=0.99)
         self.fc3 = nn.Linear(args.hidden2, 1)
@@ -52,7 +52,7 @@ class ModelPaperBaseline_bin5(nn.Module):
         self.x_input = x
         #x = F.relu(self.BNm1(self.convm1(x)))
         x = F.relu(self.BN0(self.conv0(x)))
-        x = self.act_q(x)
+        #x = self.act_q(x)
         shortcut = x.clone()
         self.shorcut = shortcut
         for i in range(len(self.layers_conv)):
@@ -60,17 +60,17 @@ class ModelPaperBaseline_bin5(nn.Module):
             x = self.layers_batch[i](x)
             x = F.relu(x)
             x = x + shortcut
-        x = self.act_q(x)
+        #x = self.act_q(x)
         self.classify = x
         #x = F.relu(self.BN_conv_time2(self.conv_time2(x)))
         #self.classify2 = x
         #x = self.act_q(x)
         #x = F.relu(self.BN_conv_der(self.conv_der(x)))
         #print(x.shape)
-        x = x.transpose(1,2)
-        x = F.relu(self.BN_conv_time(self.conv_time(x)))
-        x = self.act_q(x)
-        x = x.transpose(1, 2)
+        #x = x.transpose(1,2)
+        #x = F.relu(self.BN_conv_time(self.conv_time(x)))
+        #x = self.act_q(x)
+        #x = x.transpose(1, 2)
         self.classify2 = x
         x = x.reshape(x.size(0), -1)
         self.intermediare = x.clone()
