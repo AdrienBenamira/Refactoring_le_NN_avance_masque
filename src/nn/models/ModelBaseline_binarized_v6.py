@@ -12,7 +12,7 @@ class ModelPaperBaseline_bin6(nn.Module):
     def __init__(self, args):
         super(ModelPaperBaseline_bin6, self).__init__()
         self.args = args
-        kstime = 9
+        kstime = 14
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
         self.convm1 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=len(self.args.inputs_type), kernel_size=1)
@@ -35,7 +35,7 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1, args.hidden2)
         self.BN6 = nn.BatchNorm1d(args.hidden2, eps=0.01, momentum=0.99)
-        #self.fc3 = nn.Linear(args.hidden2, 1)
+        self.fc3 = nn.Linear(args.hidden2, 1)
         self.conv_time = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=1)
         self.BN_conv_time = nn.BatchNorm1d(16, eps=0.01, momentum=0.99)
 
@@ -71,15 +71,17 @@ class ModelPaperBaseline_bin6(nn.Module):
         x = self.act_q(x)
         self.classify = x
         x = F.relu(self.BN_conv_time2(self.conv_time2(x)))
+        x = self.act_q(x)
         self.classify = x
-        x = F.relu(self.BN_convv2(self.convv2(x)))
-        self.classify = x
-        x = F.relu(self.BN_conv_time3(self.conv_time3(x)))
-        self.classify = x
+        #x = F.relu(self.BN_convv2(self.convv2(x)))
+        #self.classify = x
+        #x = F.relu(self.BN_conv_time3(self.conv_time3(x)))
+        #self.classify = x
 
         #x = self.act_q(x)
         #x = F.relu(self.BN_conv_der(self.conv_der(x)))
         #print(x.shape)
+        #print(ok)
         #x = x.transpose(1,2)
         #x = F.relu(self.BN_conv_time(self.conv_time(x)))
         #x = self.act_q(x)
@@ -87,10 +89,10 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.classify2 = x
         x = x.reshape(x.size(0), -1)
         self.intermediare = x.clone()
-        #x = F.relu(self.BN5(self.fc1(x)))
+        x = F.relu(self.BN5(self.fc1(x)))
         #x = F.relu(self.BN7(self.fc5(x)))
-        #x = self.fc3(x)
-        x = self.fc4(x)
+        x = self.fc3(x)
+        #x = self.fc4(x)
         x = torch.sigmoid(x)
         return x
 
