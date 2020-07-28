@@ -33,8 +33,8 @@ class ModelPaperBaseline_bin5(nn.Module):
         self.fc2 = nn.Linear(args.hidden1, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc3 = nn.Linear(args.hidden1, 1)
-        self.conv_time = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=1)
-        self.BN_conv_time = nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99)
+        self.conv_time = nn.Conv1d(in_channels=args.word_size, out_channels=args.word_size, kernel_size=1)
+        self.BN_conv_time = nn.BatchNorm1d(args.word_size, eps=0.01, momentum=0.99)
         self.act_q = activation_quantize_fn(a_bit=1)
 
 
