@@ -12,6 +12,11 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 
+#91.5 for 2 dense layers and arg_time_final = 16 (120 filter 64 dense)
+#91.8 for 3 dense layers and arg_time_final = 16
+#XXX for 2 dense layers and arg_time_final = 4
+#XXX for 3 dense layers and arg_time_final = 4
+#XXX for + conv1D + 2 dense layers and arg_time_final = XX
 
 
 class ModelPaperBaseline_bin5(nn.Module):
@@ -27,8 +32,12 @@ class ModelPaperBaseline_bin5(nn.Module):
         self.layers_batch = nn.ModuleList()
         self.numLayers = args.numLayers
         for i in range(args.numLayers - 1):
-            self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
-            self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
+            if i == 0:
+                self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
+                self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
+            else:
+                self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1, groups = args.out_channel1))
+                self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
         self.fc1 = nn.Linear(args.out_channel1 * arg_time_final, args.hidden1)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1, args.hidden1)
