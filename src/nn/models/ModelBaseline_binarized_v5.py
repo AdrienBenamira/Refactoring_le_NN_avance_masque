@@ -62,7 +62,7 @@ class ModelPaperBaseline_bin5(nn.Module):
             x = F.relu(x)
             x = x + shortcut
             self.x_dico[i] = x
-        x = self.act_q(x)
+            x = self.act_q(x)
         x = x.transpose(1, 2)
         x = F.relu(self.BN_conv_time(self.conv_time(x)))
         x = x.transpose(1, 2)
