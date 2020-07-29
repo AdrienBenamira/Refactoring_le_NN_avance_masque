@@ -36,7 +36,7 @@ class ModelPaperBaseline_bin5(nn.Module):
                 self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
             else:
-                self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1, groups = args.out_channel1))
+                self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1, padding=1, groups = args.out_channel1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
         self.fc1 = nn.Linear(args.out_channel1 * arg_time_final, args.hidden1)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
@@ -62,7 +62,7 @@ class ModelPaperBaseline_bin5(nn.Module):
             x = F.relu(x)
             x = x + shortcut
             self.x_dico[i] = x
-            x = self.act_q(x)
+        x = self.act_q(x)
         x = x.transpose(1, 2)
         x = F.relu(self.BN_conv_time(self.conv_time(x)))
         x = x.transpose(1, 2)
