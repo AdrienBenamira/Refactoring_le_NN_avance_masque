@@ -165,32 +165,30 @@ args.nombre_round_eval = nombre_round_eval
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 nn_model_ref.net = nn_model_ref3.net"""
 
-nn_model_ref = NN_Model_Ref_Nclass(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
+nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 
 
-if args.retain_model_gohr_ref:
-    nn_model_ref.train_general(name_input)
-else:
-    nn_model_ref.load_nn()
-    try:
-        if args.finetunning:
-            nn_model_ref.load_nn()
-            nn_model_ref.train_from_scractch(name_input + "fine-tune")
-        #nn_model_ref.eval(["val"])
-        else:
-            nn_model_ref.load_nn()
-    except:
-        print("ERROR")
-        print("NO MODEL AVALAIBLE FOR THIS CONFIG")
-        print("CHANGE ARGUMENT retain_model_gohr_ref")
-        print()
-        sys.exit(1)
+
+nn_model_ref.load_nn()
+try:
+    if args.finetunning:
+        nn_model_ref.load_nn()
+        nn_model_ref.train_from_scractch(name_input + "fine-tune")
+    #nn_model_ref.eval(["val"])
+    else:
+        nn_model_ref.load_nn()
+except:
+    print("ERROR")
+    print("NO MODEL AVALAIBLE FOR THIS CONFIG")
+    print("CHANGE ARGUMENT retain_model_gohr_ref")
+    print()
+    sys.exit(1)
 
 
 
 flag2 = True
 acc_retain=[]
-global_sparsity = 0.2
+global_sparsity = 0.0
 parameters_to_prune = []
 for name, module in nn_model_ref.net.named_modules():
     if len(name):
@@ -228,4 +226,4 @@ for name, module in nn_model_ref.net.named_modules():
                     )
 if flag2:
     for method_cal_final in ["med", "avg"]:
-        nn_model_ref.eval_all(method_cal_final, ["val"])
+        nn_model_ref.eval_allNbatch(method_cal_final, ["val"])

@@ -1,7 +1,7 @@
 import copy
 import torch
 from torch.utils.data import DataLoader
-from src.nn.DataLoader import DataLoader_cipher_binary
+from src.nn.DataLoader import DataLoader_cipher_binary, DataLoader_cipher_binaryNbatch
 from src.nn.DataLoader_curriculum import DataLoader_curriculum
 from src.nn.models.ModelBaseline import ModelPaperBaseline
 import time
@@ -403,4 +403,82 @@ class NN_Model_Ref:
 
     def mixup_criterion(self, pred, y_a, y_b, lam):
         return lam * self.criterion(pred, y_a) + (1 - lam) * self.criterion(pred, y_b)
+
+
+    def eval_allNbatch(self, method_cal_final, val_phase = ['train', 'val']):
+
+
+        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_train_data_N_batch(self.args.nbre_sample_eval, self.args.Nbatch);
+
+        print("EVALUATE MODEL NNGOHR ON THIS DATASET ON TRAIN AND VAL")
+        print()
+        data_val = DataLoader_cipher_binaryNbatch(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.args, self.device)
+        dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
+                                    shuffle=False, num_workers=self.args.num_workers)
+
+        self.dataloaders = {'val': dataloader_val}
+
+        since = time.time()
+        n_batches = self.batch_size
+        pourcentage = 3
+        #phase = "val"
+        #self.intermediaires = {x:[] for x in val_phase }
+        data_train = np.zeros((len(self.X_train_nn_binaire), 16*self.args.out_channel1),  dtype = np.uint8)
+        data_val = np.zeros((len(self.X_val_nn_binaire), 16*self.args.out_channel1), dtype = np.uint8)
+        #x = self.net.intermediare.detach().cpu().numpy().astype(np.uint8)
+        #data_train = np.zeros_like(x, dtype = np.uint8)
+        #data_val = np.zeros_like(x, dtype = np.uint8)
+
+        self.outputs_proba = {x: [] for x in val_phase}
+        self.outputs_pred = {x: [] for x in val_phase}
+        for phase in val_phase:
+            self.net.eval()
+            if self.args.curriculum_learning:
+                self.dataloaders[phase].catgeorie = pourcentage
+            running_loss = 0.0
+            nbre_sample = 0
+            TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
+                1).long()
+
+            tk0 = tqdm(self.dataloaders[phase], total=int(len(self.dataloaders[phase])))
+            for i, data in enumerate(tk0):
+                inputs, labels = data
+                outputs = np.zeros((self.args.Nbatch, self.batch_size, 1))
+                for batch in range(self.args.Nbatch):
+
+                    outputsici = self.net(inputs[:,:,:,batch].to(self.device))
+                    outputs[batch,:,:] = outputsici.float().cpu().detach().numpy()
+
+
+                if method_cal_final == "avg":
+                    outputsend = outputs.mean(axis = 0)
+                elif method_cal_final == "med":
+                    outputsend = np.median(outputs, axis = 0)
+                elif method_cal_final == "min":
+                    outputsend = outputs.min(axis = 0)
+                elif method_cal_final == "max":
+                    outputsend = outputs.max(axis = 0)
+                elif method_cal_final == "mean minmax":
+                    outputsend = (outputs.max(axis = 0) - outputs.min(axis = 0))/2
+
+                preds = (torch.Tensor(outputsend).squeeze(1) > self.t.to(self.device)).float().cpu() * 1
+                TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
+                TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
+                FN += (preds.eq(0) & labels.eq(1)).cpu().sum()
+                FP += (preds.eq(1) & labels.eq(0)).cpu().sum()
+                TOT = TP + TN + FN + FP
+                nbre_sample += n_batches
+            #epoch_loss = running_loss / nbre_sample
+            acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
+            self.acc = acc
+            print('{} Acc: {:.4f}'.format(
+                phase, acc))
+            #print(desc)
+            print()
+            time_elapsed = time.time() - since
+            print('Evaluation complete in {:.0f}m {:.0f}s'.format(
+                time_elapsed // 60, time_elapsed % 60))
+            print()
+
+
 
