@@ -71,7 +71,8 @@ class ModelPaperBaseline_bin5(nn.Module):
         self.intermediare = x.clone()
         #x = F.relu(self.BN6(self.fc2(x)))
         x = self.fc3(x)
-        x = torch.sigmoid(x)
+        #x = torch.sigmoid(x)
+        x = F.log_softmax(x, dim=1)
         return x
 
     def freeze(self):
