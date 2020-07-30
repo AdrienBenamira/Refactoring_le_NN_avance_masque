@@ -80,6 +80,37 @@ class Create_data_binary:
         return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
 
 
+    def make_train_data_N_batch(self, n, Nbatch):
+
+        keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
+        ks = self.cipher.expand_key(keys, self.args.nombre_round_eval);
+
+        Y = np.frombuffer(self.urandom_from_random(n), dtype=np.uint8);
+        Y = Y & 1;
+
+
+        for batch in range(Nbatch):
+            plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
+            plain0r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
+            plain1l = plain0l ^ self.diff[0];
+            plain1r = plain0r ^ self.diff[1];
+            num_rand_samples = np.sum(Y == 0);
+            if self.args.type_create_data == "normal":
+                plain1l[Y == 0] = np.frombuffer(self.urandom_from_random( 2 * num_rand_samples), dtype=np.uint16);
+                plain1r[Y == 0] = np.frombuffer(self.urandom_from_random(2 * num_rand_samples), dtype=np.uint16);
+            ctdata0l, ctdata0r = self.cipher.encrypt((plain0l, plain0r), ks);
+            ctdata1l, ctdata1r = self.cipher.encrypt((plain1l, plain1r), ks);
+            liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
+            X = self.convert_to_binary(liste_inputs);
+            if batch==0:
+                Xfinal = X
+            else:
+                Xfinal = np.concatenate((Xfinal, X), axis=1)
+
+
+        print(Xfinal.shape)
+        return (Xfinal, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
+
 
     def make_train_data_general_3class(self, n):
 

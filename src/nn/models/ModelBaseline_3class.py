@@ -15,8 +15,8 @@ class ModelPaperBaseline_3class(nn.Module):
         self.BN0 = nn.BatchNorm1d(16, eps=0.01, momentum=0.99)
         self.layers_conv = nn.ModuleList()
         self.layers_batch = nn.ModuleList()
-        self.numLayers = 3
-        for i in range(3 - 1):
+        self.numLayers = 10
+        for i in range(10 - 1):
             self.layers_conv.append(nn.Conv1d(in_channels=16, out_channels=16, kernel_size=3, padding=1))
             self.layers_batch.append(nn.BatchNorm1d(16, eps=0.01, momentum=0.99))
         self.fc1 = nn.Linear(16 * args.word_size, 64)  # 6*6 from image dimension
