@@ -1,7 +1,7 @@
 import copy
 import torch
 from torch.utils.data import DataLoader
-from src.nn.DataLoader import DataLoader_cipher_binary
+from src.nn.DataLoader import DataLoader_cipher_binary, DataLoader_cipher_binaryNbatch
 from src.nn.DataLoader_curriculum import DataLoader_curriculum
 from src.nn.models.ModelBaseline import ModelPaperBaseline
 import time
@@ -11,6 +11,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
 
+from src.nn.models.ModelBaselineNbatch import ModelPaperBaselineN_batch
 from src.nn.models.ModelBaseline_3class import ModelPaperBaseline_3class
 from src.nn.models.ModelBaseline_binarized_BagNET import ModelPaperBaseline_bin_bagnet
 from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
@@ -62,50 +63,20 @@ class NN_Model_Ref_Nclass:
 
 
     def choose_model(self):
-        if self.args.type_model=="baseline":
-            return ModelPaperBaseline(self.args).to(self.device)
-        if self.args.type_model=="perceptron":
-            return Perceptron(self.args).to(self.device)
-        if self.args.type_model=="baseline_3class":
-            return ModelPaperBaseline_3class(self.args).to(self.device)
-        if self.args.type_model=="baseline_v2":
-            return ModelPaperBaseline_v2(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin":
-            return ModelPaperBaseline_bin(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v2":
-            return ModelPaperBaseline_bin2(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v3":
-            return ModelPaperBaseline_bin3(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v4":
-            return ModelPaperBaseline_bin4(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v5":
-            return ModelPaperBaseline_bin5(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v6":
-            return ModelPaperBaseline_bin6(self.args).to(self.device)
-        if self.args.type_model=="cnn_attention":
-            return Modelbaseline_CNN_ATTENTION(self.args).to(self.device)
-        if self.args.type_model=="multihead":
-            return Multihead(self.args).to(self.device)
-        if self.args.type_model=="deepset":
-            model =DTanh(self.args)
-        if self.args.type_model == "BagNet":
-            model = ModelPaperBaseline_bin_bagnet(self.args)
-            return model.to(self.device)
+        return ModelPaperBaselineN_batch(self.args).to(self.device)
 
     def create_data(self):
-        if self.args.make_data_Nbatch:
-            self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_data(self.args.nbre_sample_train);
-        else:
-            self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_data(self.args.nbre_sample_train);
+
+        self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_train_data_N_batch(self.args.nbre_sample_train, self.args.Nbatch);
 
         self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_train_data_N_batch(self.args.nbre_sample_eval, self.args.Nbatch);
 
 
     def train_from_scractch(self, name_input):
-        data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device)
+        data_train = DataLoader_cipher_binaryNbatch(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.args, self.device)
         dataloader_train = DataLoader(data_train, batch_size=self.batch_size,
                                       shuffle=True, num_workers=self.args.num_workers)
-        data_val = DataLoader_cipher_binary(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device)
+        data_val = DataLoader_cipher_binaryNbatch(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.args, self.device)
         dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
                                       shuffle=False, num_workers=self.args.num_workers)
         self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}

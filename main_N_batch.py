@@ -18,8 +18,6 @@ import argparse
 from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
 import numpy as np
 import pandas as pd
-import torch
-import torch.nn.utils.prune as prune
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
 
@@ -119,15 +117,6 @@ parser.add_argument("--eval_nn_ref", default=config.compare_classifer.eval_nn_re
 parser.add_argument("--compute_independance_feature", default=config.compare_classifer.compute_independance_feature, type=str2bool)
 parser.add_argument("--save_data_proba", default=config.compare_classifer.save_data_proba, type=str2bool)
 
-parser.add_argument("--model_to_prune", default=config.prunning.model_to_prune)
-parser.add_argument("--values_prunning", default=config.prunning.values_prunning, type=str2list)
-parser.add_argument("--layers_NOT_to_prune", default=config.prunning.layers_NOT_to_prune, type=str2list)
-parser.add_argument("--save_model_prune", default=config.prunning.save_model_prune, type=str2bool)
-parser.add_argument("--logs_layers", default=config.prunning.logs_layers, type=str2bool)
-parser.add_argument("--nbre_sample_eval_prunning", default=config.prunning.nbre_sample_eval_prunning, type=two_args_str_int)
-parser.add_argument("--inputs_type_prunning", default=config.general.inputs_type, type=transform_input_type)
-#parser.add_argument("--a_bit", default=config.train_nn.a_bit, type=two_args_str_int)
-
 
 
 args = parser.parse_args()
@@ -171,7 +160,7 @@ nn_model_ref = NN_Model_Ref_Nclass(args, writer, device, rng, path_save_model, c
 if args.retain_model_gohr_ref:
     nn_model_ref.train_general(name_input)
 else:
-    nn_model_ref.load_nn()
+    #nn_model_ref.load_nn()
     try:
         if args.finetunning:
             nn_model_ref.load_nn()
@@ -186,46 +175,83 @@ else:
         print()
         sys.exit(1)
 
+if args.create_new_data_for_ToT and args.create_new_data_for_classifier:
+    del nn_model_ref.X_train_nn_binaire, nn_model_ref.X_val_nn_binaire, nn_model_ref.Y_train_nn_binaire, nn_model_ref.Y_val_nn_binaire
+    del nn_model_ref.c0l_train_nn, nn_model_ref.c0l_val_nn, nn_model_ref.c0r_train_nn, nn_model_ref.c0r_val_nn
+    del nn_model_ref.c1l_train_nn, nn_model_ref.c1l_val_nn, nn_model_ref.c1r_train_nn, nn_model_ref.c1r_val_nn
 
 
-flag2 = True
-acc_retain=[]
-global_sparsity = 0.2
-parameters_to_prune = []
-for name, module in nn_model_ref.net.named_modules():
-    if len(name):
-        if name not in ["layers_batch", "layers_conv"]:
-            flag = True
-            for layer_forbidden in args.layers_NOT_to_prune:
-                if layer_forbidden in name:
-                    flag = False
-            if flag:
-                parameters_to_prune.append((module, 'weight'))
-prune.global_unstructured(
-    parameters_to_prune,
-    pruning_method=prune.L1Unstructured,
-    amount=global_sparsity,
-)
-tot_sparsity = 0
-tot_weight = 0
-for name, module in nn_model_ref.net.named_modules():
-    if len(name):
-        if name not in ["layers_batch", "layers_conv"]:
-            flag = True
-            for layer_forbidden in args.layers_NOT_to_prune:
-                if layer_forbidden in name:
-                    flag = False
-            if flag:
-                tot_sparsity += 100. * float(torch.sum(module.weight == 0)) / float(module.weight.nelement())
-                tot_weight += float(module.weight.nelement()) - float(torch.sum(module.weight == 0))
+print("STEP 1 : DONE")
+print("---" * 100)
+if args.end_after_training:
+    sys.exit(1)
 
-                if args.logs_layers:
-                    print(
-                    "Sparsity in {}.weight: {:.2f}%".format(str(name),
-                        100. * float(torch.sum(module.weight == 0))
-                        / float(module.weight.nelement())
-                        )
-                    )
-if flag2:
-    for method_cal_final in ["med", "avg"]:
-        nn_model_ref.eval_all(method_cal_final, ["val"])
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+print("STEP 2 : GET MASKS")
+print()
+print("LOAD MASKS: "+ str(args.load_masks) +  " | RESEARCH NEW: " +  str(args.research_new_masks) + " | MODEL: " + str(args.liste_segmentation_prediction) +" " + str(args.liste_methode_extraction)+" " + str(args.liste_methode_selection)+" " + str(args.hamming_weigth)+" " + str(args.thr_value))
+print()
+get_masks_gen = Get_masks(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device)
+if args.research_new_masks:
+    get_masks_gen.start_step()
+    del get_masks_gen.X_deltaout_train, get_masks_gen.X_eval, get_masks_gen.Y_tf, get_masks_gen.Y_eval
+
+
+
+print("STEP 2 : DONE")
+print("---" * 100)
+if args.end_after_step2:
+    sys.exit(1)
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+print("STEP 3 : MAKE TABLE OF TRUTH")
+print()
+print("NEW DATA: "+ str(args.create_new_data_for_ToT) +  " | PURE ToT: " +  str(args.create_ToT_with_only_sample_from_cipher) )
+print()
+
+table_of_truth = ToT(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device, get_masks_gen.masks, nn_model_ref)
+table_of_truth.create_DDT()
+
+del table_of_truth.c0l_create_ToT, table_of_truth.c0r_create_ToT
+del table_of_truth.c1l_create_ToT, table_of_truth.c1r_create_ToT
+
+print("STEP 3 : DONE")
+print("---" * 100)
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+print("STEP 4 : CREATE DATA PROBA AND CLASSIFY")
+print()
+print("NEW DATA: "+ str(args.create_new_data_for_classifier))
+print()
+
+generator_data = Genrator_data_prob_classifier(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device, get_masks_gen.masks, nn_model_ref)
+generator_data.create_data_g(table_of_truth)
+#EVALUATE GOHR NN ON NEW DATASET
+nn_model_ref.X_train_nn_binaire = generator_data.X_bin_train
+nn_model_ref.X_val_nn_binaire = generator_data.X_bin_val
+nn_model_ref.Y_train_nn_binaire = generator_data.Y_create_proba_train
+nn_model_ref.Y_val_nn_binaire = generator_data.Y_create_proba_val
+
+if args.eval_nn_ref:
+    nn_model_ref.eval_all(["train", "val"])
+all_clfs = All_classifier(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth)
+#all_clfs.X_train_proba = np.concatenate((all_clfs.X_train_proba, X_feat_temp), axis = 1)
+#all_clfs.X_eval_proba =  np.concatenate((all_clfs.X_eval_proba, X_feat_temp_val), axis = 1)
+all_clfs.classify_all()
+
+if args.quality_of_masks:
+    qm = Quality_masks(args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth, all_clfs)
+    qm.start_all()
+else:
+    qm = None
+
+
+
+print("STEP 4 : DONE")
+print("---" * 100)
+if args.end_after_step4:
+    sys.exit(1)
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+print("STEP 5: START EVALUATE ClASSIFIERS")
+print()
+
+evaluate_all(all_clfs, generator_data, nn_model_ref, table_of_truth, qm, path_save_model)

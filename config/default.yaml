@@ -5,7 +5,7 @@ general:
   models_path: ./results/models_trained/
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 5
+  nombre_round_eval: 8
   inputs_type: [ctdata0l^ctdata1l, DV, V0, V1]
   #[ctdata0l^ctdata1l, DV, V0, V1]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
@@ -18,18 +18,18 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
-  load_special: Yes
+  load_special: No
   load_nn_path: ./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_06_26_10_05_58_795239/0.926954_bestacc.pth #./results/0.920062_bestacc.pth #./results/0.925608_bestacc.pth #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_07_01_01_52_17_577674/0.918551_bestacc.pth #./results/0.925608_bestacc.pth #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_07_01_01_52_17_577674/0.918551_bestacc.pth #./results/0.993328_bestacc.pth #./results/0.925608_bestacc.pth # results/0.781974_bestacc.pth #
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
   type_model: baseline_v2        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
   a_bit: 1
-  nbre_sample_train: 10000
-  nbre_sample_eval: 10000
+  nbre_sample_train: 1000000
+  nbre_sample_eval: 100000
   num_epochs: 200
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
@@ -41,7 +41,7 @@ train_nn:
   base_lr:  0.0001      #Only if CyclicLR
   max_lr: 0.002       #Only if CyclicLR
   demicycle_1: 6  #Only if CyclicLR
-  numLayers: 3
+  numLayers: 2
   out_channel0: 32 #120
   out_channel1: 32 #120
   hidden1: 64
@@ -53,7 +53,7 @@ train_nn:
   end_after_training: Yes
   make_data_equilibre_3class: No
   make_data_Nbatch: No
-  Nbatch: 16
+  Nbatch: 10
 
 
 getting_masks:
