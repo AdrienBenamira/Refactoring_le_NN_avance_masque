@@ -1,23 +1,18 @@
 import sys
 import warnings
-
 from src.nn.nn_model_ref_N_batch import NN_Model_Ref_Nclass
-
 warnings.filterwarnings('ignore',category=FutureWarning)
-from collections import Counter
 from src.get_masks.evaluate_quality_masks import Quality_masks
 from src.classifiers.classifier_all import All_classifier, evaluate_all
 from src.ToT.table_of_truth import ToT
 from src.data_classifier.Generator_proba_classifier import Genrator_data_prob_classifier
 from src.get_masks.get_masks import Get_masks
-from src.nn.nn_model_ref import NN_Model_Ref
 from src.data_cipher.create_data import Create_data_binary
 from src.utils.initialisation_run import init_all_for_run, init_cipher
 from src.utils.config import Config
 import argparse
 from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
-import numpy as np
-import pandas as pd
+
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
 
@@ -160,7 +155,7 @@ nn_model_ref = NN_Model_Ref_Nclass(args, writer, device, rng, path_save_model, c
 if args.retain_model_gohr_ref:
     nn_model_ref.train_general(name_input)
 else:
-    #nn_model_ref.load_nn()
+    nn_model_ref.load_nn()
     try:
         if args.finetunning:
             nn_model_ref.load_nn()

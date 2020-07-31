@@ -50,5 +50,8 @@ def init_cipher(args):
         cipher = Cipher_Speck(args)
     if args.cipher == "simon":
         cipher = Cipher_Simon(args)
-
+    if args.cipher == "aes228":
+        cipher = Cipher_aes_228(args)
+    if args.cipher == "aes224":
+        cipher = Cipher_aes_224(args)
     return cipher

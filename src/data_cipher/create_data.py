@@ -10,7 +10,7 @@ class Create_data_binary:
         self.rng = rng
         self.WORD_SIZE = self.args.word_size
         if args.cipher == "speck":
-            self.diff = (0x0040, 0)
+            self.diff = (0x8000, 0x8000)
         if args.cipher == "simon":
             self.diff = (0, 0x0040)
         if args.cipher == "simeck":
@@ -50,6 +50,10 @@ class Create_data_binary:
     def make_data(self, n):
         if self.args.cipher != "aes224" and self.args.cipher != "aes228" :
             X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r = self.make_train_data_general(n)
+        elif self.args.cipher == "aes224":
+            X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r = self.make_train_data_generalaes224(n)
+        elif self.args.cipher == "aes228":
+            X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r = self.make_train_data_generalaes228(n)
         return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
 
 

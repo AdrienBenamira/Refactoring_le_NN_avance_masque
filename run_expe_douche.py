@@ -61,10 +61,10 @@ os.system(command)
 
 """
 
-for r in [5, 6]:
+for r in [4, 5, 6]:
     command = "python3 main.py --nombre_round_eval "+str(r)
     os.system(command)
-    for N in [5, 10, 50, 100, 500]:
+    for N in [5, 10, 50, 100]:
         Ntrain = 10**7
         Ntrain2 = int(Ntrain/N)
         Nval2 = int(Ntrain/(10*N))
