@@ -61,7 +61,7 @@ os.system(command)
 
 """
 
-for r in [3, 4, 5]:
+for r in [4, 5]:
     command = "python3 main.py --nombre_round_eval "+str(r)
     os.system(command)
     #for N in [5, 10, 50, 100]:

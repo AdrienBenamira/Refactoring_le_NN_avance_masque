@@ -16,8 +16,8 @@ class Create_data_binary:
             #self.diff = (0x8000, 0x8000)
             # round2
             #self.diff = (0x8100, 0x8102) #98.4 sur 3 round
-            #self.diff = (0x8030, 0x8032) #84.6 sur 3 round
-            self.diff = (0x8700, 0x8702) #91.7 sur 3 round
+            self.diff = (0x8030, 0x8032) #84.6 sur 3 round
+            #self.diff = (0x8700, 0x8702) #91.7 sur 3 round
         if args.cipher == "simon":
             self.diff = (0, 0x0040)
         if args.cipher == "simeck":
