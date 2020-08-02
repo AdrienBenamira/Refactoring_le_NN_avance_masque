@@ -34,14 +34,14 @@ class ModelPaperBaseline_bin5(nn.Module):
                 self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
             else:
-                self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
+                self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
         self.fc1 = nn.Linear(args.out_channel1 * arg_time_final, args.hidden1)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         #self.fc3 = nn.Linear(args.hidden1, 1)
-        self.fc3 = nn.Linear(args.out_channel1 * arg_time_final, 2)
+        self.fc3 = nn.Linear(args.out_channel1 * arg_time_final, 1)
         self.conv_time = nn.Conv1d(in_channels=args.word_size, out_channels=arg_time_final, kernel_size=1)
         self.BN_conv_time = nn.BatchNorm1d(arg_time_final, eps=0.01, momentum=0.99)
         self.act_q = activation_quantize_fn(a_bit=1)
@@ -61,8 +61,8 @@ class ModelPaperBaseline_bin5(nn.Module):
             x = F.relu(x)
             x = x + shortcut
             self.x_dico[i] = x
-            if i >=2:
-                x = self.act_q(x)
+            #if i >=2:
+            x = self.act_q(x)
         x = x.transpose(1, 2)
         x = F.relu(self.BN_conv_time(self.conv_time(x)))
         x = x.transpose(1, 2)
@@ -71,8 +71,8 @@ class ModelPaperBaseline_bin5(nn.Module):
         self.intermediare = x.clone()
         #x = F.relu(self.BN6(self.fc2(x)))
         x = self.fc3(x)
-        #x = torch.sigmoid(x)
-        x = F.log_softmax(x, dim=1)
+        x = torch.sigmoid(x)
+        #x = F.log_softmax(x, dim=1)
         return x
 
     def freeze(self):

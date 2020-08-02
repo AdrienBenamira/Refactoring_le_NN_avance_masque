@@ -237,6 +237,8 @@ class NN_Model_Ref:
                         #                                              targets_a, targets_b))
                         outputs = self.net(inputs.to(self.device))
                         #outputs2 = self.net.decoder(self.net.intermediare_compress.to(self.device))
+                        #print(labels.shape)
+                        #print(outputs.squeeze(1).shape)
                         loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
                         #loss2 = 0.02*self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
                         #print(loss1, loss2)
