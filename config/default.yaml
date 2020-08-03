@@ -44,8 +44,8 @@ train_nn:
   max_lr: 0.002       #Only if CyclicLR
   demicycle_1: 6  #Only if CyclicLR
   numLayers: 10
-  out_channel0: 128 #32 #120
-  out_channel1: 128 #32 #120
+  out_channel0: 200 #32 #120
+  out_channel1: 200 #32 #120
   hidden1: 64 #64
   hidden2: 64 #64
   kernel_size0: 1

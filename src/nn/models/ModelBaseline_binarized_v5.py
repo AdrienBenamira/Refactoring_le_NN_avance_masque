@@ -46,6 +46,8 @@ class ModelPaperBaseline_bin5(nn.Module):
         self.BN_conv_time = nn.BatchNorm1d(arg_time_final, eps=0.01, momentum=0.99)
         self.conv_time2 = nn.Conv1d(in_channels=args.word_size, out_channels=arg_time_final, kernel_size=1)
         self.BN_conv_time2 = nn.BatchNorm1d(arg_time_final, eps=0.01, momentum=0.99)
+        self.conv_time3 = nn.Conv1d(in_channels=args.word_size, out_channels=arg_time_final, kernel_size=1)
+        self.BN_conv_time3 = nn.BatchNorm1d(arg_time_final, eps=0.01, momentum=0.99)
         self.act_q = activation_quantize_fn(a_bit=1)
 
 
@@ -67,9 +69,10 @@ class ModelPaperBaseline_bin5(nn.Module):
         x = self.act_q(x)
         x = x.transpose(1, 2)
         x = F.relu(self.BN_conv_time(self.conv_time(x)))
-        x = self.act_q(x)
         x = F.relu(self.BN_conv_time2(self.conv_time2(x)))
+        x = F.relu(self.BN_conv_time3(self.conv_time3(x)))
         x = x.transpose(1, 2)
+        x = self.act_q(x)
         x = x.reshape(x.size(0), -1)
         #x = F.relu(self.BN5(self.fc1(x)))
         self.intermediare = x.clone()
