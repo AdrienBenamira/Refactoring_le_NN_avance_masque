@@ -28,7 +28,7 @@ train_nn:
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline_bin_v5        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
+  type_model: baseline        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
   a_bit: 1
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
@@ -44,10 +44,10 @@ train_nn:
   max_lr: 0.002       #Only if CyclicLR
   demicycle_1: 6  #Only if CyclicLR
   numLayers: 10
-  out_channel0: 200 #32 #120
-  out_channel1: 200 #32 #120
-  hidden1: 64 #64
-  hidden2: 64 #64
+  out_channel0: 64 #32 #120
+  out_channel1: 64 #32 #120
+  hidden1: 128 #64
+  hidden2: 128 #64
   kernel_size0: 1
   kernel_size1: 3
   num_workers: 2

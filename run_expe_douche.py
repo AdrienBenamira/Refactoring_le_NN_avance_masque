@@ -61,12 +61,12 @@ os.system(command)
 
 """
 
-for r in [4, 5]:
-    command = "python3 main.py --nombre_round_eval "+str(r)
-    os.system(command)
-    #for N in [5, 10, 50, 100]:
-    #    Ntrain = 10**7
-    #    Ntrain2 = int(Ntrain/N)
-    #    Nval2 = int(Ntrain/(10*N))
-    #    command = "python3 main_N_batch.py --Nbatch "+str(N) + " --nombre_round_eval "+str(r+1) + " --nbre_sample_train " + str(Ntrain2)+ " --nbre_sample_eval " + str(Nval2)
-    #    os.system(command)
+for r in [5, 6, 7]:
+    #command = "python3 main.py --nombre_round_eval "+str(r)
+    #os.system(command)
+    for N in [50, 100]:
+        Ntrain = 10**5
+        Ntrain2 = int(Ntrain/N)
+        Nval2 = int(Ntrain/(10*N))
+        command = "python3 main_N_batch.py --Nbatch "+str(N) + " --nombre_round_eval "+str(r+1) + " --nbre_sample_train " + str(Ntrain2)+ " --nbre_sample_eval " + str(Nval2)
+        os.system(command)
