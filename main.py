@@ -61,6 +61,8 @@ parser.add_argument("--demicycle_1", default=config.train_nn.demicycle_1, type=t
 parser.add_argument("--optimizer_type", default=config.train_nn.optimizer_type, choices=["Adam", "AdamW", "SGD"])
 parser.add_argument("--scheduler_type", default=config.train_nn.scheduler_type, choices=["CyclicLR", "None"])
 parser.add_argument("--numLayers", default=config.train_nn.numLayers, type=two_args_str_int)
+parser.add_argument("--limit", default=config.train_nn.limit, type=two_args_str_int)
+parser.add_argument("--kstime", default=config.train_nn.kstime, type=two_args_str_int)
 parser.add_argument("--out_channel0", default=config.train_nn.out_channel0, type=two_args_str_int)
 parser.add_argument("--out_channel1", default=config.train_nn.out_channel1, type=two_args_str_int)
 parser.add_argument("--hidden1", default=config.train_nn.hidden1, type=two_args_str_int)

@@ -61,7 +61,7 @@ os.system(command)
 
 """
 
-for r in [5, 6, 7]:
+"""for r in [5, 6, 7]:
     #command = "python3 main.py --nombre_round_eval "+str(r)
     #os.system(command)
     for N in [50, 100]:
@@ -69,4 +69,10 @@ for r in [5, 6, 7]:
         Ntrain2 = int(Ntrain/N)
         Nval2 = int(Ntrain/(10*N))
         command = "python3 main_N_batch.py --Nbatch "+str(N) + " --nombre_round_eval "+str(r+1) + " --nbre_sample_train " + str(Ntrain2)+ " --nbre_sample_eval " + str(Nval2)
+        os.system(command)"""
+
+
+for r in [2,3,4,5]:
+    for lks in [[1,9], [2,12], [3,15]]:
+        command = "python3 main.py --numLayers "+str(r) + " --limit "+str(lks[0]) + " --kstime "+str(lks[1])
         os.system(command)
