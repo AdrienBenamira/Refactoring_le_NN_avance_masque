@@ -72,7 +72,7 @@ os.system(command)
         os.system(command)"""
 
 
-for r in [2,3,4,5]:
+for r in [5, 4, 3, 2]:
     for lks in [[1,9], [2,12], [3,15]]:
         command = "python3 main.py --numLayers "+str(r) + " --limit "+str(lks[0]) + " --kstime "+str(lks[1])
         os.system(command)

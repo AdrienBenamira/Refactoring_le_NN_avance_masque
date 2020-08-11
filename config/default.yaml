@@ -18,22 +18,22 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
-  load_special: No
+  load_special: Yes
   load_nn_path: ./results/0.916119_bestacc.pth
   # ./results/models_trained/speck/6/ctdata0l^ctdata1l_DL_V0_V1/Gohr_baseline_best_nbre_sampletrain_10000.pth
   #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_06_26_10_05_58_795239/0.926954_bestacc.pth #./results/0.920062_bestacc.pth #./results/0.925608_bestacc.pth #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_07_01_01_52_17_577674/0.918551_bestacc.pth #./results/0.925608_bestacc.pth #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_07_01_01_52_17_577674/0.918551_bestacc.pth #./results/0.993328_bestacc.pth #./results/0.925608_bestacc.pth # results/0.781974_bestacc.pth #
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline_bin_v5        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
+  type_model: baseline_bin_v6        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
   a_bit: 1
-  nbre_sample_train: 10000000
-  nbre_sample_eval: 1000000
+  nbre_sample_train: 10000
+  nbre_sample_eval: 10000
   num_epochs: 10
-  batch_size: 5000
+  batch_size: 500
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
   weight_decay_nn: 0.00001
@@ -43,9 +43,9 @@ train_nn:
   base_lr:  0.0001      #Only if CyclicLR
   max_lr: 0.002       #Only if CyclicLR
   demicycle_1: 6  #Only if CyclicLR
-  numLayers: 2
-  limit: 1 #1 - 2 - 3
-  kstime: 9  #9 - 12 - 15
+  numLayers: 5
+  limit: 2 #1 - 2 - 3
+  kstime: 16  #9 - 12 - 15
   out_channel0: 300 #32 #120
   out_channel1: 300 #32 #120
   hidden1: 64 #64
