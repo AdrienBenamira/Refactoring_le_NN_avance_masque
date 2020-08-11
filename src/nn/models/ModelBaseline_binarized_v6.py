@@ -12,7 +12,7 @@ class ModelPaperBaseline_bin6(nn.Module):
     def __init__(self, args):
         super(ModelPaperBaseline_bin6, self).__init__()
         self.args = args
-        kstime = 9
+        kstime = 15
         self.word_size = args.word_size
         self.act_q = activation_quantize_fn(a_bit=1)
         self.convm1 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=len(self.args.inputs_type), kernel_size=1)
@@ -23,7 +23,7 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.layers_batch = nn.ModuleList()
         self.numLayers = args.numLayers
         for i in range(args.numLayers - 1):
-            if i ==0:
+            if i <3:
                 self.layers_conv.append(
                     nn.Conv1d(in_channels=args.out_channel0, out_channels=args.out_channel1, kernel_size=3, padding =1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
@@ -39,10 +39,10 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.conv_time = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=1)
         self.BN_conv_time = nn.BatchNorm1d(16, eps=0.01, momentum=0.99)
 
-        self.conv_time2 = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=kstime, groups=args.out_channel1)
+        self.conv_time2 = nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=kstime, groups=args.out_channel1, padding =7)
 
         self.BN_conv_time2 = nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99)
-        self.fc4 = nn.Linear(args.out_channel1 * (args.word_size-kstime+1), 1)
+        self.fc4 = nn.Linear(args.out_channel1 * (args.word_size), 1)
 
         self.conv_der = nn.Conv1d(in_channels=32, out_channels=32, kernel_size=3, groups=32, padding=1)
         self.BN_conv_der = nn.BatchNorm1d(32, eps=0.01, momentum=0.99)
@@ -60,9 +60,13 @@ class ModelPaperBaseline_bin6(nn.Module):
             x = self.layers_batch[i](x)
             #x = F.relu(x)
             x = x + shortcut
+        shortcut2 = x.clone()
+        self.shortcut2 = shortcut2
         x = self.act_q(x)
         self.classify = x
         x = F.relu(self.BN_conv_time2(self.conv_time2(x)))
+        #print(x.shape)
+        x = x+self.shortcut2
         #self.classify2 = x
         #x = self.act_q(x)
         #x = F.relu(self.BN_conv_der(self.conv_der(x)))

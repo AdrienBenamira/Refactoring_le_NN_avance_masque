@@ -408,7 +408,6 @@ if flag2:
 
 
 
-
 t = nn_model_ref.net.fc1.weight_mask.sum(0).detach().cpu().numpy().tolist()
 index_filter_time_keep = [i for i, x in enumerate(t) if x!=0.0]
 
