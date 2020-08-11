@@ -31,7 +31,7 @@ class ModelPaperBaseline_bin5(nn.Module):
         self.numLayers = args.numLayers
         for i in range(args.numLayers - 1):
             if i == 0:
-                self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=5, padding=2))
+                self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
                 self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
             else:
                 self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=1))
@@ -62,17 +62,17 @@ class ModelPaperBaseline_bin5(nn.Module):
         for i in range(len(self.layers_conv)):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
-            x = F.relu(x)
+            #x = F.relu(x)
             x = x + shortcut
             self.x_dico[i] = x
             #if i >=2:
         x = self.act_q(x)
         x = x.transpose(1, 2)
         x = F.relu(self.BN_conv_time(self.conv_time(x)))
-        x = F.relu(self.BN_conv_time2(self.conv_time2(x)))
-        x = F.relu(self.BN_conv_time3(self.conv_time3(x)))
+        #x = F.relu(self.BN_conv_time2(self.conv_time2(x)))
+        #x = F.relu(self.BN_conv_time3(self.conv_time3(x)))
         x = x.transpose(1, 2)
-        x = self.act_q(x)
+        #x = self.act_q(x)
         x = x.reshape(x.size(0), -1)
         #x = F.relu(self.BN5(self.fc1(x)))
         self.intermediare = x.clone()
