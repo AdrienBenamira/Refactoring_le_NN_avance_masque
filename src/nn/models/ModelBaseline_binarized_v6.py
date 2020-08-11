@@ -74,10 +74,10 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.classify2 = x
         x = x.reshape(x.size(0), -1)
         self.intermediare = x.clone()
-        x = F.relu(self.BN5(self.fc1(x)))
+        #x = F.relu(self.BN5(self.fc1(x)))
         #x = F.relu(self.BN6(self.fc2(x)))
-        x = self.fc3(x)
-        #x = self.fc4(x)
+        #x = self.fc3(x)
+        x = self.fc4(x)
         x = torch.sigmoid(x)
         return x
 
