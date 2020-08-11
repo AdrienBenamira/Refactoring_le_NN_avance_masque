@@ -52,13 +52,13 @@ class ModelPaperBaseline_bin6(nn.Module):
         self.x_input = x
         #x = F.relu(self.BNm1(self.convm1(x)))
         x = F.relu(self.BN0(self.conv0(x)))
-        x = self.act_q(x)
+        #x = self.act_q(x)
         shortcut = x.clone()
         self.shorcut = shortcut
         for i in range(len(self.layers_conv)):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
-            x = F.relu(x)
+            #x = F.relu(x)
             x = x + shortcut
         x = self.act_q(x)
         self.classify = x
