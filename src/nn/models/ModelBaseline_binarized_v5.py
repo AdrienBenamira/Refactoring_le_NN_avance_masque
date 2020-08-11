@@ -21,7 +21,7 @@ class ModelPaperBaseline_bin5(nn.Module):
 
     def __init__(self, args):
         super(ModelPaperBaseline_bin5, self).__init__()
-        arg_time_final = 16
+        arg_time_final = 9
         self.args = args
         self.word_size = args.word_size
         self.conv0 = nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel0, kernel_size=1)
@@ -58,12 +58,14 @@ class ModelPaperBaseline_bin5(nn.Module):
         for i in range(len(self.layers_conv)):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
-            x = F.relu(x)
+            if i < 2:
+                x = F.relu(x)
             x = x + shortcut
             self.x_dico[i] = x
-            #if i >=2:
-            #    x = self.act_q(x)
-        x = self.act_q(x)
+            if i >=2:
+                x = self.act_q(x)
+        if i < 2:
+            x = self.act_q(x)
         x = x.transpose(1, 2)
         x = F.relu(self.BN_conv_time(self.conv_time(x)))
         x = x.transpose(1, 2)
