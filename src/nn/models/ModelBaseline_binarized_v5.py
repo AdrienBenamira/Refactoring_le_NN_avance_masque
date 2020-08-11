@@ -58,11 +58,12 @@ class ModelPaperBaseline_bin5(nn.Module):
         for i in range(len(self.layers_conv)):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
-            x = F.relu(x)
+            if i < 1:
+                x = F.relu(x)
             x = x + shortcut
             self.x_dico[i] = x
-            #if i >=2:
-            #    x = self.act_q(x)
+            if i >=1:
+                x = self.act_q(x)
         x = x.transpose(1, 2)
         x = F.relu(self.BN_conv_time(self.conv_time(x)))
         x = x.transpose(1, 2)
