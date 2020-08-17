@@ -72,7 +72,24 @@ os.system(command)
         os.system(command)"""
 
 
-for r in [5, 4, 3, 2]:
+"""for r in [5, 4, 3, 2]:
     for lks in [[1,9], [2,12], [3,15]]:
         command = "python3 main.py --numLayers "+str(r) + " --limit "+str(lks[0]) + " --kstime "+str(lks[1])
-        os.system(command)
+        os.system(command)"""
+
+
+#self.diff = (0x8100, 0x8102) #98.4 sur 3 round
+#self.diff = (0x8300, 0x8302) #XXX sur 3 round
+#self.diff = (0x8700, 0x8702) #91.7 sur 3 round
+#self.diff = (0x8f00, 0x8f02) #XXX sur 3 round
+#self.diff = (0x9f00, 0x9f02) #XXX sur 3 round
+#self.diff = (0xbf00, 0xbf02) #XXX sur 3 round
+#self.diff = (0xff00, 0xff02) #XXX sur 3 round
+#self.diff = (0x7f00, 0x7f02) #XXX sur 3 round
+
+for diff in ["python3 main.py --diff '(0x8100, 0x8102)'", "python3 main.py --diff '(0x8300, 0x8302)'",
+             "python3 main.py --diff '(0x8700, 0x8702)'", "python3 main.py --diff '(0x8f00, 0x8f02)'",
+             "python3 main.py --diff '(0x9f00, 0x9f02)'", "python3 main.py --diff '(0xbf00, 0xbf02)'",
+             "python3 main.py --diff '(0xff00, 0xff02)'", "python3 main.py --diff '(0x7f00, 0x7f02)'"]:
+    print(diff)
+    os.system(diff)

@@ -24,6 +24,13 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
+def str2hexa(x):
+    try:
+        x2 = x.replace(")", "").replace("(", "").split(", ")
+        return int(x2[0], 16), int(x2[1], 16)
+    except:
+        return x
+
 def two_args_str_int(x):
     try:
         return int(x)

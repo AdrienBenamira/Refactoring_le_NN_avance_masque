@@ -12,7 +12,7 @@ from src.data_cipher.create_data import Create_data_binary
 from src.utils.initialisation_run import init_all_for_run, init_cipher
 from src.utils.config import Config
 import argparse
-from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
+from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type, str2hexa
 import numpy as np
 import pandas as pd
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -36,7 +36,7 @@ parser.add_argument("--alpha", default=config.general.alpha, type=two_args_str_i
 parser.add_argument("--beta", default=config.general.beta, type=two_args_str_int)
 parser.add_argument("--type_create_data", default=config.general.type_create_data, choices=["normal", "real_difference"])
 
-
+parser.add_argument("--diff", default=config.train_nn.diff, type=str2hexa)
 parser.add_argument("--retain_model_gohr_ref", default=config.train_nn.retain_model_gohr_ref, type=str2bool)
 parser.add_argument("--load_special", default=config.train_nn.load_special, type=str2bool)
 parser.add_argument("--finetunning", default=config.train_nn.finetunning, type=str2bool)

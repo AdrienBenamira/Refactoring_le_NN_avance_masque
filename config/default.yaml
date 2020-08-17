@@ -18,7 +18,16 @@ general:
 
 
 train_nn:
-  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
+  diff: (0x8100, 0x8102)
+  #(0x8100, 0x8102)
+  #(0x8300, 0x8302)
+  #(0x8700, 0x8702)
+  #(0x8f00, 0x8f02)
+  #(0x9f00, 0x9f02)
+  #(0xbf00, 0xbf02)
+  #(0xff00, 0xff02)
+  #(0x7f00, 0x7f02)
+  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
   load_special: No
@@ -28,7 +37,7 @@ train_nn:
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline_bin_v5        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
+  type_model: baseline        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
   a_bit: 1
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
@@ -46,8 +55,8 @@ train_nn:
   numLayers: 5
   limit: 2 #1 - 2 - 3
   kstime: 16  #9 - 12 - 15
-  out_channel0: 300 #32 #120
-  out_channel1: 300 #32 #120
+  out_channel0: 32 #32 #120
+  out_channel1: 32 #32 #120
   hidden1: 64 #64
   hidden2: 64 #64
   kernel_size0: 1

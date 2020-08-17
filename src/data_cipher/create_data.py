@@ -11,15 +11,27 @@ class Create_data_binary:
         self.WORD_SIZE = self.args.word_size
         if args.cipher == "speck":
             #round0
-            self.diff = (0x0040, 0x0000)
+            self.diff = args.diff #(0x8100, 0x8102)
+
+            #self.diff = (0x0040, 0x0000)
             # roun1
             #self.diff = (0x8000, 0x8000)
             # round2
             #self.diff = (0x8100, 0x8102) #98.4 sur 3 round
-            #self.diff = (0x8030, 0x8032) #84.6 sur 3 round
+            #self.diff = (0x8300, 0x8302) #XXX sur 3 round
             #self.diff = (0x8700, 0x8702) #91.7 sur 3 round
+            #self.diff = (0x8f00, 0x8f02) #XXX sur 3 round
+            #self.diff = (0x9f00, 0x9f02) #XXX sur 3 round
+            #self.diff = (0xbf00, 0xbf02) #XXX sur 3 round
+            #self.diff = (0xff00, 0xff02) #XXX sur 3 round
+            #self.diff = (0x7f00, 0x7f02) #XXX sur 3 round
         if args.cipher == "simon":
             self.diff = (0, 0x0040)
+
+
+
+
+
         if args.cipher == "simeck":
             self.diff = (0x0, 0x2)
         if args.cipher == "aes228":
