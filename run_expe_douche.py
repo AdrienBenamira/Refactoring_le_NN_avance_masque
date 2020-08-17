@@ -92,5 +92,5 @@ for r in [3,4]:
                  "python3 main.py --diff '(0x8700, 0x8702)'", "python3 main.py --diff '(0x8f00, 0x8f02)'",
                  "python3 main.py --diff '(0x9f00, 0x9f02)'", "python3 main.py --diff '(0xbf00, 0xbf02)'",
                  "python3 main.py --diff '(0xff00, 0xff02)'", "python3 main.py --diff '(0x7f00, 0x7f02)'"]:
-        print(diff + " --round "+str(r))
-        os.system(diff+ " --round "+str(r))
+        print(diff + " --nombre_round_eval "+str(r))
+        os.system(diff+ " --nombre_round_eval "+str(r))
