@@ -9,6 +9,12 @@ class Create_data_binary:
         self.cipher = cipher
         self.rng = rng
         self.WORD_SIZE = self.args.word_size
+
+        self.diffs = [(0x8100, 0x8102), (0x8300, 0x8302), (0x8700, 0x8702), (0x8f00, 0x8f02), (0x9f00, 0x9f02),
+                      (0xbf00, 0xbf02),(0xff00, 0xff02), (0x7f00, 0x7f02)]
+
+        self.ps = [1/2, (1/2)**2, (1/2)**3, (1/2)**4, (1/2)**5, (1/2)**6, (1/2)**7,(1/2)**7]
+
         if args.cipher == "speck":
             #round0
             self.diff = args.diff #(0x8100, 0x8102)
@@ -98,6 +104,28 @@ class Create_data_binary:
             ctdata0r[Y == 0] = ctdata0r[Y == 0] ^ k1;
             ctdata1l[Y == 0] = ctdata1l[Y == 0] ^ k0;
             ctdata1r[Y == 0] = ctdata1r[Y == 0] ^ k1;
+        liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
+        X = self.convert_to_binary(liste_inputs);
+        return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
+
+
+
+
+    def make_train_data_general_8class(self, n):
+        Y  = np.random.choice(np.arange(0, len(self.diffs)), n, p=self.ps)
+        Y[Y!=0] = 1
+        keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
+        plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
+        plain0r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
+        plain1l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16).copy();
+        plain1r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16).copy();
+        for classe in range(len(self.diffs)):
+            #print(classe)
+            plain1l[Y == classe] = plain0l[Y == classe] ^ self.diffs[classe][0];
+            plain1r[Y == classe] = plain0r[Y == classe] ^ self.diffs[classe][1];
+        ks = self.cipher.expand_key(keys, self.args.nombre_round_eval);
+        ctdata0l, ctdata0r = self.cipher.encrypt((plain0l, plain0r), ks);
+        ctdata1l, ctdata1r = self.cipher.encrypt((plain1l, plain1r), ks);
         liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
         X = self.convert_to_binary(liste_inputs);
         return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);

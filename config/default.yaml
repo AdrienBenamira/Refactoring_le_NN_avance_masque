@@ -18,7 +18,12 @@ general:
 
 
 train_nn:
-  diff: (0x8100, 0x8102)
+  diff: (0x0040, 0x0000)
+  # roun0
+  #(0x0040, 0x0000)
+  # roun1
+  #(0x8000, 0x8000)
+  # roun2
   #(0x8100, 0x8102)
   #(0x8300, 0x8302)
   #(0x8700, 0x8702)
@@ -65,6 +70,7 @@ train_nn:
   clip_grad_norm: 0.6
   end_after_training: Yes
   make_data_equilibre_3class: No
+  make_data_equilibre_8class: Yes
   make_data_Nbatch: No
   Nbatch: 100
 
