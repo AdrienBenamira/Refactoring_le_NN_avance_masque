@@ -186,8 +186,8 @@ pourcentage = 3
 data_train = np.zeros((len(nn_model_ref.X_train_nn_binaire), 64*8),  dtype = np.float16)
 data_val = np.zeros((len(nn_model_ref.X_val_nn_binaire), 64*8), dtype = np.float16)
 
-data_train1 = np.zeros((len(nn_model_ref.X_train_nn_binaire), 8),  dtype = np.float16)
-data_val1 = np.zeros((len(nn_model_ref.X_val_nn_binaire), 8), dtype = np.float16)
+#data_train1 = np.zeros((len(nn_model_ref.X_train_nn_binaire), 8),  dtype = np.float16)
+#data_val1 = np.zeros((len(nn_model_ref.X_val_nn_binaire), 8), dtype = np.float16)
 
 #x = nn_model_ref.net.intermediare.detach().cpu().numpy().astype(np.uint8)
 #data_train = np.zeros_like(x, dtype = np.uint8)
@@ -222,13 +222,13 @@ for phase in val_phase:
                 coefall +=coef
 
 
-            if phase == "train":
-                data_train1[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,iter_filenames] = outputs.squeeze(1).detach().cpu().numpy()
-            else:
-                data_val1[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,iter_filenames] = outputs.squeeze(1).detach().cpu().numpy()
+            #if phase == "train":
+            #    data_train1[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,iter_filenames] = outputs.squeeze(1).detach().cpu().numpy()
+            #else:
+            #    data_val1[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,iter_filenames] = outputs.squeeze(1).detach().cpu().numpy()
 
 
-            data_ici = nn_model_ref.net.intermediare.detach().cpu().numpy()
+            data_ici = nn_model_ref.net.intermediare2.detach().cpu().numpy()
             if phase == "train":
                 data_train[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,64*iter_filenames:64*iter_filenames+64] = data_ici
             else:

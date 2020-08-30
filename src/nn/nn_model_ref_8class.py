@@ -221,10 +221,10 @@ class NN_Model_Ref_8class:
                         _, predicted = torch.max(outputs.data, 1)
                         #print(all_preds, predicted)
                         all_preds = torch.cat(
-                            (all_preds.long(), predicted)
+                            (all_preds.cpu().long(), predicted.cpu())
                         )
                         all_labels = torch.cat(
-                            (all_labels, labels)
+                            (all_labels.cpu(), labels.cpu())
                         )
 
                         if phase == 'train':

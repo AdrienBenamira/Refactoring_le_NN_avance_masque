@@ -62,7 +62,11 @@ def make_classifier2(input_size=84, d1=512, d2=256, final_activation='sigmoid'):
     dense1ter = BatchNormalization()(dense1ter);
     dense1ter = Activation('relu')(dense1ter);
 
-    dense2 = Dense(d2)(dense1ter);
+    dense2bis = Dense(d2)(dense1ter);
+    dense2bis = BatchNormalization()(dense2bis);
+    dense2bis = Activation('relu')(dense2bis);
+
+    dense2 = Dense(d2)(dense2bis);
     dense2 = BatchNormalization()(dense2);
     dense2 = Activation('relu')(dense2);
     out = Dense(1, activation=final_activation)(dense2);
