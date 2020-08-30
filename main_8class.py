@@ -193,8 +193,10 @@ for i in range(net_f.numLayers - 1):
     net_f.layers_batch[i].weight.requires_grad = False
 net_f.fc1.weight.requires_grad = False
 net_f.BN5.weight.requires_grad = False
-net_f.fc2 = nn.Linear(args.hidden1, args.hidden1)
-net_f.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
+net_f.fc2.weight.requires_grad = False
+net_f.BN6.weight.requires_grad = False
+#net_f.fc2 = nn.Linear(args.hidden1, args.hidden1)
+#net_f.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
 net_f.fc3 = nn.Linear(args.hidden1, 1)
 nn_model_ref2.net = net_f
 nn_model_ref2.train_general(name_input)

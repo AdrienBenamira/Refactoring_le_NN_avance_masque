@@ -113,14 +113,16 @@ class Create_data_binary:
 
     def make_train_data_general_8class(self, n):
         Y  = np.random.choice(np.arange(0, len(self.diffs)), n, p=self.ps)
-        Y[Y!=0] = 1
+        Y[Y==7] = 3
+        Y[Y==6] = 3
+        Y[Y==5] = 3
+        Y[Y==4] = 3
         keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
         plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
         plain0r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
         plain1l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16).copy();
         plain1r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16).copy();
         for classe in range(len(self.diffs)):
-            #print(classe)
             plain1l[Y == classe] = plain0l[Y == classe] ^ self.diffs[classe][0];
             plain1r[Y == classe] = plain0r[Y == classe] ^ self.diffs[classe][1];
         ks = self.cipher.expand_key(keys, self.args.nombre_round_eval);
