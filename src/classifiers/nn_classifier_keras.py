@@ -47,13 +47,22 @@ def make_classifier(input_size=84, d1=128, d2=64, final_activation='sigmoid'):
     model = Model(inputs=inp, outputs=out);
     return (model);
 
-def make_classifier2(input_size=84, d1=1024, d2=512, final_activation='sigmoid'):
+def make_classifier2(input_size=84, d1=512, d2=256, final_activation='sigmoid'):
     # Input and preprocessing layers
     inp = Input(shape=(input_size,));
     dense1 = Dense(d1)(inp);
     dense1 = BatchNormalization()(dense1);
     dense1 = Activation('relu')(dense1);
-    dense2 = Dense(d2)(dense1);
+
+    dense1bis = Dense(d1)(dense1);
+    dense1bis = BatchNormalization()(dense1bis);
+    dense1bis = Activation('relu')(dense1bis);
+
+    dense1ter = Dense(d1)(dense1bis);
+    dense1ter = BatchNormalization()(dense1ter);
+    dense1ter = Activation('relu')(dense1ter);
+
+    dense2 = Dense(d2)(dense1ter);
     dense2 = BatchNormalization()(dense2);
     dense2 = Activation('relu')(dense2);
     out = Dense(1, activation=final_activation)(dense2);
@@ -71,7 +80,7 @@ def train_speck_distinguisher(args, n_feat, X, Y, X_eval, Y_eval, epoch, bs, nam
     # set up model checkpoint
     check = make_checkpoint(wdir + 'NN_classifier' + str(args.nombre_round_eval) + "_"+ name_ici + '.h5');
     # create learnrate schedule
-    lr = LearningRateScheduler(cyclic_lr(10, 0.002, 0.0001));
+    lr = LearningRateScheduler(cyclic_lr(10, 0.002, 0.001));
     # train and evaluate
     h = net.fit(X, Y, epochs=epoch, batch_size=bs, validation_data=(X_eval, Y_eval), callbacks=[lr, check]);
     np.save(wdir + 'h_acc_' + str(np.max(h.history['val_acc'])) + "_"+ name_ici +  '.npy', h.history['val_acc']);

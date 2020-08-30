@@ -43,6 +43,7 @@ class ModelPaperBaseline(nn.Module):
         x = F.relu(self.BN5(self.fc1(x)))
         self.intermediare = x.clone()
         x = F.relu(self.BN6(self.fc2(x)))
+        self.intermediare2 = x.clone()
         x = self.fc3(x)
         x = torch.sigmoid(x)
         return x
