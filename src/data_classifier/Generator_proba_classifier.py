@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 from scipy import sparse
-from sparse_vector import SparseVector
+#from sparse_vector import SparseVector
 import time
 
 class Genrator_data_prob_classifier:
