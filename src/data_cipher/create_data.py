@@ -113,11 +113,11 @@ class Create_data_binary:
 
     def make_train_data_general_8class(self, n):
         Y  = np.random.choice(np.arange(0, len(self.diffs)), n, p=self.ps)
-        #Y[Y != 0] = 1
-        Y[Y==7] = 3
-        Y[Y==6] = 3
-        Y[Y==5] = 3
-        Y[Y==4] = 3
+        Y[Y != 0] = 1
+        #Y[Y==7] = 3
+        #Y[Y==6] = 3
+        #Y[Y==5] = 3
+        #Y[Y==4] = 3
         keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
         plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
         plain0r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
@@ -270,12 +270,13 @@ class Create_data_binary:
 
     def convert_data_inputs(self, args, ctdata0l, ctdata0r, ctdata1l, ctdata1r):
         inputs_toput = []
-        V0 = self.cipher.ror(ctdata0l ^ ctdata0r, self.cipher.BETA)
-        V1 = self.cipher.ror(ctdata1l ^ ctdata1r, self.cipher.BETA)
-        DV = V0 ^ V1
-        V0Inv = 65535 - V0 #(V0 ^ 0xffff)
-        V1Inv = 65535 - V1
-        inv_DeltaV = 65535 - DV
+        if self.args.cipher =="speck":
+            V0 = self.cipher.ror(ctdata0l ^ ctdata0r, self.cipher.BETA)
+            V1 = self.cipher.ror(ctdata1l ^ ctdata1r, self.cipher.BETA)
+            DV = V0 ^ V1
+            V0Inv = 65535 - V0 #(V0 ^ 0xffff)
+            V1Inv = 65535 - V1
+            inv_DeltaV = 65535 - DV
         for i in range(len(args.inputs_type)):
             if args.inputs_type[i] =="ctdata0l":
                 inputs_toput.append(ctdata0l)

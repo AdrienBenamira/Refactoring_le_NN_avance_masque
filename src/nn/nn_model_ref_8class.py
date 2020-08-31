@@ -165,10 +165,10 @@ class NN_Model_Ref_8class:
         print()
         data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device)
         dataloader_train = DataLoader(data_train, batch_size=self.batch_size,
-                                      shuffle=False, num_workers=self.args.num_workers)
+                                      shuffle=False, num_workers=self.args.num_workers, pin_memory=True)
         data_val = DataLoader_cipher_binary(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device)
         dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
-                                      shuffle=False, num_workers=self.args.num_workers)
+                                      shuffle=False, num_workers=self.args.num_workers, pin_memory=True)
         if len(val_phase)>1:
             self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
         else:

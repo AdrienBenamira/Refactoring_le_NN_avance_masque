@@ -5,7 +5,7 @@ general:
   models_path: ./results/models_trained/
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 3
+  nombre_round_eval: 5
   inputs_type: [ctdata0l^ctdata1l, DV, V0, V1]
   #[ctdata0l^ctdata1l, DV, V0, V1]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
@@ -19,6 +19,8 @@ general:
 
 train_nn:
   diff: (0x0040, 0x0000)
+  #(0, 0x0040) SIMON
+  #SPECK
   # roun0
   #(0x0040, 0x0000)
   # roun1
@@ -32,21 +34,32 @@ train_nn:
   #(0xbf00, 0xbf02)
   #(0xff00, 0xff02)
   #(0x7f00, 0x7f02)
-  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
-  load_special: No
-  load_nn_path: ./results/0.916119_bestacc.pth
+  load_special: Yes
+  load_nn_path: ./results/0.781695_bestacc.pth
+  #./results/0.781695_bestacc.pth
+  #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_06_26_10_05_58_795239/0.926954_bestacc.pth
+  #./results/0.872292_bestacc.pth
   # ./results/models_trained/speck/6/ctdata0l^ctdata1l_DL_V0_V1/Gohr_baseline_best_nbre_sampletrain_10000.pth
-  #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_06_26_10_05_58_795239/0.926954_bestacc.pth #./results/0.920062_bestacc.pth #./results/0.925608_bestacc.pth #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_07_01_01_52_17_577674/0.918551_bestacc.pth #./results/0.925608_bestacc.pth #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_07_01_01_52_17_577674/0.918551_bestacc.pth #./results/0.993328_bestacc.pth #./results/0.925608_bestacc.pth # results/0.781974_bestacc.pth #
+  #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_06_26_10_05_58_795239/0.926954_bestacc.pth
+  #./results/0.920062_bestacc.pth
+  #./results/0.925608_bestacc.pth
+  #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_07_01_01_52_17_577674/0.918551_bestacc.pth
+  #./results/0.925608_bestacc.pth
+  #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_07_01_01_52_17_577674/0.918551_bestacc.pth
+  #./results/0.993328_bestacc.pth
+  #./results/0.925608_bestacc.pth
+  # results/0.781974_bestacc.pth #
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
   type_model: baseline        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
   a_bit: 1
-  nbre_sample_train: 10000000
-  nbre_sample_eval: 1000000
-  num_epochs: 200
+  nbre_sample_train: 20000000
+  nbre_sample_eval: 2000000
+  num_epochs: 50
   batch_size: 500
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
@@ -66,7 +79,7 @@ train_nn:
   hidden2: 64 #64
   kernel_size0: 1
   kernel_size1: 3
-  num_workers: 2
+  num_workers: 4
   clip_grad_norm: 0.6
   end_after_training: Yes
   make_data_equilibre_3class: No
@@ -77,7 +90,9 @@ train_nn:
 
 getting_masks:
   load_masks: Yes
-  file_mask: results/masks_ref/speck/6/masks_QQ/masks_61.txt #results/masks_ref/speck/masks_inter_round.txt
+  file_mask: results/masks_ref/speck/6/masks_QQ/masks_126.txt
+  #results/masks_ref/speck/6/masks_QQ/masks_126.txt
+  #results/masks_ref/speck/masks_inter_round.txt
   nbre_max_masks_load: -1
   research_new_masks: No
   nbre_generate_data_train_val: 1000000

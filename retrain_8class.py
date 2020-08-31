@@ -1,8 +1,9 @@
 import sys
 import warnings
 
-
 from src.nn.DataLoader import DataLoader_cipher_binary
+from src.nn.nn_model_ref_3class import NN_Model_Ref_3class
+from src.nn.nn_model_ref_8class import NN_Model_Ref_8class
 
 warnings.filterwarnings('ignore',category=FutureWarning)
 from collections import Counter
@@ -19,6 +20,7 @@ import argparse
 from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type, str2hexa
 import numpy as np
 import pandas as pd
+import torch.nn as nn
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # initiate the parser
 
@@ -40,7 +42,7 @@ parser.add_argument("--alpha", default=config.general.alpha, type=two_args_str_i
 parser.add_argument("--beta", default=config.general.beta, type=two_args_str_int)
 parser.add_argument("--type_create_data", default=config.general.type_create_data, choices=["normal", "real_difference"])
 
-parser.add_argument("--diff", default=config.train_nn.diff, type=str2hexa)
+
 parser.add_argument("--retain_model_gohr_ref", default=config.train_nn.retain_model_gohr_ref, type=str2bool)
 parser.add_argument("--load_special", default=config.train_nn.load_special, type=str2bool)
 parser.add_argument("--finetunning", default=config.train_nn.finetunning, type=str2bool)
@@ -50,7 +52,7 @@ parser.add_argument("--countinuous_learning", default=config.train_nn.countinuou
 parser.add_argument("--curriculum_learning", default=config.train_nn.curriculum_learning, type=str2bool)
 parser.add_argument("--nbre_epoch_per_stage", default=config.train_nn.nbre_epoch_per_stage, type=two_args_str_int)
 parser.add_argument("--a_bit", default=config.train_nn.a_bit, type=two_args_str_int)
-parser.add_argument("--type_model", default=config.train_nn.type_model, choices=["baseline", "cnn_attention", "multihead", "deepset", "baseline_bin", "baseline_bin_v2"])
+parser.add_argument("--type_model", default=config.train_nn.type_model, choices=["baseline", "cnn_attention", "multihead", "deepset", "baseline_bin", "baseline_3class"])
 parser.add_argument("--nbre_sample_train", default=config.train_nn.nbre_sample_train, type=two_args_str_int)
 parser.add_argument("--nbre_sample_eval", default=config.train_nn.nbre_sample_eval, type=two_args_str_int)
 parser.add_argument("--num_epochs", default=config.train_nn.num_epochs, type=two_args_str_int)
@@ -65,17 +67,16 @@ parser.add_argument("--demicycle_1", default=config.train_nn.demicycle_1, type=t
 parser.add_argument("--optimizer_type", default=config.train_nn.optimizer_type, choices=["Adam", "AdamW", "SGD"])
 parser.add_argument("--scheduler_type", default=config.train_nn.scheduler_type, choices=["CyclicLR", "None"])
 parser.add_argument("--numLayers", default=config.train_nn.numLayers, type=two_args_str_int)
-parser.add_argument("--limit", default=config.train_nn.limit, type=two_args_str_int)
-parser.add_argument("--kstime", default=config.train_nn.kstime, type=two_args_str_int)
 parser.add_argument("--out_channel0", default=config.train_nn.out_channel0, type=two_args_str_int)
 parser.add_argument("--out_channel1", default=config.train_nn.out_channel1, type=two_args_str_int)
 parser.add_argument("--hidden1", default=config.train_nn.hidden1, type=two_args_str_int)
-parser.add_argument("--hidden2", default=config.train_nn.hidden2, type=two_args_str_int)
 parser.add_argument("--kernel_size0", default=config.train_nn.kernel_size0, type=two_args_str_int)
 parser.add_argument("--kernel_size1", default=config.train_nn.kernel_size1, type=two_args_str_int)
 parser.add_argument("--num_workers", default=config.train_nn.num_workers, type=two_args_str_int)
 parser.add_argument("--clip_grad_norm", default=config.train_nn.clip_grad_norm, type=two_args_str_float)
 parser.add_argument("--end_after_training", default=config.train_nn.end_after_training, type=str2bool)
+parser.add_argument("--make_data_equilibre_3class", default=config.train_nn.make_data_equilibre_3class, type=str2bool)
+parser.add_argument("--make_data_equilibre_8class", default=config.train_nn.make_data_equilibre_8class, type=str2bool)
 
 
 
@@ -117,12 +118,14 @@ parser.add_argument("--end_after_step4", default=config.compare_classifer.end_af
 parser.add_argument("--eval_nn_ref", default=config.compare_classifer.eval_nn_ref, type=str2bool)
 parser.add_argument("--compute_independance_feature", default=config.compare_classifer.compute_independance_feature, type=str2bool)
 parser.add_argument("--save_data_proba", default=config.compare_classifer.save_data_proba, type=str2bool)
-
+parser.add_argument("--diff", default=config.train_nn.diff, type=str2hexa)
 
 
 args = parser.parse_args()
 
-from src.classifiers.nn_classifier_keras import train_speck_distinguisher
+args.logs_tensorboard = args.logs_tensorboard.replace("test", "test_3class")
+
+
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #
 print("---" * 100)
@@ -141,183 +144,196 @@ print()
 print("COUNTINUOUS LEARNING: "+ str(args.countinuous_learning) +  " | CURRICULUM LEARNING: " +  str(args.curriculum_learning) + " | MODEL: " + str(args.type_model))
 print()
 
-
-import glob
-from torch.utils.data import DataLoader
-
-
-args.load_special = True
-mypath = "./results/Res_96/*pth"
-all_models_trained = {}
-for filenames in glob.glob(mypath):
-    print(filenames)
-    nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-    args.load_nn_path = filenames
-    nn_model_ref.load_nn()
-    all_models_trained[filenames] = nn_model_ref.net.eval()
-
-    del nn_model_ref
-
-all_models_trained["coef"] = [1, 1, 1, 1, 1, 1, 1, 1]
-#[0.125,0.008, 0.06, 0.5, 0.03, 0.0125, 0.008, 0.25]
-
-
+"""nombre_round_eval = args.nombre_round_eval
+args.nombre_round_eval = nombre_round_eval - 2
+nn_model_ref2 = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
+nn_model_ref2.epochs = 10
+nn_model_ref2.train_general(name_input)
+args.nombre_round_eval = nombre_round_eval - 1
+nn_model_ref3 = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
+nn_model_ref3.epochs = 10
+nn_model_ref3.net = nn_model_ref2.net
+nn_model_ref3.train_general(name_input)
+args.nombre_round_eval = nombre_round_eval
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
+nn_model_ref.net = nn_model_ref3.net"""
+
+nn_model_ref = NN_Model_Ref_8class(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
+nn_model_ref.load_nn()
+net_f = nn_model_ref.net.eval()
 
 
-data_train = DataLoader_cipher_binary(nn_model_ref.X_train_nn_binaire, nn_model_ref.Y_train_nn_binaire, nn_model_ref.device)
-dataloader_train = DataLoader(data_train, batch_size=nn_model_ref.batch_size,
-                              shuffle=False, num_workers=nn_model_ref.args.num_workers)
-data_val = DataLoader_cipher_binary(nn_model_ref.X_val_nn_binaire, nn_model_ref.Y_val_nn_binaire, nn_model_ref.device)
-dataloader_val = DataLoader(data_val, batch_size=nn_model_ref.batch_size,
-                              shuffle=False, num_workers=nn_model_ref.args.num_workers)
 
-nn_model_ref.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
-nn_model_ref.load_general_train()
+if args.create_new_data_for_ToT and args.create_new_data_for_classifier:
+    del nn_model_ref.X_train_nn_binaire, nn_model_ref.X_val_nn_binaire, nn_model_ref.Y_train_nn_binaire, nn_model_ref.Y_val_nn_binaire
+    del nn_model_ref.c0l_train_nn, nn_model_ref.c0l_val_nn, nn_model_ref.c0r_train_nn, nn_model_ref.c0r_val_nn
+    del nn_model_ref.c1l_train_nn, nn_model_ref.c1l_val_nn, nn_model_ref.c1r_train_nn, nn_model_ref.c1r_val_nn
+
+del nn_model_ref
+
+args.nombre_round_eval = 5
+nn_model_ref2 = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
+
 
 import time
 import torch
 val_phase = ['train', 'val']
+from torch.utils.data import DataLoader
+import glob
+args.load_special = True
+mypath = "./results/Res_96/*pth"
+all_models_trained = {}
+"""for filenames in glob.glob(mypath):
+    print(filenames)
+    #if filenames =="./results/Res_96/0.948724_bestacc.pth":
+    nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
+    args.load_nn_path = filenames
+    nn_model_ref.load_nn()
+    all_models_trained[filenames] = nn_model_ref.net
+    del nn_model_ref
+
+net1 = all_models_trained["./results/Res_96/0.984361_bestacc.pth"].eval()
+net2 = all_models_trained["./results/Res_96/0.928219_bestacc.pth"].eval()
+net3 = all_models_trained["./results/Res_96/0.948724_bestacc.pth"].eval()
+net4 = all_models_trained["./results/Res_96/0.928219_bestacc.pth"].eval()"""
+
+data_train = DataLoader_cipher_binary(nn_model_ref2.X_train_nn_binaire, nn_model_ref2.Y_train_nn_binaire, nn_model_ref2.device)
+dataloader_train = DataLoader(data_train, batch_size=nn_model_ref2.batch_size,
+                              shuffle=False, num_workers=nn_model_ref2.args.num_workers)
+data_val = DataLoader_cipher_binary(nn_model_ref2.X_val_nn_binaire, nn_model_ref2.Y_val_nn_binaire, nn_model_ref2.device)
+dataloader_val = DataLoader(data_val, batch_size=nn_model_ref2.batch_size,
+                              shuffle=False, num_workers=nn_model_ref2.args.num_workers)
+if len(val_phase)>1:
+    nn_model_ref2.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
+else:
+    nn_model_ref2.dataloaders = {'val': dataloader_val}
+nn_model_ref2.load_general_train()
+
+
 since = time.time()
-n_batches = nn_model_ref.batch_size
+n_batches = nn_model_ref2.batch_size
 pourcentage = 3
 #phase = "val"
-#nn_model_ref.intermediaires = {x:[] for x in val_phase }
-data_train = np.zeros((len(nn_model_ref.X_train_nn_binaire), 64*8),  dtype = np.float16)
-data_val = np.zeros((len(nn_model_ref.X_val_nn_binaire), 64*8), dtype = np.float16)
-
-#data_train1 = np.zeros((len(nn_model_ref.X_train_nn_binaire), 8),  dtype = np.float16)
-#data_val1 = np.zeros((len(nn_model_ref.X_val_nn_binaire), 8), dtype = np.float16)
-
-#x = nn_model_ref.net.intermediare.detach().cpu().numpy().astype(np.uint8)
+#nn_model_ref2.intermediaires = {x:[] for x in val_phase }
+#data_train = np.zeros((len(nn_model_ref2.X_train_nn_binaire), 16*nn_model_ref2.args.out_channel1),  dtype = np.uint8)
+#data_val = np.zeros((len(nn_model_ref2.X_val_nn_binaire), 16*nn_model_ref2.args.out_channel1), dtype = np.uint8)
+#x = nn_model_ref2.net.intermediare.detach().cpu().numpy().astype(np.uint8)
 #data_train = np.zeros_like(x, dtype = np.uint8)
 #data_val = np.zeros_like(x, dtype = np.uint8)
 from tqdm import tqdm
-nn_model_ref.outputs_proba = {x: [] for x in val_phase}
-nn_model_ref.outputs_pred = {x: [] for x in val_phase}
-
-methode1 = False
-
+nn_model_ref2.outputs_proba = {x: [] for x in val_phase}
+nn_model_ref2.outputs_pred = {x: [] for x in val_phase}
+all_preds = torch.tensor([])
+all_labels = torch.tensor([])
+all_X = torch.tensor([])
+all_preds_val = torch.tensor([])
+all_labels_val = torch.tensor([])
+all_Xval = torch.tensor([])
 for phase in val_phase:
-    nn_model_ref.net.eval()
-    if nn_model_ref.args.curriculum_learning:
-        nn_model_ref.dataloaders[phase].catgeorie = pourcentage
+    nn_model_ref2.net.eval()
+    if nn_model_ref2.args.curriculum_learning:
+        nn_model_ref2.dataloaders[phase].catgeorie = pourcentage
     running_loss = 0.0
     nbre_sample = 0
-    TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
-        1).long()
-    tk0 = tqdm(nn_model_ref.dataloaders[phase], total=int(len(nn_model_ref.dataloaders[phase])))
+
+    tk0 = tqdm(nn_model_ref2.dataloaders[phase], total=int(len(nn_model_ref2.dataloaders[phase])))
     for i, data in enumerate(tk0):
         inputs, labels = data
-        coefall = 0
-        for iter_filenames, filenames in enumerate(glob.glob(mypath)):
-            coef = all_models_trained["coef"][iter_filenames]
-            nn_model_ref.net = all_models_trained[filenames].eval()
-            outputs = nn_model_ref.net(inputs.to(nn_model_ref.device))
-            if methode1 :
-                if iter_filenames==0:
-                    outputs_f = coef* outputs
-                else:
-                    outputs_f += coef * outputs
-                coefall +=coef
+        outputs = net_f(inputs.to(nn_model_ref2.device))
+        _, predicted = torch.max(outputs.data, 1)
+        if phase == "train":
+            #print(all_preds)
+            all_preds = torch.cat(
+                (all_preds.cpu().long(), predicted.cpu())
+            )
+            all_labels = torch.cat(
+                (all_labels.cpu(), labels.cpu())
+            )
+            all_X = torch.cat(
+                (all_X.cpu(), inputs.cpu())
+            )
+        else:
+            all_preds_val = torch.cat(
+                (all_preds.cpu().long(), predicted.cpu())
+            )
+            all_labels_val = torch.cat(
+                (all_labels.cpu(), labels.cpu())
+            )
+            all_Xval = torch.cat(
+                (all_X.cpu(), inputs.cpu())
+            )
+        """outputs = net1(inputs.to(nn_model_ref2.device)[predicted==0])
+        preds = (outputs.squeeze(1) > nn_model_ref2.t.to(nn_model_ref2.device)).int().cpu() * 1
+        correct1 += (preds == labels[predicted==0].to(nn_model_ref2.device)).cpu().sum().item()
+        TOT21 += labels[predicted==0].size(0)
 
+        outputs = net2(inputs.to(nn_model_ref2.device)[predicted == 1])
+        preds = (outputs.squeeze(1) > nn_model_ref2.t.to(nn_model_ref2.device)).int().cpu() * 1
+        correct2 += (preds == labels[predicted == 1].to(nn_model_ref2.device)).cpu().sum().item()
+        TOT22 += labels[predicted == 1].size(0)
 
-            #if phase == "train":
-            #    data_train1[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,iter_filenames] = outputs.squeeze(1).detach().cpu().numpy()
-            #else:
-            #    data_val1[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,iter_filenames] = outputs.squeeze(1).detach().cpu().numpy()
+        outputs = net3(inputs.to(nn_model_ref2.device)[predicted == 2])
+        preds = (outputs.squeeze(1) > nn_model_ref2.t.to(nn_model_ref2.device)).int().cpu() * 1
+        correct3 += (preds == labels[predicted == 2].to(nn_model_ref2.device)).cpu().sum().item()
+        TOT23 += labels[predicted == 2].size(0)
 
+        outputs = net4(inputs.to(nn_model_ref2.device)[predicted == 3])
+        preds = (outputs.squeeze(1) > nn_model_ref2.t.to(nn_model_ref2.device)).int().cpu() * 1
+        correct4 += (preds == labels[predicted == 3].to(nn_model_ref2.device)).cpu().sum().item()
+        TOT24 += labels[predicted == 3].size(0)"""
 
-            data_ici = nn_model_ref.net.intermediare2.detach().cpu().numpy()
-            if phase == "train":
-                data_train[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,64*iter_filenames:64*iter_filenames+64] = data_ici
-            else:
-                data_val[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,64*iter_filenames:64*iter_filenames+64] = data_ici
-
-
-            del data_ici
-
-            if methode1:
-                outputs = outputs_f/(coefall)
-            #print(outputs_f)
-
-
-
-
-        #data_ici = nn_model_ref.net.intermediare.detach().cpu().numpy().astype(np.uint8)
+        #preds = (outputs.squeeze(1) > nn_model_ref2.t.to(nn_model_ref2.device)).int().cpu() * 1
+        #data_ici = nn_model_ref2.net.intermediare.detach().cpu().numpy().astype(np.uint8)
         #if phase == "train":
-        #    data_train[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,:] = data_ici
+        #    data_train[i*nn_model_ref2.batch_size:(i+1)*nn_model_ref2.batch_size,:] = data_ici
         #else:
-        #    data_val[i*nn_model_ref.batch_size:(i+1)*nn_model_ref.batch_size,:] = data_ici
+        #    data_val[i*nn_model_ref2.batch_size:(i+1)*nn_model_ref2.batch_size,:] = data_ici
         #del data_ici
 
-        #nn_model_ref.intermediaires[phase].append(nn_model_ref.net.intermediare.detach().cpu().numpy().astype(np.uint8))
-        #nn_model_ref.outputs_proba[phase].append(outputs.detach().cpu().numpy().astype(np.float16))
+        #nn_model_ref2.intermediaires[phase].append(nn_model_ref2.net.intermediare.detach().cpu().numpy().astype(np.uint8))
+        #nn_model_ref2.outputs_proba[phase].append(outputs.detach().cpu().numpy().astype(np.float16))
 
-        loss = nn_model_ref.criterion(outputs.squeeze(1), labels.to(nn_model_ref.device))
-        desc = 'loss: %.4f; ' % (loss.item())
-        preds = (outputs.squeeze(1) > nn_model_ref.t.to(nn_model_ref.device)).float().cpu() * 1
-        #nn_model_ref.outputs_pred[phase].append(preds.detach().cpu().numpy().astype(np.float16))
-        TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
-        TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
-        FN += (preds.eq(0) & labels.eq(1)).cpu().sum()
-        FP += (preds.eq(1) & labels.eq(0)).cpu().sum()
-        TOT = TP + TN + FN + FP
-        desc += 'acc: %.3f, TP: %.3f, TN: %.3f, FN: %.3f, FP: %.3f' % (
-            (TP.item() + TN.item()) * 1.0 / TOT.item(), TP.item() * 1.0 / TOT.item(),
-            TN.item() * 1.0 / TOT.item(), FN.item() * 1.0 / TOT.item(),
-            FP.item() * 1.0 / TOT.item())
-        running_loss += loss.item() * n_batches
         nbre_sample += n_batches
-
-        #print(ok)
-
-
-
-
-
     epoch_loss = running_loss / nbre_sample
-    acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
-    nn_model_ref.acc = acc
-    print('{} Loss: {:.4f}'.format(
-        phase, epoch_loss))
-    print('{} Acc: {:.4f}'.format(
-        phase, acc))
     #print(desc)
     print()
     time_elapsed = time.time() - since
     print('Evaluation complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
     print()
+    num1 = int(nn_model_ref2.args.nbre_sample_train_classifier/nn_model_ref2.batch_size)
+    num2 = int(nn_model_ref2.args.nbre_sample_val_classifier / nn_model_ref2.batch_size)
+    if phase == "train":
+        #scaler1 = StandardScaler()
+        #del nn_model_ref2.dataloaders["train"]
+        #data = data_train #np.array(nn_model_ref2.intermediaires[phase]).astype(np.uint8).reshape(num1 * nn_model_ref2.batch_size, -1)
+        #data2 = scaler1.fit_transform(data)
+        nn_model_ref2.all_intermediaire = data_train
+        #nn_model_ref2.outputs_proba_train = np.array(nn_model_ref2.outputs_proba[phase]).astype(np.float16).reshape(num1 * nn_model_ref2.batch_size, -1)
+        #nn_model_ref2.outputs_pred_train = np.array(nn_model_ref2.outputs_pred[phase]).astype(np.float16).reshape(num1 * nn_model_ref2.batch_size, -1)
+        #if not nn_model_ref2.args.retrain_nn_ref:
+            #del nn_model_ref2.all_intermediaire, data_train
 
+    else:
+        #scaler2 = StandardScaler()
+        #data = data_val
+        #data = np.array(nn_model_ref2.intermediaires[phase]).astype(np.uint8).reshape(num1 * nn_model_ref2.batch_size, -1)
+        #data2 = scaler2.fit_transform(data)
+        nn_model_ref2.all_intermediaire_val = data_val
+        #nn_model_ref2.outputs_proba_val = np.array(nn_model_ref2.outputs_proba[phase]).astype(np.float16).reshape(num2 * nn_model_ref2.batch_size, -1)
+        #nn_model_ref2.outputs_pred_val = np.array(nn_model_ref2.outputs_pred[phase]).astype(np.float16).reshape(
+        #    num2 * nn_model_ref2.batch_size, -1)
+        #if not nn_model_ref2.args.retrain_nn_ref:
+            #del nn_model_ref2.all_intermediaire_val, data_val
+        del nn_model_ref2.dataloaders[phase]
 
+for i in range(4):
+    print(all_X[all_preds==i].numpy().shape)
+    print(all_labels[all_preds==i].numpy().shape)
 
-from sklearn.model_selection import cross_val_score
-from sklearn import svm
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import ShuffleSplit
-
-
-
-#n_samples = data_train1.shape[0]
-#cv = ShuffleSplit(n_splits=5, test_size=0.2, random_state=0)
-#clf = svm.SVC(kernel='linear', C=1)
-#clf = RandomForestClassifier(max_depth=10, random_state=0)
-#scores = cross_val_score(clf, data_train1, nn_model_ref.Y_train_nn_binaire, cv=cv)
-#print("Accuracy: %0.4f (+/- %0.4f)" % (scores.mean(), scores.std() * 2))
-
-
-"""net2, h = train_speck_distinguisher(args,data_train1.shape[1], data_train1,
-                                            nn_model_ref.Y_train_nn_binaire, data_val1, nn_model_ref.Y_val_nn_binaire,
-                                            bs=args.batch_size_our,
-                                            epoch=args.num_epch_our, name_ici="our_model",
-                                            wdir=nn_model_ref.path_save_model, flag_3layes=False)"""
-
-net2, h = train_speck_distinguisher(args,data_train.shape[1], data_train,
-                                            nn_model_ref.Y_train_nn_binaire, data_val, nn_model_ref.Y_val_nn_binaire,
-                                            bs=args.batch_size_our,
-                                            epoch=args.num_epch_our, name_ici="our_model",
-                                            wdir=nn_model_ref.path_save_model, flag_3layes=False)
-print(ok)
-
-
+    nn_model_ref2.X_train_nn_binaire = all_X[all_preds==i].numpy()
+    nn_model_ref2.X_val_nn_binaire = all_Xval[all_preds_val==i].numpy()
+    nn_model_ref2.Y_train_nn_binaire = all_labels[all_preds==i].numpy()
+    nn_model_ref2.Y_val_nn_binaire =all_labels_val[all_preds_val==i].numpy()
+    nn_model_ref2.train_general(name_input)
+    nn_model_ref2.choose_model()
