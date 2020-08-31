@@ -113,6 +113,7 @@ class Create_data_binary:
 
     def make_train_data_general_8class(self, n):
         Y  = np.random.choice(np.arange(0, len(self.diffs)), n, p=self.ps)
+        #Y[Y != 0] = 1
         Y[Y==7] = 3
         Y[Y==6] = 3
         Y[Y==5] = 3

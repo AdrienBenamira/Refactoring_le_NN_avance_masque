@@ -23,7 +23,7 @@ class ModelPaperBaseline_8class(nn.Module):
         self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1, args.hidden1)
         self.BN6 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
-        self.fc3 = nn.Linear(args.hidden1, 8)
+        self.fc3 = nn.Linear(args.hidden1, 4)
 
 
     def forward(self, x):
