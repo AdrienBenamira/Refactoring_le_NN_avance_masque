@@ -223,12 +223,20 @@ pourcentage = 3
 from tqdm import tqdm
 nn_model_ref2.outputs_proba = {x: [] for x in val_phase}
 nn_model_ref2.outputs_pred = {x: [] for x in val_phase}
-all_preds = torch.tensor([])
-all_labels = torch.tensor([])
-all_X = torch.tensor([])
-all_preds_val = torch.tensor([])
-all_labels_val = torch.tensor([])
-all_Xval = torch.tensor([])
+
+data_train_preds = np.zeros((len(nn_model_ref2.X_train_nn_binaire)),  dtype = np.uint8)
+data_train_labels = np.zeros((len(nn_model_ref2.X_train_nn_binaire)),  dtype = np.uint8)
+data_train_X = np.zeros((len(nn_model_ref2.X_train_nn_binaire), 64),  dtype = np.uint8)
+data_val_preds = np.zeros((len(nn_model_ref2.X_val_nn_binaire)),  dtype = np.uint8)
+data_val_labels = np.zeros((len(nn_model_ref2.X_val_nn_binaire)),  dtype = np.uint8)
+data_val_X = np.zeros((len(nn_model_ref2.X_val_nn_binaire), 64),  dtype = np.uint8)
+
+#all_preds = torch.tensor([])
+#all_labels = torch.tensor([])
+#all_X = torch.tensor([])
+#all_preds_val = torch.tensor([])
+#all_labels_val = torch.tensor([])
+#all_Xval = torch.tensor([])
 for phase in val_phase:
     nn_model_ref2.net.eval()
     if nn_model_ref2.args.curriculum_learning:
@@ -242,26 +250,18 @@ for phase in val_phase:
         outputs = net_f(inputs.to(nn_model_ref2.device))
         _, predicted = torch.max(outputs.data, 1)
         if phase == "train":
-            #print(all_preds)
-            all_preds = torch.cat(
-                (all_preds.cpu().long(), predicted.cpu())
-            )
-            all_labels = torch.cat(
-                (all_labels.cpu(), labels.cpu())
-            )
-            all_X = torch.cat(
-                (all_X.cpu(), inputs.cpu())
-            )
+            data_train_preds[i * nn_model_ref2.batch_size:(i + 1) * nn_model_ref2.batch_size] = predicted.cpu()
+            data_train_labels[i * nn_model_ref2.batch_size:(i + 1) * nn_model_ref2.batch_size] = labels.cpu()
+            data_train_X[i * nn_model_ref2.batch_size:(i + 1) * nn_model_ref2.batch_size, :] = inputs.cpu()
+
+
         else:
-            all_preds_val = torch.cat(
-                (all_preds.cpu().long(), predicted.cpu())
-            )
-            all_labels_val = torch.cat(
-                (all_labels.cpu(), labels.cpu())
-            )
-            all_Xval = torch.cat(
-                (all_X.cpu(), inputs.cpu())
-            )
+
+            data_val_preds[i * nn_model_ref2.batch_size:(i + 1) * nn_model_ref2.batch_size] = predicted.cpu()
+            data_val_labels[i * nn_model_ref2.batch_size:(i + 1) * nn_model_ref2.batch_size] = labels.cpu()
+            data_val_X[i * nn_model_ref2.batch_size:(i + 1) * nn_model_ref2.batch_size, :] = inputs.cpu()
+
+
         """outputs = net1(inputs.to(nn_model_ref2.device)[predicted==0])
         preds = (outputs.squeeze(1) > nn_model_ref2.t.to(nn_model_ref2.device)).int().cpu() * 1
         correct1 += (preds == labels[predicted==0].to(nn_model_ref2.device)).cpu().sum().item()
@@ -328,12 +328,12 @@ for phase in val_phase:
         del nn_model_ref2.dataloaders[phase]
 
 for i in range(4):
-    print(all_X[all_preds==i].numpy().shape)
-    print(all_labels[all_preds==i].numpy().shape)
+    print(data_train_X[data_train_preds==i].shape)
+    print(data_train_labels[data_train_preds==i].shape)
 
-    nn_model_ref2.X_train_nn_binaire = all_X[all_preds==i].numpy()
-    nn_model_ref2.X_val_nn_binaire = all_Xval[all_preds_val==i].numpy()
-    nn_model_ref2.Y_train_nn_binaire = all_labels[all_preds==i].numpy()
-    nn_model_ref2.Y_val_nn_binaire =all_labels_val[all_preds_val==i].numpy()
+    nn_model_ref2.X_train_nn_binaire = data_train_X[data_train_preds==i]
+    nn_model_ref2.X_val_nn_binaire = data_val_X[data_val_preds==i]
+    nn_model_ref2.Y_train_nn_binaire = data_train_labels[data_train_preds==i]
+    nn_model_ref2.Y_val_nn_binaire =data_val_labels[data_val_preds==i]
     nn_model_ref2.train_general(name_input)
     nn_model_ref2.choose_model()
