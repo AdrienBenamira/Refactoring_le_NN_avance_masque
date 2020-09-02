@@ -139,7 +139,7 @@ compare_classifer:
   batch_size_2: 500
   classifiers_ours: [NN, LGBM] # [NN, LGBM, RF]
   num_epch_our: 20
-  batch_size_our: 500
+  batch_size_our: 5000
   retrain_with_import_features: No
   keep_number_most_impactfull: 40
   quality_of_masks: No
