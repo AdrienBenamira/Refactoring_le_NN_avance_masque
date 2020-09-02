@@ -84,7 +84,7 @@ def train_speck_distinguisher(args, n_feat, X, Y, X_eval, Y_eval, epoch, bs, nam
     # set up model checkpoint
     check = make_checkpoint(wdir + 'NN_classifier' + str(args.nombre_round_eval) + "_"+ name_ici + '.h5');
     # create learnrate schedule
-    lr = LearningRateScheduler(cyclic_lr(10, 0.002, 0.001));
+    lr = LearningRateScheduler(cyclic_lr(10, 0.0002, 0.0001));
     # train and evaluate
     h = net.fit(X, Y, epochs=epoch, batch_size=bs, validation_data=(X_eval, Y_eval), callbacks=[lr, check]);
     np.save(wdir + 'h_acc_' + str(np.max(h.history['val_acc'])) + "_"+ name_ici +  '.npy', h.history['val_acc']);
