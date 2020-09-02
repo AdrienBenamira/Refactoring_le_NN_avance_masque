@@ -277,6 +277,16 @@ class Create_data_binary:
             V0Inv = 65535 - V0 #(V0 ^ 0xffff)
             V1Inv = 65535 - V1
             inv_DeltaV = 65535 - DV
+        if self.args.cipher =="simon":
+            c0r =ctdata0r
+            c0l = ctdata0l
+            c1r = ctdata1r
+            c1l = ctdata1l
+            t0 = (self.cipher.rol(c0r, 8) & self.cipher.rol(c0r, 1)) ^ self.cipher.rol(c0r, 2) ^ c0l
+            t1 = (self.cipher.rol(c1r, 8) & self.cipher.rol(c1r, 1)) ^ self.cipher.rol(c1r, 2) ^ c1l
+
+
+
         for i in range(len(args.inputs_type)):
             if args.inputs_type[i] =="ctdata0l":
                 inputs_toput.append(ctdata0l)
@@ -377,7 +387,21 @@ class Create_data_binary:
             if args.inputs_type[i] == "inv(DV)":
                 #V1 = 65535 - (ctdata1l ^ ctdata1r)
                 inputs_toput.append(inv_DeltaV)
+            if args.inputs_type[i] == "c0r^c1r":
+                #V1 = 65535 - (ctdata1l ^ ctdata1r)
+                inputs_toput.append(c0r^c1r)
+            if args.inputs_type[i] == "c0l^c1l":
+                #V1 = 65535 - (ctdata1l ^ ctdata1r)
+                inputs_toput.append(c0l^c1l)
+            if args.inputs_type[i] == "t0^t1":
+                #V1 = 65535 - (ctdata1l ^ ctdata1r)
+                inputs_toput.append(t0^t1)
+
         return inputs_toput
 
 
-
+    def find_difference(self, c0l, c0r, c1l, c1r):
+        # takes in n round ciphertext and output difference at n-1 round
+        t0 = (rol(c0r, 8) & rol(c0r, 1)) ^ rol(c0r, 2) ^ c0l
+        t1 = (rol(c1r, 8) & rol(c1r, 1)) ^ rol(c1r, 2) ^ c1l
+        return (c0r ^ c1r, t0 ^ t1)

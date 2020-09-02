@@ -7,6 +7,11 @@ class Cipher_Simon:
         self.BETA = self.args.beta
         self.MASK_VAL = 2 ** self.WORD_SIZE - 1;
 
+    def rol(self, x, val):
+        return ((x << val) % 2 ** self.WORD_SIZE) ^ (x >> (self.WORD_SIZE - val))
+
+
+
     def enc_one_round(self, p, k):
         x, y = p[0], p[1];
 
