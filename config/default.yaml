@@ -5,7 +5,7 @@ general:
   models_path: ./results/models_trained/
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 5
+  nombre_round_eval: 3
   inputs_type: [ctdata0l^ctdata1l, DV, V0, V1]
   #[c0l^c1l, c0r^c1r]
   #[c0r^c1r, t0^t1]
