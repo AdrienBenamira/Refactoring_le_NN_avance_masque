@@ -130,7 +130,7 @@ class Create_data_binary:
         ctdata0l, ctdata0r = self.cipher.encrypt((plain0l, plain0r), ks);
         ctdata1l, ctdata1r = self.cipher.encrypt((plain1l, plain1r), ks);
 
-        Y2 = np.zeros(n, dtype=np.uint16)
+        Y2 = np.zeros(int(n/8), dtype=np.uint16)
         nombre_round_eval2 = self.args.nombre_round_eval +2
         keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
         plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
