@@ -132,11 +132,11 @@ class Create_data_binary:
 
         Y2 = np.zeros(int(n/8), dtype=np.uint16)
         nombre_round_eval2 = self.args.nombre_round_eval +2
-        keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
-        plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
-        plain0r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
-        plain1l[Y2 == 0] = np.frombuffer(self.urandom_from_random( 2 * len(Y2)), dtype=np.uint16);
-        plain1r[Y2 == 0] = np.frombuffer(self.urandom_from_random(2 * len(Y2)), dtype=np.uint16);
+        keys = np.frombuffer(self.urandom_from_random(8 * len(Y2)), dtype=np.uint16).reshape(4, -1);
+        plain0l = np.frombuffer(self.urandom_from_random(2 * len(Y2)), dtype=np.uint16);
+        plain0r = np.frombuffer(self.urandom_from_random(2 * len(Y2)), dtype=np.uint16);
+        plain1l = np.frombuffer(self.urandom_from_random( 2 * len(Y2)), dtype=np.uint16);
+        plain1r = np.frombuffer(self.urandom_from_random(2 * len(Y2)), dtype=np.uint16);
         ks = self.cipher.expand_key(keys, nombre_round_eval2);
         ctdata0l2, ctdata0r2 = self.cipher.encrypt((plain0l, plain0r), ks);
         ctdata1l2, ctdata1r2 = self.cipher.encrypt((plain1l, plain1r), ks);
