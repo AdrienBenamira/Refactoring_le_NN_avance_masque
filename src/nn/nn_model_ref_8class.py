@@ -10,6 +10,7 @@ import os
 import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
+from sklearn.metrics import accuracy_score
 
 from src.nn.models.ModelBaseline_3class import ModelPaperBaseline_3class
 from src.nn.models.ModelBaseline_8class import ModelPaperBaseline_8class
@@ -258,6 +259,12 @@ class NN_Model_Ref_8class:
 
                 cm = confusion_matrix(all_labels, all_preds)
                 print(cm)
+                all_labels[all_labels!=0] = 1
+                all_preds[all_preds!=0] = 1
+                cm = confusion_matrix(all_labels, all_preds)
+                print(cm)
+                print(accuracy_score(all_labels, all_preds))
+
 
                 #acc = (correct.item()) * 1.0 / TOT2.item()
                 #print('{} Acc Multiclass: {:.4f}'.format(

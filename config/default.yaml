@@ -63,15 +63,15 @@ train_nn:
   nbre_sample_train: 80000000
   nbre_sample_eval: 1000000
   num_epochs: 20
-  batch_size: 500
+  batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
   weight_decay_nn: 0.00001
   momentum_nn: 0.9 #only for SGD
   optimizer_type: Adam #Adam - AdamW - SGD
   scheduler_type: CyclicLR #CyclicLR - None
-  base_lr:  0.0001      #Only if CyclicLR
-  max_lr: 0.002       #Only if CyclicLR
+  base_lr:  0.00001      #Only if CyclicLR
+  max_lr: 0.0002       #Only if CyclicLR
   demicycle_1: 6  #Only if CyclicLR
   numLayers: 10
   limit: 2 #1 - 2 - 3
