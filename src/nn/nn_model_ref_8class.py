@@ -239,15 +239,24 @@ class NN_Model_Ref_8class:
                         correct += (predicted == labels.to(self.device)).cpu().sum().item()
                         TOT2 += labels.size(0)
                         running_loss += loss.item() * n_batches
-
-
-
-
-
-
-
-
                         nbre_sample += n_batches
+
+                        if (nbre_sample%10000*n_batches)==10000:
+                            epoch_loss = running_loss / nbre_sample
+                            acc = (correct.item()) * 1.0 / TOT2.item()
+                            print('{} Acc Multiclass: {:.4f}'.format(
+                                phase, acc))
+                            print('{} Loss: {:.4f}'.format(
+                                phase, epoch_loss))
+
+                            cm = confusion_matrix(all_labels, all_preds)
+                            print(cm)
+                            all_labels[all_labels != 0] = 1
+                            all_preds[all_preds != 0] = 1
+                            cm = confusion_matrix(all_labels, all_preds)
+                            print(cm)
+                            print(accuracy_score(all_labels, all_preds))
+
 
                 #if phase == 'train':
                 epoch_loss = running_loss / nbre_sample
