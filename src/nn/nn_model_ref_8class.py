@@ -10,6 +10,7 @@ import os
 import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
+from sklearn.metrics import accuracy_score
 
 from src.nn.models.ModelBaseline_3class import ModelPaperBaseline_3class
 from src.nn.models.ModelBaseline_8class import ModelPaperBaseline_8class
@@ -238,15 +239,11 @@ class NN_Model_Ref_8class:
                         correct += (predicted == labels.to(self.device)).cpu().sum().item()
                         TOT2 += labels.size(0)
                         running_loss += loss.item() * n_batches
-
-
-
-
-
-
-
-
                         nbre_sample += n_batches
+                    #tk0.set_postfix({'ACC': accuracy_score(all_labels, all_preds)})
+                    tk0.set_postfix({'LOSS': running_loss / nbre_sample})
+
+
 
                 #if phase == 'train':
                 epoch_loss = running_loss / nbre_sample
@@ -258,6 +255,12 @@ class NN_Model_Ref_8class:
 
                 cm = confusion_matrix(all_labels, all_preds)
                 print(cm)
+                all_labels[all_labels!=0] = 1
+                all_preds[all_preds!=0] = 1
+                cm = confusion_matrix(all_labels, all_preds)
+                print(cm)
+                print(accuracy_score(all_labels, all_preds))
+
 
                 #acc = (correct.item()) * 1.0 / TOT2.item()
                 #print('{} Acc Multiclass: {:.4f}'.format(

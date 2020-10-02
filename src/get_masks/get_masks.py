@@ -30,6 +30,12 @@ class Get_masks:
             self.load_masks()
             self.security_check()
 
+    def save_masks(self, path_save_model):
+        with open(path_save_model + "masks_all_v1.txt", "w") as file:
+            for i in range(len(self.args.inputs_type)):
+                file.write(str(self.masks[i]))
+                file.write("\n")
+
 
     def start_step(self):
         self.create_data()

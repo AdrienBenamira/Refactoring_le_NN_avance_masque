@@ -191,8 +191,8 @@ print()
 get_masks_gen = Get_masks(args, nn_model_ref.net, path_save_model, rng, creator_data_binary, device)
 if args.research_new_masks:
     get_masks_gen.start_step()
+    get_masks_gen.save_masks(path_save_model)
     del get_masks_gen.X_deltaout_train, get_masks_gen.X_eval, get_masks_gen.Y_tf, get_masks_gen.Y_eval
-
 
 
 print("STEP 2 : DONE")

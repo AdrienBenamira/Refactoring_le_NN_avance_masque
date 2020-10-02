@@ -112,23 +112,41 @@ class Create_data_binary:
 
 
     def make_train_data_general_8class(self, n):
-        Y  = np.random.choice(np.arange(0, len(self.diffs)), n, p=self.ps)
-        Y[Y != 0] = 1
-        #Y[Y==7] = 3
-        #Y[Y==6] = 3
-        #Y[Y==5] = 3
-        #Y[Y==4] = 3
+        Y  = np.random.choice(np.arange(1, len(self.diffs)+1), n, p=self.ps)
+        #Y[Y != 0] = 1
         keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
         plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
         plain0r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
         plain1l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16).copy();
         plain1r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16).copy();
         for classe in range(len(self.diffs)):
-            plain1l[Y == classe] = plain0l[Y == classe] ^ self.diffs[classe][0];
-            plain1r[Y == classe] = plain0r[Y == classe] ^ self.diffs[classe][1];
+            plain1l[Y == classe+1] = plain0l[Y == classe+1] ^ self.diffs[classe][0];
+            plain1r[Y == classe+1] = plain0r[Y == classe+1] ^ self.diffs[classe][1];
+        Y[Y == 8] = 4
+        Y[Y == 7] = 4
+        Y[Y == 6] = 4
+        Y[Y == 5] = 4
         ks = self.cipher.expand_key(keys, self.args.nombre_round_eval);
         ctdata0l, ctdata0r = self.cipher.encrypt((plain0l, plain0r), ks);
         ctdata1l, ctdata1r = self.cipher.encrypt((plain1l, plain1r), ks);
+
+        Y2 = np.zeros(int(n/8), dtype=np.uint16)
+        nombre_round_eval2 = self.args.nombre_round_eval +2
+        keys = np.frombuffer(self.urandom_from_random(8 * len(Y2)), dtype=np.uint16).reshape(4, -1);
+        plain0l = np.frombuffer(self.urandom_from_random(2 * len(Y2)), dtype=np.uint16);
+        plain0r = np.frombuffer(self.urandom_from_random(2 * len(Y2)), dtype=np.uint16);
+        plain1l = np.frombuffer(self.urandom_from_random( 2 * len(Y2)), dtype=np.uint16);
+        plain1r = np.frombuffer(self.urandom_from_random(2 * len(Y2)), dtype=np.uint16);
+        ks = self.cipher.expand_key(keys, nombre_round_eval2);
+        ctdata0l2, ctdata0r2 = self.cipher.encrypt((plain0l, plain0r), ks);
+        ctdata1l2, ctdata1r2 = self.cipher.encrypt((plain1l, plain1r), ks);
+
+        Y = np.append(Y, Y2)
+        ctdata0l = np.append(ctdata0l, ctdata0l2)
+        ctdata0r = np.append(ctdata0r, ctdata0r2)
+        ctdata1l = np.append(ctdata1l, ctdata1l2)
+        ctdata1r = np.append(ctdata1r, ctdata1r2)
+
         liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
         X = self.convert_to_binary(liste_inputs);
         return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
@@ -277,6 +295,16 @@ class Create_data_binary:
             V0Inv = 65535 - V0 #(V0 ^ 0xffff)
             V1Inv = 65535 - V1
             inv_DeltaV = 65535 - DV
+        if self.args.cipher =="simon":
+            c0r =ctdata0r
+            c0l = ctdata0l
+            c1r = ctdata1r
+            c1l = ctdata1l
+            t0 = (self.cipher.rol(c0r, 8) & self.cipher.rol(c0r, 1)) ^ self.cipher.rol(c0r, 2) ^ c0l
+            t1 = (self.cipher.rol(c1r, 8) & self.cipher.rol(c1r, 1)) ^ self.cipher.rol(c1r, 2) ^ c1l
+
+
+
         for i in range(len(args.inputs_type)):
             if args.inputs_type[i] =="ctdata0l":
                 inputs_toput.append(ctdata0l)
@@ -377,7 +405,21 @@ class Create_data_binary:
             if args.inputs_type[i] == "inv(DV)":
                 #V1 = 65535 - (ctdata1l ^ ctdata1r)
                 inputs_toput.append(inv_DeltaV)
+            if args.inputs_type[i] == "c0r^c1r":
+                #V1 = 65535 - (ctdata1l ^ ctdata1r)
+                inputs_toput.append(c0r^c1r)
+            if args.inputs_type[i] == "c0l^c1l":
+                #V1 = 65535 - (ctdata1l ^ ctdata1r)
+                inputs_toput.append(c0l^c1l)
+            if args.inputs_type[i] == "t0^t1":
+                #V1 = 65535 - (ctdata1l ^ ctdata1r)
+                inputs_toput.append(t0^t1)
+
         return inputs_toput
 
 
-
+    def find_difference(self, c0l, c0r, c1l, c1r):
+        # takes in n round ciphertext and output difference at n-1 round
+        t0 = (rol(c0r, 8) & rol(c0r, 1)) ^ rol(c0r, 2) ^ c0l
+        t1 = (rol(c1r, 8) & rol(c1r, 1)) ^ rol(c1r, 2) ^ c1l
+        return (c0r ^ c1r, t0 ^ t1)
