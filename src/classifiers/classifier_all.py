@@ -1,4 +1,4 @@
-from src.classifiers.nn_classifier_keras import train_speck_distinguisher
+from src.classifiers.nn_classifier_keras import train_speck_distinguisher, train_speck_distinguisher2
 from sklearn import linear_model
 from sklearn.ensemble import RandomForestClassifier
 import lightgbm as lgb
@@ -14,13 +14,14 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.decomposition import PCA
-
+from sklearn.svm import SVC
 
 class All_classifier:
 
 
-    def __init__(self, args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth):
+    def __init__(self, args, path_save_model, generator_data, get_masks_gen, nn_model_ref, table_of_truth, cpt = 0):
         self.args = args
+        self.cpt = cpt
         self.table_of_truth = table_of_truth
         self.path_save_model = path_save_model
         self.nn_model_ref = nn_model_ref
@@ -36,10 +37,10 @@ class All_classifier:
         Y_v_df = pd.DataFrame(self.Y_eval_proba, columns=["Label"])
         if self.args.save_data_proba:
             print("START SAVE DATA PROBA")
-            X_t_df.to_csv(path_save_model + "X_train_proba.csv", index=False)
-            X_v_df.to_csv(path_save_model + "X_val_proba.csv", index=False)
-            Y_t_df.to_csv(path_save_model + "Y_train_proba.csv", index=False)
-            Y_v_df.to_csv(path_save_model + "Y_val_proba.csv", index=False)
+            #X_t_df.to_csv(path_save_model + "X_train_proba.csv", index=False)
+            #X_v_df.to_csv(path_save_model + "X_val_proba.csv", index=False)
+            Y_t_df.to_csv(path_save_model + str(cpt) + "_Y_train_proba.csv", index=False)
+            Y_v_df.to_csv(path_save_model + str(cpt) + "_Y_val_proba.csv", index=False)
             print("END SAVE DATA PROBA")
         self.masks_infos_score = None
         self.masks_infos_rank = None
@@ -73,6 +74,14 @@ class All_classifier:
                 if self.args.retrain_with_import_features and self.args.keep_number_most_impactfull >0:
                     classifier, indices = self.classifier_RF_retrict()
                     self.clf_final["RF_restricted"] = [classifier, indices]
+            if clf == "LR":
+                print("START CLASSIFY LR")
+                print()
+                classifier = self.classifier_lr()
+                self.clf_final["LR"] = classifier
+                #if self.args.retrain_with_import_features and self.args.keep_number_most_impactfull >0:
+                #    classifier, indices = self.classifier_lgbm_retrict()
+                #    self.clf_final["LR_restricted"] = [classifier, indices]
 
 
 
@@ -124,7 +133,7 @@ class All_classifier:
 
 
     def classifier_nn(self):
-        net2, h = train_speck_distinguisher(self.args, self.X_train_proba.shape[1], self.X_train_proba,
+        net2, h = train_speck_distinguisher2(self.args, self.X_train_proba.shape[1], self.X_train_proba,
                                             self.Y_train_proba, self.X_eval_proba, self.Y_eval_proba,
                                             bs=self.args.batch_size_our,
                                             epoch=self.args.num_epch_our, name_ici="our_model",
@@ -161,13 +170,41 @@ class All_classifier:
 
 
         final_model = lgb.LGBMClassifier(**best_params_, random_state=self.args.seed)
-        cv_score_best = cross_val_score(final_model, X_DDTpd, self.Y_train_proba, cv=5, verbose=6)
-        print(cv_score_best.mean(), cv_score_best.std())
+        #cv_score_best = cross_val_score(final_model, X_DDTpd, self.Y_train_proba, cv=5, verbose=6)
+        #print(cv_score_best.mean(), cv_score_best.std())
+
+
+
+
         final_model.fit(X_DDTpd, self.Y_train_proba)
+
+
 
         self.plot_feat_importance(final_model, features,
                                   self.path_save_model + "features_importances_LGBM_nbrefeat_"+str(len(features))+".png")
         y_pred = final_model.predict(X_eval)
+
+        #print(self.nn_model_ref.outputs_pred_val[:,0].shape, y_pred.shape)
+        #print(self.nn_model_ref.outputs_pred_val[:,0], y_pred)
+
+        same_output = self.nn_model_ref.outputs_pred_val[:,0] == y_pred
+
+        #print(same_output)
+
+        p2 = 100 * np.sum(same_output) / len(same_output)
+        print("Proportion des prediction identiques: " + str(p2))
+
+
+
+        index_interext = np.logical_and(same_output, self.Y_eval_proba == y_pred)
+        p22 = 100 * np.sum(index_interext) / len(index_interext)
+        print("Proportion des prediction identiques et egal au label: " + str(p22))
+        #print(ok)
+        cm = confusion_matrix(y_pred=y_pred, y_true=self.Y_eval_proba, normalize="true")
+        res = np.array([accuracy_score(self.Y_eval_proba, y_pred), cm[0][0], cm[1][1], p2, p22])
+        print(res)
+        np.save(self.path_save_model + "res_" + str(self.cpt) + ".npy",res )
+
         self.save_logs(self.path_save_model + "logs_lgbm_"+str(len(features))+".txt", y_pred, self.Y_eval_proba)
         lgb.create_tree_digraph(final_model).save(directory=self.path_save_model, filename="tree_LGBM_nbrefeat_"+str(len(features))+".dot")
         os.system("dot -Tpng " + self.path_save_model + "tree_LGBM_nbrefeat_"+str(len(features))+".dot > " + self.path_save_model + "tree_LGBM_nbrefeat_"+str(len(features))+".png")
@@ -188,6 +225,18 @@ class All_classifier:
         X_DDTpd = pd.DataFrame(data=self.X_train_proba, columns=self.table_of_truth.features_name)
         clf = self.classifier_lgbm_general(X_DDTpd, self.X_eval_proba, self.table_of_truth.features_name)
         return clf
+
+    def classifier_lr(self):
+        X_DDTpd = pd.DataFrame(data=self.X_train_proba, columns=self.table_of_truth.features_name)
+        clf = SVC(kernel="linear", C=0.025,random_state=self.args.seed)
+        clf.fit(X_DDTpd, self.Y_train_proba)
+        y_pred = clf.predict(self.X_eval_proba)
+        print(accuracy_score(self.Y_eval_proba, y_pred.round()))
+        return clf
+
+
+
+
 
 
     def classifier_lgbm_retrict(self):
@@ -213,6 +262,8 @@ class All_classifier:
                           'min_samples_leaf': 2,
                           'bootstrap': True}
         final_model = RandomForestClassifier(**best_params_RF, random_state=self.args.seed)
+        cv_score_best = cross_val_score(final_model, X_DDTpd, self.Y_train_proba, cv=5, verbose=6)
+        print(cv_score_best.mean(), cv_score_best.std())
         final_model.fit(X_DDTpd, self.Y_train_proba)
         self.plot_feat_importance(final_model, features,
                                   self.path_save_model + "features_importances_RF_nbrefeat_"+str(len(features))+".png")

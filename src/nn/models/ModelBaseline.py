@@ -40,6 +40,7 @@ class ModelPaperBaseline(nn.Module):
             x = x + shortcut
             self.x_dico[i] = x
         x = x.view(x.size(0), -1)
+        self.intermediare0 = x.clone()
         x = F.relu(self.BN5(self.fc1(x)))
         self.intermediare = x.clone()
         x = F.relu(self.BN6(self.fc2(x)))

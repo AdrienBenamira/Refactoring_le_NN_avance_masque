@@ -6,7 +6,7 @@ general:
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 5
-  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  inputs_type: [ctdata0l, ctdata0r, ctdata1l, ctdata1r]
   #[ctdata0l^ctdata1l, DV, V0, V1]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l, ctdata0r, ctdata1l, ctdata1r]
@@ -57,10 +57,10 @@ train_nn:
   nbre_epoch_per_stage: 3
   type_model: baseline        # baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet
   a_bit: 1
-  nbre_sample_train: 10000000
-  nbre_sample_eval: 1000000
-  num_epochs: 5
-  batch_size: 5000
+  nbre_sample_train: 10000
+  nbre_sample_eval: 10000
+  num_epochs: 1
+  batch_size: 500
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
   weight_decay_nn: 0.00001
@@ -133,7 +133,7 @@ compare_classifer:
   save_data_proba: No
   num_epch_2: 5
   batch_size_2: 500
-  classifiers_ours: [NN, LGBM, RF, LR] # [NN, LGBM, RF]
+  classifiers_ours: [LGBM, RF, LR] # [NN, LGBM, RF]
   num_epch_our: 20
   batch_size_our: 500
   retrain_with_import_features: No
