@@ -184,12 +184,12 @@ class All_classifier:
                                   self.path_save_model + "features_importances_LGBM_nbrefeat_"+str(len(features))+".png")
         y_pred = final_model.predict(X_eval)
 
-        #print(self.nn_model_ref.outputs_pred_val[:,0].shape, y_pred.shape)
-        #print(self.nn_model_ref.outputs_pred_val[:,0], y_pred)
+        print(self.nn_model_ref.outputs_pred_val[:,0].shape, y_pred.shape)
+        print(self.nn_model_ref.outputs_pred_val[:,0], y_pred)
 
         same_output = self.nn_model_ref.outputs_pred_val[:,0] == y_pred
 
-        #print(same_output)
+        print(same_output)
 
         p2 = 100 * np.sum(same_output) / len(same_output)
         print("Proportion des prediction identiques: " + str(p2))

@@ -314,8 +314,8 @@ class NN_Model_Ref:
         #data_train = np.zeros_like(x, dtype = np.uint8)
         #data_val = np.zeros_like(x, dtype = np.uint8)
 
-        self.outputs_proba = {x:  np.zeros((len(self.X_train_nn_binaire),1),  dtype = np.uint8) for x in val_phase}
-        self.outputs_pred = {x: np.zeros((len(self.X_train_nn_binaire),1),  dtype = np.uint8) for x in val_phase}
+        self.outputs_proba = {"train":  np.zeros((len(self.X_train_nn_binaire),1),  dtype = np.uint8), "val":  np.zeros((len(self.X_val_nn_binaire),1),  dtype = np.uint8) }
+        self.outputs_pred = {"train":  np.zeros((len(self.X_train_nn_binaire),1),  dtype = np.uint8), "val":  np.zeros((len(self.X_val_nn_binaire),1),  dtype = np.uint8) }
         for phase in val_phase:
             self.net.eval()
             if self.args.curriculum_learning:
