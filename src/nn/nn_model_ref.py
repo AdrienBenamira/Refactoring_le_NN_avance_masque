@@ -308,8 +308,8 @@ class NN_Model_Ref:
         pourcentage = 3
         #phase = "val"
         #self.intermediaires = {x:[] for x in val_phase }
-        data_train = np.zeros((len(self.X_train_nn_binaire), 64),  dtype = np.float16)#16*self.args.out_channel1),  dtype = np.uint8)
-        data_val = np.zeros((len(self.X_val_nn_binaire), 64),  dtype = np.float16)#16*self.args.out_channel1), dtype = np.uint8)
+        data_train = np.zeros((len(self.X_train_nn_binaire), 512),  dtype = np.float16)#16*self.args.out_channel1),  dtype = np.uint8)
+        data_val = np.zeros((len(self.X_val_nn_binaire), 512),  dtype = np.float16)#16*self.args.out_channel1), dtype = np.uint8)
         #x = self.net.intermediare.detach().cpu().numpy().astype(np.uint8)
         #data_train = np.zeros_like(x, dtype = np.uint8)
         #data_val = np.zeros_like(x, dtype = np.uint8)
@@ -328,7 +328,7 @@ class NN_Model_Ref:
             for i, data in enumerate(tk0):
                 inputs, labels = data
                 outputs = self.net(inputs.to(self.device))
-                data_ici = self.net.intermediare.detach().cpu().numpy().astype(np.float16)
+                data_ici = self.net.intermediare0.detach().cpu().numpy().astype(np.float16)
                 if phase == "train":
                     data_train[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
                 else:
