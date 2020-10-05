@@ -24,7 +24,7 @@ import pandas as pd
 import numpy as np
 from src.utils.config import Config
 import argparse
-from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
+from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type, str2hexa
 import torch.nn.utils.prune as prune
 import math
 
@@ -146,6 +146,7 @@ parser.add_argument("--nbre_sample_eval_prunning", default=config.prunning.nbre_
 parser.add_argument("--inputs_type_prunning", default=config.general.inputs_type, type=transform_input_type)
 parser.add_argument("--a_bit", default=config.train_nn.a_bit, type=two_args_str_int)
 
+parser.add_argument("--diff", default=config.train_nn.diff, type=str2hexa)
 
 args = parser.parse_args()
 

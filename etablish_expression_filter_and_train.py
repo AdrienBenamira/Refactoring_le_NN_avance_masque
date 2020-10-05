@@ -24,7 +24,7 @@ import pandas as pd
 import numpy as np
 from src.utils.config import Config
 import argparse
-from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type
+from src.utils.utils import str2bool, two_args_str_int, two_args_str_float, str2list, transform_input_type, str2hexa
 import torch.nn.utils.prune as prune
 import math
 
@@ -337,11 +337,11 @@ parser.add_argument("--logs_layers", default=config.prunning.logs_layers, type=s
 parser.add_argument("--nbre_sample_eval_prunning", default=config.prunning.nbre_sample_eval_prunning, type=two_args_str_int)
 parser.add_argument("--inputs_type_prunning", default=config.general.inputs_type, type=transform_input_type)
 parser.add_argument("--a_bit", default=config.train_nn.a_bit, type=two_args_str_int)
-
+parser.add_argument("--diff", default=config.train_nn.diff, type=str2hexa)
 
 args = parser.parse_args()
 
-args.load_special = True
+args.load_special = False
 args.finetunning = False
 args.logs_tensorboard = args.logs_tensorboard.replace("test", "table_of_truth")
 args.inputs_type = args.inputs_type_prunning
@@ -471,7 +471,7 @@ df_dico_second_tot = {}
 nn_model_ref.net(x_input_f2.to(device))
 for index in range(nn_model_ref.net.x_input.shape[0]):
     res = []
-    for index_x, x in enumerate(nn_model_ref.net.classify[index]):
+    for index_x, x in enumerate(nn_model_ref.net.x_input[index]):
         res.append(x.detach().cpu().numpy())
     res2 = np.array(res).transpose()
     #print(res2)
@@ -504,8 +504,10 @@ print(df2_name.head(5))
 
 
 #df3 = df2.rename(columns={"Unnamed: 0": "Key"})
-df2.columns=["Filter_" + str(i) for i in range(args.out_channel0)]
+df2.columns=["Filter_" + str(i) for i in range(4)]
 df2_name.columns=["DL[i-1]","DV[i-1]","V0[i-1]","V1[i-1]","DL[i]","DV[i]","V0[i]","V1[i]","DL[i+1]","DV[i+1]","V0[i+1]","V1[i+1]"]
+
+#df2_name.columns=["DL[i-1]","DV[i-1]","V0[i-1]","V1[i-1]","DL[i]","DV[i]","V0[i]","V1[i]","DL[i+1]","DV[i+1]","V0[i+1]","V1[i+1]"]
 print(df2.head(5))
 print(df2_name.head(5))
 df_m = pd.concat([df2_name,df2], axis = 1)

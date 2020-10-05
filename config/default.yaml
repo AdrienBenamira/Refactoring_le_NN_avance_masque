@@ -5,8 +5,8 @@ general:
   models_path: ./results/models_trained/
   models_path_load: ./results/models_trained/
   cipher: simon # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 5
-  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  nombre_round_eval: 8
+  inputs_type: [c0r^c1r, c0l^c1l, t0^t1]
   #[ctdata0l^ctdata1l, DV, V0, V1]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l, ctdata0r, ctdata1l, ctdata1r]
@@ -18,7 +18,7 @@ general:
 
 
 train_nn:
-  diff: (0x0040, 0x0000)
+  diff: (0, 0x0040)
   #(0, 0x0040) SIMON
   #SPECK
   # roun0
@@ -34,7 +34,7 @@ train_nn:
   #(0xbf00, 0xbf02)
   #(0xff00, 0xff02)
   #(0x7f00, 0x7f02)
-  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
   load_special: No
@@ -59,7 +59,7 @@ train_nn:
   a_bit: 1
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 5
+  num_epochs: 20
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
@@ -89,7 +89,7 @@ train_nn:
 
 
 getting_masks:
-  load_masks: Yes
+  load_masks: No
   file_mask: results/masks_ref/speck/masks_inter_round.txt
   #results/masks_ref/speck/6/masks_QQ/masks_126.txt
   #results/masks_ref/speck/masks_inter_round.txt
@@ -133,7 +133,7 @@ compare_classifer:
   save_data_proba: No
   num_epch_2: 5
   batch_size_2: 500
-  classifiers_ours: [NN, LGBM, RF, LR] # [NN, LGBM, RF]
+  classifiers_ours: [LGBM] # [NN, LGBM, RF]
   num_epch_our: 20
   batch_size_our: 500
   retrain_with_import_features: No
