@@ -59,7 +59,7 @@ train_nn:
   a_bit: 1
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
-  num_epochs: 20
+  num_epochs: 50
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
