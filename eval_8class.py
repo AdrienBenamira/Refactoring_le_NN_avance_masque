@@ -159,8 +159,8 @@ nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, 
 nn_model_ref.net = nn_model_ref3.net"""
 
 nn_model_ref = NN_Model_Ref_8class(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
-nn_model_ref.load_nn()
-net_f = nn_model_ref.net.eval()
+#nn_model_ref.load_nn()
+#net_f = nn_model_ref.net.eval()
 
 
 
@@ -192,10 +192,10 @@ for filenames in glob.glob(mypath):
     all_models_trained[filenames] = nn_model_ref.net
     del nn_model_ref
 
-net1 = all_models_trained["./results/Res_96/0.984361_bestacc.pth"].eval()
-net2 = all_models_trained["./results/Res_96/0.928219_bestacc.pth"].eval()
-net3 = all_models_trained["./results/Res_96/0.948724_bestacc.pth"].eval()
-net4 = all_models_trained["./results/Res_96/0.928219_bestacc.pth"].eval()
+#net1 = all_models_trained["./results/Res_96/0.984361_bestacc.pth"].eval()
+#net2 = all_models_trained["./results/Res_96/0.928219_bestacc.pth"].eval()
+#net3 = all_models_trained["./results/Res_96/0.948724_bestacc.pth"].eval()
+#net4 = all_models_trained["./results/Res_96/0.928219_bestacc.pth"].eval()
 
 data_train = DataLoader_cipher_binary(nn_model_ref2.X_train_nn_binaire, nn_model_ref2.Y_train_nn_binaire, nn_model_ref2.device)
 dataloader_train = DataLoader(data_train, batch_size=nn_model_ref2.batch_size,

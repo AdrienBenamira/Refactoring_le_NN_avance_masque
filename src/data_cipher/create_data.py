@@ -156,7 +156,6 @@ class Create_data_binary:
 
         keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
         ks = self.cipher.expand_key(keys, self.args.nombre_round_eval);
-
         Y = np.frombuffer(self.urandom_from_random(n), dtype=np.uint8);
         Y = Y & 1;
 

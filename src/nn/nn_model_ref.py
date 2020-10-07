@@ -314,8 +314,8 @@ class NN_Model_Ref:
         #data_train = np.zeros_like(x, dtype = np.uint8)
         #data_val = np.zeros_like(x, dtype = np.uint8)
 
-        #self.outputs_proba = {"train":  np.zeros((len(self.X_train_nn_binaire),1),  dtype = np.uint8), "val":  np.zeros((len(self.X_val_nn_binaire),1),  dtype = np.uint8) }
-        #self.outputs_pred = {"train":  np.zeros((len(self.X_train_nn_binaire),1),  dtype = np.uint8), "val":  np.zeros((len(self.X_val_nn_binaire),1),  dtype = np.uint8) }
+        self.outputs_proba = {"train":  np.zeros((len(self.X_train_nn_binaire),1),  dtype = np.uint8), "val":  np.zeros((len(self.X_val_nn_binaire),1),  dtype = np.uint8) }
+        self.outputs_pred = {"train":  np.zeros((len(self.X_train_nn_binaire),1),  dtype = np.uint8), "val":  np.zeros((len(self.X_val_nn_binaire),1),  dtype = np.uint8) }
         for phase in val_phase:
             self.net.eval()
             if self.args.curriculum_learning:
@@ -336,12 +336,12 @@ class NN_Model_Ref:
                 del data_ici
 
                 #self.intermediaires[phase].append(self.net.intermediare.detach().cpu().numpy().astype(np.uint8))
-                #self.outputs_proba[phase][i*self.batch_size:(i+1)*self.batch_size,:] = outputs.detach().cpu().numpy().astype(np.float16)
+                self.outputs_proba[phase][i*self.batch_size:(i+1)*self.batch_size,:] = outputs.detach().cpu().numpy().astype(np.float16)
                 loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
                 desc = 'loss: %.4f; ' % (loss.item())
                 preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
                 #print(preds.unsqueeze(1).shape, outputs.shape)
-                #self.outputs_pred[phase][i*self.batch_size:(i+1)*self.batch_size,:] = preds.unsqueeze(1).detach().cpu().numpy().astype(np.float16)
+                self.outputs_pred[phase][i*self.batch_size:(i+1)*self.batch_size,:] = preds.unsqueeze(1).detach().cpu().numpy().astype(np.float16)
                 TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
                 TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
                 FN += (preds.eq(0) & labels.eq(1)).cpu().sum()
@@ -368,25 +368,25 @@ class NN_Model_Ref:
             print()
             num1 = int(self.args.nbre_sample_train_classifier/self.batch_size)
             num2 = int(self.args.nbre_sample_val_classifier / self.batch_size)
-            #if phase == "train":
+            if phase == "train":
                 #scaler1 = StandardScaler()
                 #del self.dataloaders["train"]
                 #data = data_train #np.array(self.intermediaires[phase]).astype(np.uint8).reshape(num1 * self.batch_size, -1)
                 #data2 = scaler1.fit_transform(data)
                 #self.all_intermediaire = data_train
-                #self.outputs_proba_train = np.array(self.outputs_proba[phase]).astype(np.float16)#.reshape(num1 * self.batch_size, -1)
-                #self.outputs_pred_train = np.array(self.outputs_pred[phase]).astype(np.float16)#.reshape(num1 * self.batch_size, -1)
+                self.outputs_proba_train = np.array(self.outputs_proba[phase]).astype(np.float16)#.reshape(num1 * self.batch_size, -1)
+                self.outputs_pred_train = np.array(self.outputs_pred[phase]).astype(np.float16)#.reshape(num1 * self.batch_size, -1)
                 #if not self.args.retrain_nn_ref:
                     #del self.all_intermediaire, data_train
 
-            #else:
+            else:
                 #scaler2 = StandardScaler()
                 #data = data_val
                 #data = np.array(self.intermediaires[phase]).astype(np.uint8).reshape(num1 * self.batch_size, -1)
                 #data2 = scaler2.fit_transform(data)
                 #self.all_intermediaire_val = data_val
-                #self.outputs_proba_val = np.array(self.outputs_proba[phase]).astype(np.float16)#.reshape(num2 * self.batch_size, -1)
-                #self.outputs_pred_val = np.array(self.outputs_pred[phase]).astype(np.float16)#.reshape(num2 * self.batch_size, -1)
+                self.outputs_proba_val = np.array(self.outputs_proba[phase]).astype(np.float16)#.reshape(num2 * self.batch_size, -1)
+                self.outputs_pred_val = np.array(self.outputs_pred[phase]).astype(np.float16)#.reshape(num2 * self.batch_size, -1)
                 #    num2 * self.batch_size, -1)
                 #if not self.args.retrain_nn_ref:
                     #del self.all_intermediaire_val, data_val
