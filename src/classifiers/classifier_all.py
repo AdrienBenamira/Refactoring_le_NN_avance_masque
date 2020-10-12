@@ -170,8 +170,8 @@ class All_classifier:
 
 
         final_model = lgb.LGBMClassifier(**best_params_, random_state=self.args.seed)
-        cv_score_best = cross_val_score(final_model, X_DDTpd, self.Y_train_proba, cv=5, verbose=6)
-        print(cv_score_best.mean(), cv_score_best.std())
+        #cv_score_best = cross_val_score(final_model, X_DDTpd, self.Y_train_proba, cv=5, verbose=6)
+        #print(cv_score_best.mean(), cv_score_best.std())
 
 
 

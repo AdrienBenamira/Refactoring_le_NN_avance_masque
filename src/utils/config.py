@@ -1,6 +1,3 @@
-__author__ = "Benjamin Devillers (bdvllrs)"
-__version__ = "1.0.6"
-
 import os
 import yaml
 
