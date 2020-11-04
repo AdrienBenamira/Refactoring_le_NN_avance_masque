@@ -36,10 +36,10 @@ train_nn:
   #(0xbf00, 0xbf02)
   #(0xff00, 0xff02)
   #(0x7f00, 0x7f02)
-  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
-  load_special: Yes
+  load_special: No
   load_nn_path: ./res_baseline_real/0.928545_bestacc.pth
   #./res_baseline_real/0.92833_bestacc_cc'.pth
   #./results/test_v2/speck/7/ctdata0l_ctdata0r_ctdata1l_ctdata1r/2020_10_20_23_56_34_952575/0.99356_bestacc.pth
@@ -60,7 +60,7 @@ train_nn:
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline_real        # baseline_real baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet, baseline_real
+  type_model: baseline_block0       # baseline_real baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet, baseline_real
   a_bit: 1
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
@@ -72,8 +72,8 @@ train_nn:
   momentum_nn: 0.9 #only for SGD
   optimizer_type: Adam #Adam - AdamW - SGD
   scheduler_type: CyclicLR #CyclicLR - None
-  base_lr:  0.0001      #Only if CyclicLR
-  max_lr: 0.002       #Only if CyclicLR
+  base_lr:  0.00001      #Only if CyclicLR
+  max_lr: 0.0002       #Only if CyclicLR
   demicycle_1: 5  #Only if CyclicLR
   numLayers: 10
   limit: 2 #1 - 2 - 3
@@ -86,7 +86,7 @@ train_nn:
   kernel_size1: 3
   num_workers: 4
   clip_grad_norm: 0.6
-  end_after_training: No
+  end_after_training: Yes
   make_data_equilibre_3class: No
   make_data_Nbatch: No
   Nbatch: 100
