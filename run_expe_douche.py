@@ -115,7 +115,7 @@ for filetodo in ["masks_all_THOMASTEST_1.txt", "masks_all_THOMASTEST_2.txt", "ma
         os.system(command)"""
 
 
-masks_all_THOMASTEST_ffff_1.txt
+
 
 
 
