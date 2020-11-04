@@ -152,7 +152,7 @@ compare_classifer:
   batch_size_our: 500
   retrain_with_import_features: No
   keep_number_most_impactfull: 64
-  quality_of_masks: Yes
+  quality_of_masks: No
   compute_independance_feature: No
   alpha_test: 0.05
   end_after_step4: Yes

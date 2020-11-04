@@ -115,10 +115,13 @@ for filetodo in ["masks_all_THOMASTEST_1.txt", "masks_all_THOMASTEST_2.txt", "ma
         os.system(command)"""
 
 
+masks_all_THOMASTEST_ffff_1.txt
+
 
 
 pathini= "/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/masks_analyse/"
-for filetodo in ["masks_all_THOMASTEST_ffff_1.txt", "masks_all_THOMASTEST_ffff_2.txt", "masks_all_THOMASTEST_ffff_3.txt"]:
+for filetodo in ["masks_all_THOMASTEST_ffff_1.txt", "masks_all_THOMASTEST_ffff_2.txt", "masks_all_THOMASTEST_ffff_12.txt",
+                 "masks_all_THOMASTEST_ffff_3.txt", "masks_all_THOMASTEST_ffff_23.txt", "masks_all_THOMASTEST_ffff_123.txt"]:
     path_file = pathini+filetodo
     command = "python3 main.py --file_mask "+path_file
     os.system(command)
