@@ -17,11 +17,7 @@ class ModelPaperBaseline_block0(nn.Module):
         self.layers_batch = nn.ModuleList()
         self.numLayers = args.numLayers
         for i in range(args.numLayers):
-            if i ==0:
-                self.layers_conv.append(nn.Conv1d(in_channels=len(self.args.inputs_type), out_channels=args.out_channel1, kernel_size=3, padding=1))
-            else:
-                self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
-
+            self.layers_conv.append(nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
             self.layers_batch.append(nn.BatchNorm1d(args.out_channel1, eps=0.01, momentum=0.99))
             self.layers_conv.append(
                 nn.Conv1d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
@@ -35,15 +31,16 @@ class ModelPaperBaseline_block0(nn.Module):
 
     def forward(self, x):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
+        x2 = torch.zeros(x.shape[0], self.args.out_channel0, self.word_size)
+        x2[:,:len(self.args.inputs_type),:] = x
+        shortcut = x2
+        x = x2
         self.x_input = x
         self.x_dico = {}
         for i in range(0, len(self.layers_conv), 2):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
             x = F.relu(x)
-            if i ==0:
-                shortcut = x.clone()
-                self.shorcut = shortcut[0]
             x = self.layers_conv[i+1](x)
             x = self.layers_batch[i+1](x)
             x = F.relu(x)

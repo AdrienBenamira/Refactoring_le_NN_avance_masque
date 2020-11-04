@@ -103,7 +103,7 @@ for filetodo in ["masks_all_THOMASTEST_1.txt", "masks_all_THOMASTEST_2.txt", "ma
     os.system(command)"""
 
 
-for round in ["5", "6", "7", "8"]:
+"""for round in ["5", "6", "7", "8"]:
     command = "python3 main.py --nombre_round_eval "+round
     os.system(command)
     for N in [10, 50, 100]:
@@ -112,4 +112,13 @@ for round in ["5", "6", "7", "8"]:
         Nval2 = int(Ntrain / (10 * N))
         command = "python3 main_N_batch2.py --Nbatch " + str(N) + " --nombre_round_eval " + str(
             round) + " --nbre_sample_train " + str(Ntrain2) + " --nbre_sample_eval " + str(Nval2)
-        os.system(command)
+        os.system(command)"""
+
+
+
+
+pathini= "/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/masks_analyse/"
+for filetodo in ["masks_all_THOMASTEST_ffff_1.txt", "masks_all_THOMASTEST_ffff_2.txt", "masks_all_THOMASTEST_ffff_3.txt"]:
+    path_file = pathini+filetodo
+    command = "python3 main.py --file_mask "+path_file
+    os.system(command)
