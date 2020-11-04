@@ -11,6 +11,8 @@ import torch.nn as nn
 from torch.autograd import Variable
 import numpy as np
 
+from src.nn.models.ModelBaselineNbatch import ModelPaperBaselineN_batch
+from src.nn.models.ModelBaselineNbatch_lambda import ModelPaperBaselineN_batch_lambda
 from src.nn.models.ModelBaseline_3class import ModelPaperBaseline_3class
 from src.nn.models.ModelBaseline_binarized_BagNET import ModelPaperBaseline_bin_bagnet
 from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
@@ -19,8 +21,6 @@ from src.nn.models.ModelBaseline_binarized_v3 import ModelPaperBaseline_bin3
 from src.nn.models.ModelBaseline_binarized_v4 import ModelPaperBaseline_bin4
 from src.nn.models.ModelBaseline_binarized_v5 import ModelPaperBaseline_bin5
 from src.nn.models.ModelBaseline_binarized_v6 import ModelPaperBaseline_bin6
-from src.nn.models.ModelBaseline_block0 import ModelPaperBaseline_block0
-from src.nn.models.ModelBaseline_real import ModelPaperBaseline_real
 from src.nn.models.ModelBaseline_v2 import ModelPaperBaseline_v2
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
 from src.nn.models.Multi_Headed import Multihead
@@ -29,7 +29,7 @@ from src.nn.models.deepset import DTanh
 from src.utils.utils import F1_Loss
 from sklearn.preprocessing import StandardScaler
 
-class NN_Model_Ref:
+class NN_Model_Ref_Nclassv2:
 
     def __init__(self, args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train):
         """
@@ -64,52 +64,20 @@ class NN_Model_Ref:
 
 
     def choose_model(self):
-        if self.args.type_model == "baseline_block0":
-            return ModelPaperBaseline_block0(self.args).to(self.device)
-        if self.args.type_model=="baseline":
-            return ModelPaperBaseline(self.args).to(self.device)
-        if self.args.type_model=="baseline_real":
-            return ModelPaperBaseline_real(self.args).to(self.device)
-        if self.args.type_model=="perceptron":
-            return Perceptron(self.args).to(self.device)
-        if self.args.type_model=="baseline_3class":
-            return ModelPaperBaseline_3class(self.args).to(self.device)
-        if self.args.type_model=="baseline_v2":
-            return ModelPaperBaseline_v2(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin":
-            return ModelPaperBaseline_bin(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v2":
-            return ModelPaperBaseline_bin2(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v3":
-            return ModelPaperBaseline_bin3(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v4":
-            return ModelPaperBaseline_bin4(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v5":
-            return ModelPaperBaseline_bin5(self.args).to(self.device)
-        if self.args.type_model=="baseline_bin_v6":
-            return ModelPaperBaseline_bin6(self.args).to(self.device)
-        if self.args.type_model=="cnn_attention":
-            return Modelbaseline_CNN_ATTENTION(self.args).to(self.device)
-        if self.args.type_model=="multihead":
-            return Multihead(self.args).to(self.device)
-        if self.args.type_model=="deepset":
-            model =DTanh(self.args)
-        if self.args.type_model == "BagNet":
-            model = ModelPaperBaseline_bin_bagnet(self.args)
-            return model.to(self.device)
+        return ModelPaperBaselineN_batch(self.args).to(self.device)
+        #return ModelPaperBaselineN_batch_lambda(self.args).to(self.device)
 
     def create_data(self):
-        self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_data(
-            self.args.nbre_sample_train);
-        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_data(
-           self.args.nbre_sample_eval);
+        self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_train_data_N_batch_Hayoung(self.args.nbre_sample_train, self.args.Nbatch);
+
+        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_train_data_N_batch_Hayoung(self.args.nbre_sample_eval, self.args.Nbatch);
 
 
     def train_from_scractch(self, name_input):
-        data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device)
+        data_train = DataLoader_cipher_binaryNbatch(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.args, self.device)
         dataloader_train = DataLoader(data_train, batch_size=self.batch_size,
                                       shuffle=True, num_workers=self.args.num_workers)
-        data_val = DataLoader_cipher_binary(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.device)
+        data_val = DataLoader_cipher_binaryNbatch(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.args, self.device)
         dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
                                       shuffle=False, num_workers=self.args.num_workers)
         self.dataloaders = {'train': dataloader_train, 'val': dataloader_val}
@@ -189,7 +157,7 @@ class NN_Model_Ref:
         #    scheduler = OneCycleLR(optimizer_conv, max_lr=max_lr, total_steps=step_size_up)
 
 
-    def eval_all(self, val_phase = ["train", "val"]):
+    def eval_all(self, method_cal_final, val_phase = ["train", "val"]):
         print("EVALUATE MODEL NNGOHR ON THIS DATASET ON TRAIN AND VAL")
         print()
         data_train = DataLoader_cipher_binary(self.X_train_nn_binaire, self.Y_train_nn_binaire, self.device)
@@ -203,7 +171,7 @@ class NN_Model_Ref:
         else:
             self.dataloaders = {'val': dataloader_val}
         self.load_general_train()
-        self.eval(val_phase)
+        self.eval(method_cal_final, val_phase)
 
 
     def train(self, name_input):
@@ -243,8 +211,6 @@ class NN_Model_Ref:
                         #                                              targets_a, targets_b))
                         outputs = self.net(inputs.to(self.device))
                         #outputs2 = self.net.decoder(self.net.intermediare_compress.to(self.device))
-                        #print(labels.shape)
-                        #print(outputs.squeeze(1).shape)
                         loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
                         #loss2 = 0.02*self.criterion(outputs2.squeeze(1), self.net.intermediare.squeeze(1).to(self.device))
                         #print(loss1, loss2)
@@ -308,125 +274,7 @@ class NN_Model_Ref:
 
 
 
-    def eval(self, val_phase = ['train', 'val']):
-        since = time.time()
-        n_batches = self.batch_size
-        pourcentage = 3
-        #phase = "val"
-        #self.intermediaires = {x:[] for x in val_phase }
-        #data_train = np.zeros((len(self.X_train_nn_binaire), 512),  dtype = np.float16)#16*self.args.out_channel1),  dtype = np.uint8)
-        #data_val = np.zeros((len(self.X_val_nn_binaire), 512),  dtype = np.float16)#16*self.args.out_channel1), dtype = np.uint8)
-        #x = self.net.intermediare.detach().cpu().numpy().astype(np.uint8)
-        #data_train = np.zeros_like(x, dtype = np.uint8)
-        #data_val = np.zeros_like(x, dtype = np.uint8)
-
-        self.outputs_proba = {"train":  np.zeros((len(self.X_train_nn_binaire),1),  dtype = np.uint8), "val":  np.zeros((len(self.X_val_nn_binaire),1),  dtype = np.uint8) }
-        self.outputs_pred = {"train":  np.zeros((len(self.X_train_nn_binaire),1),  dtype = np.uint8), "val":  np.zeros((len(self.X_val_nn_binaire),1),  dtype = np.uint8) }
-        for phase in val_phase:
-            self.net.eval()
-            if self.args.curriculum_learning:
-                self.dataloaders[phase].catgeorie = pourcentage
-            running_loss = 0.0
-            nbre_sample = 0
-            TP, TN, FN, FP = torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(1).long(), torch.zeros(
-                1).long()
-            tk0 = tqdm(self.dataloaders[phase], total=int(len(self.dataloaders[phase])))
-            for i, data in enumerate(tk0):
-                inputs, labels = data
-                outputs = self.net(inputs.to(self.device))
-                data_ici = self.net.intermediare0.detach().cpu().numpy().astype(np.float16)
-                #if phase == "train":
-                    #data_train[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
-                #else:
-                    #data_val[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
-                del data_ici
-
-                #self.intermediaires[phase].append(self.net.intermediare.detach().cpu().numpy().astype(np.uint8))
-                self.outputs_proba[phase][i*self.batch_size:(i+1)*self.batch_size,:] = outputs.detach().cpu().numpy().astype(np.float16)
-                loss = self.criterion(outputs.squeeze(1), labels.to(self.device))
-                desc = 'loss: %.4f; ' % (loss.item())
-                preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
-                #print(preds.unsqueeze(1).shape, outputs.shape)
-                self.outputs_pred[phase][i*self.batch_size:(i+1)*self.batch_size,:] = preds.unsqueeze(1).detach().cpu().numpy().astype(np.float16)
-                TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
-                TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
-                FN += (preds.eq(0) & labels.eq(1)).cpu().sum()
-                FP += (preds.eq(1) & labels.eq(0)).cpu().sum()
-                TOT = TP + TN + FN + FP
-                desc += 'acc: %.3f, TP: %.3f, TN: %.3f, FN: %.3f, FP: %.3f' % (
-                    (TP.item() + TN.item()) * 1.0 / TOT.item(), TP.item() * 1.0 / TOT.item(),
-                    TN.item() * 1.0 / TOT.item(), FN.item() * 1.0 / TOT.item(),
-                    FP.item() * 1.0 / TOT.item())
-                running_loss += loss.item() * n_batches
-                nbre_sample += n_batches
-            epoch_loss = running_loss / nbre_sample
-            acc = (TP.item() + TN.item()) * 1.0 / TOT.item()
-            self.acc = acc
-            print('{} Loss: {:.4f}'.format(
-                phase, epoch_loss))
-            print('{} Acc: {:.4f}'.format(
-                phase, acc))
-            #print(desc)
-            print()
-            time_elapsed = time.time() - since
-            print('Evaluation complete in {:.0f}m {:.0f}s'.format(
-                time_elapsed // 60, time_elapsed % 60))
-            print()
-            num1 = int(self.args.nbre_sample_train_classifier/self.batch_size)
-            num2 = int(self.args.nbre_sample_val_classifier / self.batch_size)
-            if phase == "train":
-                #scaler1 = StandardScaler()
-                #del self.dataloaders["train"]
-                #data = data_train #np.array(self.intermediaires[phase]).astype(np.uint8).reshape(num1 * self.batch_size, -1)
-                #data2 = scaler1.fit_transform(data)
-                #self.all_intermediaire = data_train
-                self.outputs_proba_train = np.array(self.outputs_proba[phase]).astype(np.float16)#.reshape(num1 * self.batch_size, -1)
-                self.outputs_pred_train = np.array(self.outputs_pred[phase]).astype(np.float16)#.reshape(num1 * self.batch_size, -1)
-                #if not self.args.retrain_nn_ref:
-                    #del self.all_intermediaire, data_train
-
-            else:
-                #scaler2 = StandardScaler()
-                #data = data_val
-                #data = np.array(self.intermediaires[phase]).astype(np.uint8).reshape(num1 * self.batch_size, -1)
-                #data2 = scaler2.fit_transform(data)
-                #self.all_intermediaire_val = data_val
-                self.outputs_proba_val = np.array(self.outputs_proba[phase]).astype(np.float16)#.reshape(num2 * self.batch_size, -1)
-                self.outputs_pred_val = np.array(self.outputs_pred[phase]).astype(np.float16)#.reshape(num2 * self.batch_size, -1)
-                #    num2 * self.batch_size, -1)
-                #if not self.args.retrain_nn_ref:
-                    #del self.all_intermediaire_val, data_val
-                #del self.dataloaders[phase]
-
-    def mixup_data(self, x, y, alpha=1.0):
-        '''Returns mixed inputs, pairs of targets, and lambda'''
-        if alpha > 0:
-            lam = np.random.beta(alpha, alpha)
-        else:
-            lam = 1
-        batch_size = x.size()[0]
-        index = torch.randperm(batch_size).to(self.device)
-        mixed_x = lam * x + (1 - lam) * x[index, :]
-        y_a, y_b = y, y[index]
-        return mixed_x, y_a, y_b, lam
-
-    def mixup_criterion(self, pred, y_a, y_b, lam):
-        return lam * self.criterion(pred, y_a) + (1 - lam) * self.criterion(pred, y_b)
-
-
-    def eval_allNbatch(self, method_cal_final, val_phase = ['train', 'val']):
-
-
-        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_train_data_N_batch(self.args.nbre_sample_eval, self.args.Nbatch);
-
-        print("EVALUATE MODEL NNGOHR ON THIS DATASET ON TRAIN AND VAL")
-        print()
-        data_val = DataLoader_cipher_binaryNbatch(self.X_val_nn_binaire, self.Y_val_nn_binaire, self.args, self.device)
-        dataloader_val = DataLoader(data_val, batch_size=self.batch_size,
-                                    shuffle=False, num_workers=self.args.num_workers)
-
-        self.dataloaders = {'val': dataloader_val}
-
+    def eval(self, method_cal_final, val_phase = ['train', 'val']):
         since = time.time()
         n_batches = self.batch_size
         pourcentage = 3
@@ -454,8 +302,7 @@ class NN_Model_Ref:
                 inputs, labels = data
                 outputs = np.zeros((self.args.Nbatch, self.batch_size, 1))
                 for batch in range(self.args.Nbatch):
-
-                    outputsici = self.net(inputs[:,:,:,batch].to(self.device))
+                    outputsici = self.net(inputs[:,64*batch:64*(batch+1)].to(self.device))
                     outputs[batch,:,:] = outputsici.float().cpu().detach().numpy()
 
 
@@ -488,6 +335,23 @@ class NN_Model_Ref:
             print('Evaluation complete in {:.0f}m {:.0f}s'.format(
                 time_elapsed // 60, time_elapsed % 60))
             print()
+
+
+    def mixup_data(self, x, y, alpha=1.0):
+        '''Returns mixed inputs, pairs of targets, and lambda'''
+        if alpha > 0:
+            lam = np.random.beta(alpha, alpha)
+        else:
+            lam = 1
+        batch_size = x.size()[0]
+        index = torch.randperm(batch_size).to(self.device)
+        mixed_x = lam * x + (1 - lam) * x[index, :]
+        y_a, y_b = y, y[index]
+        return mixed_x, y_a, y_b, lam
+
+    def mixup_criterion(self, pred, y_a, y_b, lam):
+        return lam * self.criterion(pred, y_a) + (1 - lam) * self.criterion(pred, y_b)
+
 
 
 

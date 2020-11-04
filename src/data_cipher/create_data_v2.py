@@ -1,7 +1,12 @@
 import numpy as np
 import sys
 
-class Create_data_binary:
+from src.data_cipher.cipher_simeck import Cipher_Simeck
+from src.data_cipher.cipher_simon import Cipher_Simon
+from src.data_cipher.cipher_speck import Cipher_Speck
+
+
+class Create_data_binary2:
 
 
     def __init__(self, args, cipher, rng):
@@ -17,7 +22,7 @@ class Create_data_binary:
 
         if args.cipher == "speck":
             #round0
-            self.diff = args.diff #(0x8100, 0x8102)
+            self.diff = (0x0040, 0x0000) #(0x8100, 0x8102)
 
             #self.diff = (0x0040, 0x0000)
             # roun1
@@ -73,12 +78,33 @@ class Create_data_binary:
 
 
     def make_data(self, n):
-        if self.args.cipher != "aes224" and self.args.cipher != "aes228" :
-            X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r = self.make_train_data_general(n)
-        elif self.args.cipher == "aes224":
-            X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r = self.make_train_data_generalaes224(n)
-        elif self.args.cipher == "aes228":
-            X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r = self.make_train_data_generalaes228(n)
+        #if self.args.cipher != "aes224" and self.args.cipher != "aes228" :
+        self.args.cipher = "speck"
+        self.args.nombre_round_eval = 5
+        self.cipher = Cipher_Speck(self.args)
+        X1, Y1, ctdata0l1, ctdata0r1, ctdata1l1, ctdata1r1 = self.make_train_data_general(n)
+        self.args.cipher = "simon"
+        self.args.nombre_round_eval = 5
+        self.args.nbre_sample_train = 1000000
+        self.cipher = Cipher_Simon(self.args)
+        X2, Y2, ctdata0l2, ctdata0r2, ctdata1l2, ctdata1r2 = self.make_train_data_general(n)
+        self.args.cipher = "simeck"
+        self.args.nombre_round_eval = 5
+        self.args.nbre_sample_train = 1000000
+        self.cipher = Cipher_Simeck(self.args)
+        X3, Y3, ctdata0l3, ctdata0r3, ctdata1l3, ctdata1r3 = self.make_train_data_general(n)
+        X = np.concatenate((X1, X2, X3))
+        Y = np.concatenate((Y1, Y2, Y3))
+        print(X.shape)
+        p = np.random.permutation(len(Y))
+        return (X[p], Y[p], ctdata0l3, ctdata0r3, ctdata1l3, ctdata1r3);
+
+    def make_data2(self, n):
+        self.args.cipher = "speck"
+        self.args.nombre_round_eval = 5
+        #if self.args.cipher != "aes224" and self.args.cipher != "aes228" :
+        self.cipher = Cipher_Speck(self.args)
+        X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r = self.make_train_data_general(n)
         return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
 
 
@@ -173,99 +199,6 @@ class Create_data_binary:
             ctdata1l, ctdata1r = self.cipher.encrypt((plain1l, plain1r), ks);
             liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
             X = self.convert_to_binary(liste_inputs);
-            if batch==0:
-                Xfinal = X
-            else:
-                Xfinal = np.concatenate((Xfinal, X), axis=1)
-
-
-        print(Xfinal.shape)
-        return (Xfinal, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
-
-
-    def make_train_data_recoverykey(self, n):
-        keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
-        keys_r = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
-        ks = self.cipher.expand_key(keys, self.args.nombre_round_eval-1);
-        ks2 = self.cipher.expand_key(keys, self.args.nombre_round_eval);
-        ks2_r = self.cipher.expand_key(keys_r, 1);
-        Y = np.frombuffer(self.urandom_from_random(n), dtype=np.uint8);
-        Y = Y & 1;
-        plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
-        plain0r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
-        plain1l = plain0l ^ self.diff[0];
-        plain1r = plain0r ^ self.diff[1];
-
-
-        ctdata0l_m1, ctdata0r_m1 = self.cipher.encrypt((plain0l, plain0r), ks);
-        ctdata1l_m1, ctdata1r_m1 = self.cipher.encrypt((plain1l, plain1r), ks);
-
-
-        ctdata0l, ctdata0r = self.cipher.encrypt((plain0l, plain0r), ks2);
-        ctdata1l, ctdata1r = self.cipher.encrypt((plain1l, plain1r), ks2);
-
-        ctdata0l_m1r, ctdata0r_m1r = self.cipher.decrypt((ctdata0l, ctdata0r), ks2_r);
-        ctdata1l_m1r, ctdata1r_m1r = self.cipher.decrypt((ctdata1l, ctdata1r), ks2_r);
-
-
-        ctdata0l_m1[Y == 0] = ctdata0l_m1r[Y == 0]
-        ctdata0r_m1[Y == 0] = ctdata0r_m1r[Y == 0]
-        ctdata1l_m1[Y == 0] = ctdata1l_m1r[Y == 0]
-        ctdata1r_m1[Y == 0] = ctdata1r_m1r[Y == 0]
-
-        liste_inputs = self.convert_data_inputs(self.args, ctdata0l_m1, ctdata0r_m1, ctdata1l_m1, ctdata1r_m1)
-        X = self.convert_to_binary(liste_inputs);
-
-        return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
-
-
-    def make_train_data_N_batch_Hayoung(self, n, Nbatch):
-
-        keys = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
-        keys_r = np.frombuffer(self.urandom_from_random(8 * n), dtype=np.uint16).reshape(4, -1);
-        ks = self.cipher.expand_key(keys, self.args.nombre_round_eval-1);
-        ks2 = self.cipher.expand_key(keys, self.args.nombre_round_eval);
-        ks2_r = self.cipher.expand_key(keys_r, 1);
-        Y = np.frombuffer(self.urandom_from_random(n), dtype=np.uint8);
-        Y = Y & 1;
-
-
-        for batch in range(Nbatch):
-            plain0l = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
-            plain0r = np.frombuffer(self.urandom_from_random(2 * n), dtype=np.uint16);
-            plain1l = plain0l ^ self.diff[0];
-            plain1r = plain0r ^ self.diff[1];
-            #num_rand_samples = np.sum(Y == 0);
-            #if self.args.type_create_data == "normal":
-            #    plain1l[Y == 0] = np.frombuffer(self.urandom_from_random( 2 * num_rand_samples), dtype=np.uint16);
-            #    plain1r[Y == 0] = np.frombuffer(self.urandom_from_random(2 * num_rand_samples), dtype=np.uint16);
-            ctdata0l_m1, ctdata0r_m1 = self.cipher.encrypt((plain0l, plain0r), ks);
-            ctdata1l_m1, ctdata1r_m1 = self.cipher.encrypt((plain1l, plain1r), ks);
-
-            ctdata0l, ctdata0r = self.cipher.encrypt((plain0l, plain0r), ks2);
-            ctdata1l, ctdata1r = self.cipher.encrypt((plain1l, plain1r), ks2);
-
-
-            ctdata0l_m1r, ctdata0r_m1r = self.cipher.decrypt((ctdata0l, ctdata0r), ks2_r);
-            ctdata1l_m1r, ctdata1r_m1r = self.cipher.decrypt((ctdata1l, ctdata1r), ks2_r);
-
-
-
-            ctdata0l_m1[Y == 0] = ctdata0l_m1r[Y == 0]
-            ctdata0r_m1[Y == 0] = ctdata0r_m1r[Y == 0]
-            ctdata1l_m1[Y == 0] = ctdata1l_m1r[Y == 0]
-            ctdata1r_m1[Y == 0] = ctdata1r_m1r[Y == 0]
-            liste_inputs = self.convert_data_inputs(self.args, ctdata0l_m1, ctdata0r_m1, ctdata1l_m1, ctdata1r_m1)
-            X = self.convert_to_binary(liste_inputs);
-
-
-            #ctdata0l, ctdata0r = self.cipher.encrypt((plain0l, plain0r), ks2);
-            #ctdata1l, ctdata1r = self.cipher.encrypt((plain1l, plain1r), ks2);
-            #liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
-            #X2 = self.convert_to_binary(liste_inputs);
-            #X[Y == 0] = X2[Y == 0]
-
-
             if batch==0:
                 Xfinal = X
             else:

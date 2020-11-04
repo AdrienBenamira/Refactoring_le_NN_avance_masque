@@ -184,21 +184,32 @@ class All_classifier:
                                   self.path_save_model + "features_importances_LGBM_nbrefeat_"+str(len(features))+".png")
         y_pred = final_model.predict(X_eval)
 
+        y_pred_df = pd.DataFrame(y_pred)
+        y_pred_df.to_csv(self.path_save_model + "Y_pred_val.csv", index=False)
+
+
+
         #print(self.nn_model_ref.outputs_pred_val[:,0].shape, y_pred.shape)
         #print(self.nn_model_ref.outputs_pred_val[:,0], y_pred)
 
-        same_output = self.nn_model_ref.outputs_pred_val[:,0] == y_pred
+        if self.args.eval_nn_ref:
+
+            same_output = self.nn_model_ref.outputs_pred_val[:,0] == y_pred
 
         #print(same_output)
 
-        p2 = 100 * np.sum(same_output) / len(same_output)
-        print("Proportion des prediction identiques: " + str(p2))
+            p2 = 100 * np.sum(same_output) / len(same_output)
+            print("Proportion des prediction identiques: " + str(p2))
 
 
 
-        index_interext = np.logical_and(same_output, self.Y_eval_proba == y_pred)
-        p22 = 100 * np.sum(index_interext) / len(index_interext)
-        print("Proportion des prediction identiques et egal au label: " + str(p22))
+            index_interext = np.logical_and(same_output, self.Y_eval_proba == y_pred)
+            p22 = 100 * np.sum(index_interext) / len(index_interext)
+            print("Proportion des prediction identiques et egal au label: " + str(p22))
+        else:
+            p22=None
+            p2 = None
+            same_output=None
         #print(ok)
         cm = confusion_matrix(y_pred=y_pred, y_true=self.Y_eval_proba, normalize="true")
         res = np.array([accuracy_score(self.Y_eval_proba, y_pred), cm[0][0], cm[1][1], p2, p22])

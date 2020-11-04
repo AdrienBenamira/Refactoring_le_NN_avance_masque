@@ -6,7 +6,7 @@ general:
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 5
-  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  inputs_type: [ctdata0l, ctdata0r, ctdata1l, ctdata1r]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[c0r^c1r, c0l^c1l, t0^t1]
   #[ctdata0l^ctdata1l, DV, V0, V1]
@@ -40,7 +40,10 @@ train_nn:
   finetunning: No
   model_finetunne: baseline
   load_special: No
-  load_nn_path: ./0.926695_bestacc.pth
+  load_nn_path: ./res_baseline_real/0.928545_bestacc.pth
+  #./res_baseline_real/0.92833_bestacc_cc'.pth
+  #./results/test_v2/speck/7/ctdata0l_ctdata0r_ctdata1l_ctdata1r/2020_10_20_23_56_34_952575/0.99356_bestacc.pth
+  #./res_baseline_real/0.787816_bestacc.pth
   #./results/0.781695_bestacc.pth
   #./results/test_v2/speck/5/ctdata0l^ctdata1l_DV_V0_V1/2020_06_26_10_05_58_795239/0.926954_bestacc.pth
   #./results/0.872292_bestacc.pth
@@ -69,9 +72,9 @@ train_nn:
   momentum_nn: 0.9 #only for SGD
   optimizer_type: Adam #Adam - AdamW - SGD
   scheduler_type: CyclicLR #CyclicLR - None
-  base_lr:  0.00001      #Only if CyclicLR
-  max_lr: 0.0002       #Only if CyclicLR
-  demicycle_1: 6  #Only if CyclicLR
+  base_lr:  0.0001      #Only if CyclicLR
+  max_lr: 0.002       #Only if CyclicLR
+  demicycle_1: 5  #Only if CyclicLR
   numLayers: 10
   limit: 2 #1 - 2 - 3
   kstime: 16  #9 - 12 - 15
@@ -86,22 +89,31 @@ train_nn:
   end_after_training: Yes
   make_data_equilibre_3class: No
   make_data_Nbatch: No
-  Nbatch: 1
+  Nbatch: 100
   make_data_equilibre_8class: Yes
 
 
 getting_masks:
   load_masks: Yes
-  file_mask: results/masks_ref/speck/masks_inter_round.txt
+  file_mask: ./results/masks_analyse/results_masks/masks_all_Thomas2.txt
+  #./results/masks_analyse/results_masks/masks_all_Thomas2.txt
+  #./results/masks_analyse/results_masks/masks_all_Thomas.txt
+  #./results/masks_analyse/results_masks/masks_all_Thomas.txt
+  #./results/masks_analyse/masks_all_THOMASTEST_2.txt
+  #./results/masks_analyse/results_masks/masks_all_Saliency.txt
+  #./results/masks_analyse/results_masks/masks_all_GradientShap.txt
+  #./results/masks_analyse/results_masks/masks_all_FeatureAblation.txt
+  #./results/masks_analyse/results_masks/masks_all_DeepLift.txt
+  #results/masks_ref/speck/masks_inter_round.txt
   #results/masks_ref/speck/6/masks_QQ/masks_126.txt
   #results/masks_ref/speck/masks_inter_round.txt
   nbre_max_masks_load: -1
-  research_new_masks: Yes
+  research_new_masks: No
   nbre_generate_data_train_val: 1000000
   nbre_necessaire_val_SV: 5000
-  nbre_max_batch: 2
-  liste_segmentation_prediction: ["1, 0.9", "0.9, 0.5", "1, 0.8", "1, 0.5"]
-  liste_methode_extraction: [DeepLift, GradientShap, FeatureAblation, Saliency] #
+  nbre_max_batch: 3
+  liste_segmentation_prediction: ["1, 0.9", "1, 0.7", ]
+  liste_methode_extraction: [DeepLift, GradientShap, FeatureAblation, Saliency, Occlusion] #
   #[IntegratedGradients, IntegratedGradients_tunnel, DeepLift, GradientShap, FeatureAblation, Saliency, ShapleyValueSampling, Occlusion]
   #temps get_mask IntegratedGradients 0.6 for 100 samples
   #temps get_mask IntegratedGradients_tunnel 3.7 for 100 samples NE PAS PRENDRE
@@ -111,10 +123,10 @@ getting_masks:
   #temps get_mask Saliency 0.03 for 100 samples
   #temps get_mask ShapleyValueSampling 4 for 100 samples
   #temps get_mask Occlusion 0.15 for 100 samples
-  liste_methode_selection: [abs_sum, abs_median, abs_mean]
+  liste_methode_selection: [abs_sum, abs_mean]
   #[PCA, sum, abs_sum, median, abs_median, mean, abs_mean]
-  hamming_weigth: [16, 18]
-  thr_value: []
+  hamming_weigth: []
+  thr_value: [0.2, 0.25, 0.5, 0.75]
   save_fig_plot_feature_before_mask: No
   end_after_step2: No
 
@@ -130,17 +142,17 @@ make_data_classifier:
   nbre_sample_val_classifier: 100000
 
 compare_classifer:
-  eval_nn_ref: Yes
+  eval_nn_ref: No
   retrain_nn_ref: No
   save_data_proba: No
   num_epch_2: 5
   batch_size_2: 500
-  classifiers_ours: [LGBM] # [NN, LGBM, RF]
+  classifiers_ours: [LGBM, NN] # [NN, LGBM, RF]
   num_epch_our: 20
   batch_size_our: 500
-  retrain_with_import_features: Yes
+  retrain_with_import_features: No
   keep_number_most_impactfull: 50
-  quality_of_masks: No
+  quality_of_masks: Yes
   compute_independance_feature: No
   alpha_test: 0.05
   end_after_step4: Yes

@@ -29,7 +29,7 @@ from src.nn.models.deepset import DTanh
 from src.utils.utils import F1_Loss
 from sklearn.preprocessing import StandardScaler
 
-class NN_Model_Ref:
+class NN_Model_Ref_recovery_key:
 
     def __init__(self, args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train):
         """
@@ -99,9 +99,9 @@ class NN_Model_Ref:
             return model.to(self.device)
 
     def create_data(self):
-        self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_data(
+        self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_train_data_recoverykey(
             self.args.nbre_sample_train);
-        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_data(
+        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_train_data_recoverykey(
            self.args.nbre_sample_eval);
 
 

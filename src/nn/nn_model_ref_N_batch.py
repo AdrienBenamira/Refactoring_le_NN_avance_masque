@@ -12,6 +12,7 @@ from torch.autograd import Variable
 import numpy as np
 
 from src.nn.models.ModelBaselineNbatch import ModelPaperBaselineN_batch
+from src.nn.models.ModelBaselineNbatch_lambda import ModelPaperBaselineN_batch_lambda
 from src.nn.models.ModelBaseline_3class import ModelPaperBaseline_3class
 from src.nn.models.ModelBaseline_binarized_BagNET import ModelPaperBaseline_bin_bagnet
 from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
@@ -64,6 +65,7 @@ class NN_Model_Ref_Nclass:
 
     def choose_model(self):
         return ModelPaperBaselineN_batch(self.args).to(self.device)
+        #return ModelPaperBaselineN_batch_lambda(self.args).to(self.device)
 
     def create_data(self):
         self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_train_data_N_batch(self.args.nbre_sample_train, self.args.Nbatch);

@@ -87,10 +87,29 @@ os.system(command)
 #self.diff = (0xff00, 0xff02) #XXX sur 3 round
 #self.diff = (0x7f00, 0x7f02) #XXX sur 3 round
 
-for r in [3,4]:
+"""for r in [3,4]:
     for diff in ["python3 main.py --diff '(0x8100, 0x8102)'", "python3 main.py --diff '(0x8300, 0x8302)'",
                  "python3 main.py --diff '(0x8700, 0x8702)'", "python3 main.py --diff '(0x8f00, 0x8f02)'",
                  "python3 main.py --diff '(0x9f00, 0x9f02)'", "python3 main.py --diff '(0xbf00, 0xbf02)'",
                  "python3 main.py --diff '(0xff00, 0xff02)'", "python3 main.py --diff '(0x7f00, 0x7f02)'"]:
         print(diff + " --nombre_round_eval "+str(r))
-        os.system(diff+ " --nombre_round_eval "+str(r))
+        os.system(diff+ " --nombre_round_eval "+str(r))"""
+"""
+pathini= "/home/adriben/PycharmProjects/Refactoring_le_NN_avance_masque/results/masks_analyse/masks_all_THOMASTEST_todo/"
+for filetodo in ["masks_all_THOMASTEST_1.txt", "masks_all_THOMASTEST_2.txt", "masks_all_THOMASTEST_3.txt",
+                 "masks_all_THOMASTEST_12.txt", "masks_all_THOMASTEST_23.txt", "masks_all_THOMASTEST_123.txt"]:
+    path_file = pathini+filetodo
+    command = "python3 main.py --file_mask "+path_file
+    os.system(command)"""
+
+
+for round in ["5", "6", "7", "8"]:
+    command = "python3 main.py --nombre_round_eval "+round
+    os.system(command)
+    for N in [10, 50, 100]:
+        Ntrain = 10 ** 5
+        Ntrain2 = int(Ntrain / N)
+        Nval2 = int(Ntrain / (10 * N))
+        command = "python3 main_N_batch2.py --Nbatch " + str(N) + " --nombre_round_eval " + str(
+            round) + " --nbre_sample_train " + str(Ntrain2) + " --nbre_sample_eval " + str(Nval2)
+        os.system(command)

@@ -57,6 +57,8 @@ class ToT:
         ddt_entree = (np.uint64(liste_inputsmasked[0]) << debut)
         for index in range(1, len(liste_inputs)):
             ddt_entree += (np.uint64(liste_inputsmasked[index]) << debut - 16 * index)
+        print(bin(max(ddt_entree)))
+        print(ok)
         return ddt_entree
 
         """   def convert_proba_pure(self, vals, counts, num_samples):

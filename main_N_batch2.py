@@ -1,6 +1,8 @@
 import sys
 import warnings
 from src.nn.nn_model_ref_N_batch import NN_Model_Ref_Nclass
+from src.nn.nn_model_ref_N_batch_v2 import NN_Model_Ref_Nclassv2
+
 warnings.filterwarnings('ignore',category=FutureWarning)
 from src.get_masks.evaluate_quality_masks import Quality_masks
 from src.classifiers.classifier_all import All_classifier, evaluate_all
@@ -150,7 +152,7 @@ args.nombre_round_eval = nombre_round_eval
 nn_model_ref = NN_Model_Ref(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 nn_model_ref.net = nn_model_ref3.net"""
 
-nn_model_ref = NN_Model_Ref_Nclass(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
+nn_model_ref = NN_Model_Ref_Nclassv2(args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train)
 
 
 if args.retain_model_gohr_ref:

@@ -8,7 +8,7 @@ from captum.attr import Saliency, ShapleyValueSampling
 from captum.attr import IntegratedGradients, DeepLift, GradientShap, NoiseTunnel, FeatureAblation, Occlusion
 import torch
 from sklearn.decomposition import PCA
-
+import pandas as pd
 
 
 class Get_masks:
@@ -142,6 +142,9 @@ class Get_masks:
             if methode_extraction == "Occlusion":
                 res = self.extract_Oc(index_interet_v)
             dico_res_dico[methode_extraction][offeset: offeset + self.args.nbre_necessaire_val_SV] = res
+            df = pd.DataFrame(res, columns = [i for i in range(64)])
+            df.to_csv(self.path_file_models + str(methode_extraction) + str(index_interet_v.shape[0]) + str(self.valimin_mnt) + ".csv")
+
         return dico_res_dico
 
 
@@ -261,7 +264,7 @@ class Get_masks:
         nbit = self.args.word_size * len(self.args.inputs_type)
         for thrh in self.args.thr_value:
             mask = np.zeros(nbit)
-            all_vmask = data_X_bin2 > thrh
+            all_vmask = data_X_bin2 > thrh*max(data_X_bin2)
             mask[all_vmask] = 1
             masks_for_moment = []
             for index_m in range(len(self.args.inputs_type)):

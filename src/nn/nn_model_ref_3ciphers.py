@@ -19,7 +19,6 @@ from src.nn.models.ModelBaseline_binarized_v3 import ModelPaperBaseline_bin3
 from src.nn.models.ModelBaseline_binarized_v4 import ModelPaperBaseline_bin4
 from src.nn.models.ModelBaseline_binarized_v5 import ModelPaperBaseline_bin5
 from src.nn.models.ModelBaseline_binarized_v6 import ModelPaperBaseline_bin6
-from src.nn.models.ModelBaseline_block0 import ModelPaperBaseline_block0
 from src.nn.models.ModelBaseline_real import ModelPaperBaseline_real
 from src.nn.models.ModelBaseline_v2 import ModelPaperBaseline_v2
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
@@ -29,7 +28,7 @@ from src.nn.models.deepset import DTanh
 from src.utils.utils import F1_Loss
 from sklearn.preprocessing import StandardScaler
 
-class NN_Model_Ref:
+class NN_Model_Ref3ciphers:
 
     def __init__(self, args, writer, device, rng, path_save_model, cipher, creator_data_binary, path_save_model_train):
         """
@@ -64,8 +63,6 @@ class NN_Model_Ref:
 
 
     def choose_model(self):
-        if self.args.type_model == "baseline_block0":
-            return ModelPaperBaseline_block0(self.args).to(self.device)
         if self.args.type_model=="baseline":
             return ModelPaperBaseline(self.args).to(self.device)
         if self.args.type_model=="baseline_real":
@@ -101,7 +98,7 @@ class NN_Model_Ref:
     def create_data(self):
         self.X_train_nn_binaire, self.Y_train_nn_binaire, self.c0l_train_nn, self.c0r_train_nn, self.c1l_train_nn, self.c1r_train_nn = self.creator_data_binary.make_data(
             self.args.nbre_sample_train);
-        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_data(
+        self.X_val_nn_binaire, self.Y_val_nn_binaire, self.c0l_val_nn, self.c0r_val_nn, self.c1l_val_nn, self.c1r_val_nn = self.creator_data_binary.make_data2(
            self.args.nbre_sample_eval);
 
 
