@@ -36,10 +36,10 @@ train_nn:
   #(0xbf00, 0xbf02)
   #(0xff00, 0xff02)
   #(0x7f00, 0x7f02)
-  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
-  load_special: No
+  load_special: Yes
   load_nn_path: ./res_baseline_real/0.928545_bestacc.pth
   #./res_baseline_real/0.92833_bestacc_cc'.pth
   #./results/test_v2/speck/7/ctdata0l_ctdata0r_ctdata1l_ctdata1r/2020_10_20_23_56_34_952575/0.99356_bestacc.pth
@@ -60,7 +60,7 @@ train_nn:
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline_block0        # baseline_real baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet, baseline_real
+  type_model: baseline_real        # baseline_real baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet, baseline_real
   a_bit: 1
   nbre_sample_train: 10000000
   nbre_sample_eval: 1000000
