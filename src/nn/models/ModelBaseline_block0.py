@@ -31,7 +31,7 @@ class ModelPaperBaseline_block0(nn.Module):
 
     def forward(self, x):
         x = x.view(-1, len(self.args.inputs_type), self.word_size)
-        x2 = torch.zeros(x.shape[0], self.args.out_channel0, self.word_size)
+        x2 = torch.zeros(x.shape[0], self.args.out_channel0, self.word_size).to(x.device)
         x2[:,:len(self.args.inputs_type),:] = x
         shortcut = x2
         x = x2
