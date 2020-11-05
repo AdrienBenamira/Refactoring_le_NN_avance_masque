@@ -19,6 +19,9 @@ class ModelPaperBaselineN_batch(nn.Module):
         for i in range(args.numLayers - 1):
             self.layers_conv.append(nn.Conv2d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
             self.layers_batch.append(nn.BatchNorm2d(args.out_channel1, eps=0.01, momentum=0.99))
+            self.layers_conv.append(
+                nn.Conv2d(in_channels=args.out_channel1, out_channels=args.out_channel1, kernel_size=3, padding=1))
+            self.layers_batch.append(nn.BatchNorm2d(args.out_channel1, eps=0.01, momentum=0.99))
         self.fc1 = nn.Linear(args.out_channel1 * args.word_size * args.Nbatch, args.hidden1)  # 6*6 from image dimension
         self.BN5 = nn.BatchNorm1d(args.hidden1, eps=0.01, momentum=0.99)
         self.fc2 = nn.Linear(args.hidden1, args.hidden1)
@@ -32,9 +35,12 @@ class ModelPaperBaselineN_batch(nn.Module):
         shortcut = x.clone()
         self.shorcut = shortcut[0]
         self.x_dico = {}
-        for i in range(len(self.layers_conv)):
+        for i in range(0, len(self.layers_conv), 2):
             x = self.layers_conv[i](x)
             x = self.layers_batch[i](x)
+            x = F.relu(x)
+            x = self.layers_conv[i+1](x)
+            x = self.layers_batch[i+1](x)
             x = F.relu(x)
             x = x + shortcut
             self.x_dico[i] = x

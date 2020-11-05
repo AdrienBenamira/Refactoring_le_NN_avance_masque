@@ -6,7 +6,7 @@ general:
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
   nombre_round_eval: 5
-  inputs_type: [ctdata0l, ctdata0r, ctdata1l, ctdata1r]
+  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[c0r^c1r, c0l^c1l, t0^t1]
   #[ctdata0l^ctdata1l, DV, V0, V1]
@@ -36,10 +36,10 @@ train_nn:
   #(0xbf00, 0xbf02)
   #(0xff00, 0xff02)
   #(0x7f00, 0x7f02)
-  retain_model_gohr_ref: Yes    # Retrain le model de Gohr or load
+  retain_model_gohr_ref: No    # Retrain le model de Gohr or load
   finetunning: No
   model_finetunne: baseline
-  load_special: No
+  load_special: Yes
   load_nn_path: ./res_baseline_real/0.928545_bestacc.pth
   #./res_baseline_real/0.92833_bestacc_cc'.pth
   #./results/test_v2/speck/7/ctdata0l_ctdata0r_ctdata1l_ctdata1r/2020_10_20_23_56_34_952575/0.99356_bestacc.pth
@@ -62,10 +62,10 @@ train_nn:
   nbre_epoch_per_stage: 3
   type_model: baseline_real       # baseline_real baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet, baseline_real
   a_bit: 1
-  nbre_sample_train: 100000
+  nbre_sample_train: 10000
   nbre_sample_eval: 10000
-  num_epochs: 1
-  batch_size: 500
+  num_epochs: 200
+  batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
   lr_nn: 0.0001
   weight_decay_nn: 0.00001
@@ -86,7 +86,7 @@ train_nn:
   kernel_size1: 3
   num_workers: 4
   clip_grad_norm: 0.6
-  end_after_training: Yes
+  end_after_training: No
   make_data_equilibre_3class: No
   make_data_Nbatch: No
   Nbatch: 100
@@ -95,7 +95,8 @@ train_nn:
 
 getting_masks:
   load_masks: Yes
-  file_mask: ./results/masks_analyse/masks_all_THOMASTEST_ffff_2.txt
+  file_mask: results/masks_analyse/masks_all_THOMASTEST_todo/masks_all_THOMASTEST_2.txt
+  #./results/masks_analyse/masks_all_THOMASTEST_ffff_2.txt
   #./results/masks_analyse/results_masks/masks_all_Thomas2.txt
   #./results/masks_analyse/results_masks/masks_all_Thomas.txt
   #./results/masks_analyse/results_masks/masks_all_Thomas.txt
@@ -148,11 +149,11 @@ compare_classifer:
   num_epch_2: 5
   batch_size_2: 500
   classifiers_ours: [NN] # [NN, LGBM, RF]
-  num_epch_our: 20
+  num_epch_our: 1
   batch_size_our: 500
   retrain_with_import_features: No
   keep_number_most_impactfull: 64
-  quality_of_masks: No
+  quality_of_masks: Yes
   compute_independance_feature: No
   alpha_test: 0.05
   end_after_step4: Yes

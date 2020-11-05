@@ -41,12 +41,22 @@ class Quality_masks:
         self.df_["score_LGBM"] = all_clfs.masks_infos_score
         self.df_["ranked_LGBM"] = all_clfs.masks_infos_rank
         self.res_all_accuracy=[]
+        self.res_all_accuracy2 = []
         self.res_all_mean = []
         self.res_all_median = []
         self.res_all_sum = []
         self.res_all_IQR = []
         self.res_all_min = []
         self.res_all_max = []
+
+        self.m1 = []
+        self.m2 = []
+        self.m12 = []
+        self.acc1 = []
+        self.acc2 = []
+        self.acc = []
+
+        self.labelici = []
 
 
 
@@ -55,6 +65,48 @@ class Quality_masks:
         self.df_["independance_y"] = self.independance_feature_label()
         for index, _ in tqdm(enumerate(self.masks_reshape)):
             self.start_one_masks_acc_statistics(index)
+
+
+
+        """for index1, _ in tqdm(enumerate(self.masks_reshape)):
+            for index2, _ in tqdm(enumerate(self.masks_reshape)):
+                if index2 >index1:
+                    #self.labelici.append((self.masks_reshape[index1], self.masks_reshape[index2]))
+                    #print((self.masks_reshape[index1], self.masks_reshape[index2]))
+                    acc = self.start_one_masks_acc_statistics2(index1, index2)
+                    acc1, acc2 = self.res_all_accuracy[index1], self.res_all_accuracy[index2]
+                    m10, m20 = self.masks_reshape[index1], self.masks_reshape[index2]
+                    m1bis = ""
+                    for mmmm in m10:
+                        m1bis+=str(mmmm)+"_"
+                    m1 = m1bis[:-1]
+                    m2bis = ""
+                    for mmmm in m20:
+                        m2bis+=str(mmmm)+"_"
+                    m2 = m2bis[:-1]
+                    m120 = self.masks_reshape[index1] + self.masks_reshape[index2]
+                    m12bis = ""
+                    for mmmm in m120:
+                        m12bis += str(mmmm) + "_"
+                    m12 = m12bis[:-1]
+                    self.m1.append(m1)
+                    self.m2.append(m2)
+                    self.m12.append(m12)
+                    self.acc1.append(acc1)
+                    self.acc2.append(acc2)
+                    self.acc.append(acc)
+
+        self.index2 = [x for x in range(len(self.acc))]
+        self.columns2 = ["m1", "m2", "m12", "acc1", "acc2", "acc"]
+        self.df_2 = pd.DataFrame(index=self.index2, columns=self.columns2)
+        self.df_2["m1"] = np.array(self.m1)
+        self.df_2["m2"] = np.array(self.m2)
+        self.df_2["m12"] = np.array(self.m12)
+        self.df_2["acc1"] = np.array(self.acc1)
+        self.df_2["acc2"] = np.array(self.acc2)
+        self.df_2["acc"] = np.array(self.acc)
+        self.df_2.to_csv(self.path_save_model + "quality_masks2.csv", index=False)"""
+
         self.df_["accuracy"] = np.array(self.res_all_accuracy)
         self.df_["IQR"] = np.array(self.res_all_IQR)
         self.df_["mean"] = np.array(self.res_all_mean)
@@ -92,6 +144,22 @@ class Quality_masks:
         self.res_all_IQR.append( np.quantile(X_t, 0.75) - np.quantile(X_t, 0.25) )
         self.res_all_max.append(np.max(X_t))
         self.res_all_min.append(np.min(X_t))
+
+    def start_one_masks_acc_statistics2(self, index1, index2):
+        X_t = self.X_train_proba[:, [index1, index2]].reshape(-1, 2)
+        X_DDT_val = self.X_eval_proba[:, [index1, index2]].reshape(-1, 2)
+        #X_t2 = self.X_train_proba[:, index2].reshape(-1, 1)
+        #X_DDT_val2 = self.X_eval_proba[:, index2].reshape(-1, 1)
+        #X_t = np.array([X_t1, X_t2]).reshape(-1, 2)
+        #X_DDT_val = np.array([X_DDT_val1, X_DDT_val2]).reshape(-1, 2)
+        clf = DecisionTreeClassifier(random_state=self.args.seed)
+        clf.fit(X_t, self.Y_train_proba)
+        y_pred = clf.predict(X_DDT_val)
+        #self.res_all_accuracy2.append(accuracy_score(y_pred=y_pred, y_true=self.Y_eval_proba))
+        #print(accuracy_score(y_pred=y_pred, y_true=self.Y_eval_proba))
+        #print(self.res_all_accuracy[index1], self.res_all_accuracy[index2])
+        return accuracy_score(y_pred=y_pred, y_true=self.Y_eval_proba)
+
 
 
     def independance_feature_label(self):
