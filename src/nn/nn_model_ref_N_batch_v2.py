@@ -12,7 +12,7 @@ from torch.autograd import Variable
 import numpy as np
 
 from src.nn.models.ModelBaselineNbatch import ModelPaperBaselineN_batch
-from src.nn.models.ModelBaselineNbatch_lambda import ModelPaperBaselineN_batch_lambda
+#from src.nn.models.ModelBaselineNbatch_lambda import ModelPaperBaselineN_batch_lambda
 from src.nn.models.ModelBaseline_3class import ModelPaperBaseline_3class
 from src.nn.models.ModelBaseline_binarized_BagNET import ModelPaperBaseline_bin_bagnet
 from src.nn.models.ModelBaseline_binarized_v2 import ModelPaperBaseline_bin2
