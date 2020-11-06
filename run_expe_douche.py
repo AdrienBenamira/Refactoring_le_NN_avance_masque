@@ -103,11 +103,12 @@ for filetodo in ["masks_all_THOMASTEST_1.txt", "masks_all_THOMASTEST_2.txt", "ma
     os.system(command)"""
 
 
-for round in ["5", "6", "7", "8"]:
-    command = "python3 main_recovery_key.py --nombre_round_eval "+round
-    os.system(command)
+for round in ["7", "8"]:
+    if round!="7":
+        command = "python3 main_recovery_key.py --nombre_round_eval "+round
+        os.system(command)
     for N in [10, 50, 100]:
-        Ntrain = 10 ** 4
+        Ntrain = 10 ** 7
         Ntrain2 = int(Ntrain / N)
         Nval2 = int(Ntrain / (10 * N))
         command = "python3 main_N_batch2.py --Nbatch " + str(N) + " --nombre_round_eval " + str(
