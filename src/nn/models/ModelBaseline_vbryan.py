@@ -59,7 +59,7 @@ class ModelPaperBaseline_vbryan(nn.Module):
 
         self.conv1sc = nn.Conv1d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
         self.BN1sc = nn.BatchNorm1d(64, eps=0.01, momentum=0.99)
-        self.conv2sc = nn.Conv1d(in_channels=64, out_channels=128, kernel_size=5, padding=2)
+        self.conv2sc = nn.Conv1d(in_channels=32, out_channels=128, kernel_size=5, padding=2)
         self.BN2sc = nn.BatchNorm1d(128, eps=0.01, momentum=0.99)
 
 
@@ -92,29 +92,29 @@ class ModelPaperBaseline_vbryan(nn.Module):
         x = F.relu(self.bnconv2c(self.conv2c(x)))
         x = x + shortcut
 
-        shortcut = F.relu(self.BN1sc(self.conv1sc(shortcut)))
+        shortcut0 = F.relu(self.BN1sc(self.conv1sc(shortcut)))
 
         x = F.relu(self.bnconv3a(self.conv3a(x)))
         x = F.relu(self.bnconv4a(self.conv4a(x)))
-        x = x + shortcut
+        x = x + shortcut0
         x = F.relu(self.bnconv3b(self.conv3b(x)))
         x = F.relu(self.bnconv4b(self.conv4b(x)))
-        x = x + shortcut
+        x = x + shortcut0
         x = F.relu(self.bnconv3c(self.conv3c(x)))
         x = F.relu(self.bnconv4c(self.conv4c(x)))
-        x = x + shortcut
+        x = x + shortcut0
 
-        shortcut = F.relu(self.BN2sc(self.conv2sc(shortcut)))
+        shortcut1 = F.relu(self.BN2sc(self.conv2sc(shortcut)))
 
         x = F.relu(self.bnconv5a(self.conv5a(x)))
         x = F.relu(self.bnconv6a(self.conv6a(x)))
-        x = x + shortcut
+        x = x + shortcut1
         x = F.relu(self.bnconv5b(self.conv5b(x)))
         x = F.relu(self.bnconv6b(self.conv6b(x)))
-        x = x + shortcut
+        x = x + shortcut1
         x = F.relu(self.bnconv5c(self.conv5c(x)))
         x = F.relu(self.bnconv6c(self.conv6c(x)))
-        x = x + shortcut
+        x = x + shortcut1
 
         x = x.view(x.size(0), -1)
         self.intermediare0 = x.clone()
