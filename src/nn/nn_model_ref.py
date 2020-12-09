@@ -22,6 +22,7 @@ from src.nn.models.ModelBaseline_binarized_v6 import ModelPaperBaseline_bin6
 from src.nn.models.ModelBaseline_block0 import ModelPaperBaseline_block0
 from src.nn.models.ModelBaseline_real import ModelPaperBaseline_real
 from src.nn.models.ModelBaseline_v2 import ModelPaperBaseline_v2
+from src.nn.models.ModelBaseline_vbryan import ModelPaperBaseline_vbryan
 from src.nn.models.Modelbaseline_CNN_ATTENTION import Modelbaseline_CNN_ATTENTION
 from src.nn.models.Multi_Headed import Multihead
 from src.nn.models.Perceptron import Perceptron
@@ -64,6 +65,9 @@ class NN_Model_Ref:
 
 
     def choose_model(self):
+
+        if self.args.type_model == "ModelPaperBaseline_vbryan":
+            return ModelPaperBaseline_vbryan(self.args).to(self.device)
         if self.args.type_model == "baseline_block0":
             return ModelPaperBaseline_block0(self.args).to(self.device)
         if self.args.type_model=="baseline":
@@ -332,14 +336,29 @@ class NN_Model_Ref:
                 1).long()
             tk0 = tqdm(self.dataloaders[phase], total=int(len(self.dataloaders[phase])))
             for i, data in enumerate(tk0):
+
+                data_train = np.zeros((self.batch_size, 512),  dtype = np.float16)#16*self.args.out_channel1),  dtype = np.uint8)
+                data_val = np.zeros((self.batch_size, 512),  dtype = np.float16)#16*self.args.out_channel1), dtype = np.uint8)
+                data_train2 = np.zeros((self.batch_size, 64),  dtype = np.float16)#16*self.args.out_channel1),  dtype = np.uint8)
+                data_val2 = np.zeros((self.batch_size, 64),  dtype = np.float16)#16*self.args.out_channel1), dtype = np.uint8)
+
                 inputs, labels = data
                 outputs = self.net(inputs.to(self.device))
                 data_ici = self.net.intermediare0.detach().cpu().numpy().astype(np.float16)
-                #if phase == "train":
-                    #data_train[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
-                #else:
-                    #data_val[i*self.batch_size:(i+1)*self.batch_size,:] = data_ici
-                del data_ici
+                data_ici2 = self.net.intermediare.detach().cpu().numpy().astype(np.float16)
+                if phase == "train":
+                    data_train= data_ici
+                    data_train2 = data_ici2
+                    np.save(self.path_save_model + "data_trainclf_512_" + str(phase) + "_" + str(i) + ".npy", data_train)
+                    np.save(self.path_save_model + "data_trainclf_64_" + str(phase) + "_" + str(i) + ".npy", data_train2)
+                else:
+                    data_val = data_ici
+                    data_val2 = data_ici2
+                    np.save(self.path_save_model + "data_valclf_512_" + str(phase) + "_" + str(i) + ".npy", data_train)
+                    np.save(self.path_save_model + "data_valclf_64_" + str(phase) + "_" + str(i) + ".npy", data_train2)
+
+
+                del data_ici, data_ici2
 
                 #self.intermediaires[phase].append(self.net.intermediare.detach().cpu().numpy().astype(np.uint8))
                 self.outputs_proba[phase][i*self.batch_size:(i+1)*self.batch_size,:] = outputs.detach().cpu().numpy().astype(np.float16)
@@ -348,6 +367,12 @@ class NN_Model_Ref:
                 preds = (outputs.squeeze(1) > self.t.to(self.device)).float().cpu() * 1
                 #print(preds.unsqueeze(1).shape, outputs.shape)
                 self.outputs_pred[phase][i*self.batch_size:(i+1)*self.batch_size,:] = preds.unsqueeze(1).detach().cpu().numpy().astype(np.float16)
+                # SAVE data and labels
+                preds2 = preds.unsqueeze(1).detach().cpu().numpy().astype(np.float16)
+                lab2 = labels.unsqueeze(1).detach().cpu().numpy().astype(np.float16)
+                np.save(self.path_save_model + "data_label_" + str(phase) + "_" + str(i) + ".npy", lab2)
+                np.save(self.path_save_model + "data_pred_" + str(phase) + "_" + str(i) + ".npy", preds2)
+
                 TP += (preds.eq(1) & labels.eq(1)).cpu().sum()
                 TN += (preds.eq(0) & labels.eq(0)).cpu().sum()
                 FN += (preds.eq(0) & labels.eq(1)).cpu().sum()

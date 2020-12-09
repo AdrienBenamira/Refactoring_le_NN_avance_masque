@@ -5,8 +5,8 @@ general:
   models_path: ./results/models_trained/
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 5
-  inputs_type: [ctdata0l, ctdata0r, ctdata1l, ctdata1r]
+  nombre_round_eval: 6
+  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[c0r^c1r, c0l^c1l, t0^t1]
   #[ctdata0l^ctdata1l, DV, V0, V1]
@@ -40,7 +40,7 @@ train_nn:
   finetunning: No
   model_finetunne: baseline
   load_special: No
-  load_nn_path: ./res_baseline_real/0.928545_bestacc.pth
+  load_nn_path: ./results/bloc0out/0.925881_bestacc.pth
   #./res_baseline_real/0.92833_bestacc_cc'.pth
   #./results/test_v2/speck/7/ctdata0l_ctdata0r_ctdata1l_ctdata1r/2020_10_20_23_56_34_952575/0.99356_bestacc.pth
   #./res_baseline_real/0.787816_bestacc.pth
@@ -60,10 +60,13 @@ train_nn:
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: baseline_real       # baseline_real baseline, cnn_attention, multihead, deepset, baseline_bin, baseline_bin_v2, baseline_bin_v3, baseline_bin_v4, BagNet, baseline_real
+  type_model: ModelPaperBaseline_vbryan       # baseline_real baseline,
+                                    # cnn_attention, multihead, deepset, baseline_bin,
+                                    # baseline_bin_v2, baseline_bin_v3, baseline_bin_v4,
+                                    # BagNet, baseline_real, baseline_block0
   a_bit: 1
-  nbre_sample_train: 10000000
-  nbre_sample_eval: 1000000
+  nbre_sample_train: 10000
+  nbre_sample_eval: 10000
   num_epochs: 20
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
@@ -75,7 +78,7 @@ train_nn:
   base_lr:  0.00001      #Only if CyclicLR
   max_lr: 0.0002       #Only if CyclicLR
   demicycle_1: 5  #Only if CyclicLR
-  numLayers: 1
+  numLayers: 50
   limit: 2 #1 - 2 - 3
   kstime: 16  #9 - 12 - 15
   out_channel0: 32 #32 #120
@@ -86,7 +89,7 @@ train_nn:
   kernel_size1: 3
   num_workers: 4
   clip_grad_norm: 0.6
-  end_after_training: Yes
+  end_after_training: No
   make_data_equilibre_3class: No
   make_data_Nbatch: No
   Nbatch: 100
@@ -95,7 +98,8 @@ train_nn:
 
 getting_masks:
   load_masks: Yes
-  file_mask: ./results/masks_analyse/masks_all_THOMASTEST_ffff_2.txt
+  file_mask: results/masks_ref/speck/masks_inter_round.txt
+  #./results/masks_analyse/masks_all_THOMASTEST_ffff_2.txt
   #./results/masks_analyse/results_masks/masks_all_Thomas2.txt
   #./results/masks_analyse/results_masks/masks_all_Thomas.txt
   #./results/masks_analyse/results_masks/masks_all_Thomas.txt
@@ -112,7 +116,7 @@ getting_masks:
   nbre_generate_data_train_val: 1000000
   nbre_necessaire_val_SV: 5000
   nbre_max_batch: 3
-  liste_segmentation_prediction: ["1, 0.9", "1, 0.7", ]
+  liste_segmentation_prediction: ["1, 0.9", "1, 0.7"]
   liste_methode_extraction: [DeepLift, GradientShap, FeatureAblation, Saliency, Occlusion] #
   #[IntegratedGradients, IntegratedGradients_tunnel, DeepLift, GradientShap, FeatureAblation, Saliency, ShapleyValueSampling, Occlusion]
   #temps get_mask IntegratedGradients 0.6 for 100 samples
@@ -134,25 +138,25 @@ getting_masks:
 make_ToT:
   create_new_data_for_ToT: Yes
   create_ToT_with_only_sample_from_cipher: Yes
-  nbre_sample_create_ToT: 20000000
+  nbre_sample_create_ToT: 200000
 
 make_data_classifier:
   create_new_data_for_classifier: Yes
-  nbre_sample_train_classifier: 1000000
-  nbre_sample_val_classifier: 100000
+  nbre_sample_train_classifier: 10000
+  nbre_sample_val_classifier: 10000
 
 compare_classifer:
-  eval_nn_ref: No
+  eval_nn_ref: Yes
   retrain_nn_ref: No
   save_data_proba: No
   num_epch_2: 5
   batch_size_2: 500
-  classifiers_ours: [NN] # [NN, LGBM, RF]
+  classifiers_ours: [LGBM] # [NN, LGBM, RF]
   num_epch_our: 20
   batch_size_our: 500
   retrain_with_import_features: No
   keep_number_most_impactfull: 64
-  quality_of_masks: No
+  quality_of_masks: Yes
   compute_independance_feature: No
   alpha_test: 0.05
   end_after_step4: Yes
