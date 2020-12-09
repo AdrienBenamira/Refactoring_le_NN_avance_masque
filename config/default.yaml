@@ -65,8 +65,8 @@ train_nn:
                                     # baseline_bin_v2, baseline_bin_v3, baseline_bin_v4,
                                     # BagNet, baseline_real, baseline_block0
   a_bit: 1
-  nbre_sample_train: 10000
-  nbre_sample_eval: 10000
+  nbre_sample_train: 10000000
+  nbre_sample_eval: 1000000
   num_epochs: 20
   batch_size: 5000
   loss_type: MSE #BCE - MSE -  SmoothL1Loss CrossEntropyLoss  F1
