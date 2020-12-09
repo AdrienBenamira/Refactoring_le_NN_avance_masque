@@ -89,7 +89,7 @@ train_nn:
   kernel_size1: 3
   num_workers: 4
   clip_grad_norm: 0.6
-  end_after_training: No
+  end_after_training: Yes
   make_data_equilibre_3class: No
   make_data_Nbatch: No
   Nbatch: 100
