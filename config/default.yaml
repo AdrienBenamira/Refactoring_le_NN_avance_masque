@@ -5,8 +5,8 @@ general:
   models_path: ./results/models_trained/
   models_path_load: ./results/models_trained/
   cipher: speck # speck, simon, aes228, aes224, gimli, simeck
-  nombre_round_eval: 6
-  inputs_type: [ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
+  nombre_round_eval: 5
+  inputs_type: [p0l, p0r, ctdata0l, ctdata0r, ctdata1l, ctdata1r]
   #[ctdata0l^ctdata1l, ctdata0r^ctdata1r^ctdata0l^ctdata1l, ctdata0l^ctdata0r, ctdata1l^ctdata1r]
   #[c0r^c1r, c0l^c1l, t0^t1]
   #[ctdata0l^ctdata1l, DV, V0, V1]
@@ -60,7 +60,7 @@ train_nn:
   countinuous_learning: No
   curriculum_learning: No
   nbre_epoch_per_stage: 3
-  type_model: ModelPaperBaseline_vbryan       # baseline_real baseline,
+  type_model: baseline_real       # baseline_real baseline,
                                     # cnn_attention, multihead, deepset, baseline_bin,
                                     # baseline_bin_v2, baseline_bin_v3, baseline_bin_v4,
                                     # BagNet, baseline_real, baseline_block0
@@ -75,10 +75,10 @@ train_nn:
   momentum_nn: 0.9 #only for SGD
   optimizer_type: Adam #Adam - AdamW - SGD
   scheduler_type: CyclicLR #CyclicLR - None
-  base_lr:  0.000001      #Only if CyclicLR
-  max_lr: 0.00002       #Only if CyclicLR
+  base_lr:  0.00001      #Only if CyclicLR
+  max_lr: 0.0002       #Only if CyclicLR
   demicycle_1: 5  #Only if CyclicLR
-  numLayers: 50
+  numLayers: 10
   limit: 2 #1 - 2 - 3
   kstime: 16  #9 - 12 - 15
   out_channel0: 32 #32 #120

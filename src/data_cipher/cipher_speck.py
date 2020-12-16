@@ -16,7 +16,8 @@ class Cipher_Speck:
     def enc_one_round(self, p, k):
         c0, c1 = p[0], p[1];
         c0 = self.ror(c0, self.ALPHA);
-        c0 = (c0 + c1) & self.MASK_VAL;
+        c0 = (c0 ^ c1) & self.MASK_VAL;
+        #c0 = (c0 + c1) & self.MASK_VAL;
         c0 = c0 ^ k;
         c1 = self.rol(c1, self.BETA);
         c1 = c1 ^ c0;

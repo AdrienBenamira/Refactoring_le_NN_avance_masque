@@ -104,7 +104,7 @@ class Create_data_binary:
             ctdata0r[Y == 0] = ctdata0r[Y == 0] ^ k1;
             ctdata1l[Y == 0] = ctdata1l[Y == 0] ^ k0;
             ctdata1r[Y == 0] = ctdata1r[Y == 0] ^ k1;
-        liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r)
+        liste_inputs = self.convert_data_inputs(self.args, ctdata0l, ctdata0r, ctdata1l, ctdata1r, plain0l, plain0r)
         X = self.convert_to_binary(liste_inputs);
         return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
 
@@ -378,7 +378,7 @@ class Create_data_binary:
         return (X, Y, ctdata0l, ctdata0r, ctdata1l, ctdata1r);
 
 
-    def convert_data_inputs(self, args, ctdata0l, ctdata0r, ctdata1l, ctdata1r):
+    def convert_data_inputs(self, args, ctdata0l, ctdata0r, ctdata1l, ctdata1r, plain0l=None, plain0r=None):
         inputs_toput = []
         if self.args.cipher =="speck":
             V0 = self.cipher.ror(ctdata0l ^ ctdata0r, self.cipher.BETA)
@@ -398,6 +398,10 @@ class Create_data_binary:
 
 
         for i in range(len(args.inputs_type)):
+            if args.inputs_type[i] =="p0l":
+                inputs_toput.append(plain0l)
+            if args.inputs_type[i] == "p0r":
+                inputs_toput.append(plain0r)
             if args.inputs_type[i] =="ctdata0l":
                 inputs_toput.append(ctdata0l)
             if args.inputs_type[i] =="ctdata1l":
